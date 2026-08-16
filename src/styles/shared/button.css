@@ -1,0 +1,202 @@
+.sidera-button {
+  --sidera-button-background: var(--color-primary);
+  --sidera-button-border: var(--color-primary);
+  --sidera-button-color: var(--color-white);
+  --sidera-button-hover-background: var(--color-primary-strong);
+  --sidera-button-hover-border: var(--color-primary-strong);
+  --sidera-button-hover-color: var(--color-white);
+  --sidera-button-active-background: var(--color-primary-strong);
+  --sidera-button-focus: rgba(var(--color-primary-rgb), 0.5);
+  --sidera-button-block-size: 2.875rem;
+  --sidera-button-inline-padding: 1.375rem;
+  --sidera-button-font-size: 0.875rem;
+  --sidera-button-radius: 0.625rem;
+
+  min-block-size: var(--sidera-button-block-size);
+  max-inline-size: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 1px solid var(--sidera-button-border);
+  border-radius: var(--sidera-button-radius);
+  padding: 0.625rem var(--sidera-button-inline-padding);
+  background: var(--sidera-button-background);
+  color: var(--sidera-button-color);
+  cursor: pointer;
+  font:
+    600 var(--sidera-button-font-size) / 1.2 var(--font-sans);
+  text-align: center;
+  text-decoration: none;
+  text-underline-offset: 0.2em;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease,
+    transform 180ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sidera-button:hover {
+  border-color: var(--sidera-button-hover-border);
+  background: var(--sidera-button-hover-background);
+  color: var(--sidera-button-hover-color);
+  transform: translateY(-0.125rem);
+}
+
+.sidera-button:active:not(:disabled):not([aria-disabled="true"]) {
+  background: var(--sidera-button-active-background);
+  transform: translateY(1px);
+}
+
+.sidera-button:focus-visible {
+  outline: 0.1875rem solid var(--sidera-button-focus);
+  outline-offset: 0.1875rem;
+}
+
+.sidera-button:disabled,
+.sidera-button[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.48;
+  pointer-events: none;
+}
+
+.sidera-button[data-loading="true"] {
+  cursor: wait;
+  opacity: 0.64;
+  pointer-events: none;
+}
+
+.sidera-button--secondary {
+  --sidera-button-background: var(--color-surface);
+  --sidera-button-border: var(--color-surface);
+  --sidera-button-color: var(--color-text);
+  --sidera-button-hover-background: var(--color-white);
+  --sidera-button-hover-border: var(--color-white);
+  --sidera-button-hover-color: var(--color-text);
+  --sidera-button-active-background: var(--color-line);
+}
+
+.sidera-button--outline {
+  --sidera-button-background: transparent;
+  --sidera-button-border: rgba(var(--color-text-rgb), 0.26);
+  --sidera-button-color: var(--color-text);
+  --sidera-button-hover-background: rgba(var(--color-text-rgb), 0.05);
+  --sidera-button-hover-border: rgba(var(--color-text-rgb), 0.38);
+  --sidera-button-hover-color: var(--color-text);
+  --sidera-button-active-background: rgba(var(--color-text-rgb), 0.09);
+}
+
+.sidera-button--ghost {
+  --sidera-button-background: transparent;
+  --sidera-button-border: transparent;
+  --sidera-button-color: var(--color-muted);
+  --sidera-button-hover-background: rgba(var(--color-text-rgb), 0.06);
+  --sidera-button-hover-border: transparent;
+  --sidera-button-hover-color: var(--color-primary);
+  --sidera-button-active-background: rgba(var(--color-text-rgb), 0.1);
+}
+
+.sidera-button--link {
+  --sidera-button-background: transparent;
+  --sidera-button-border: transparent;
+  --sidera-button-color: var(--color-primary);
+  --sidera-button-hover-background: transparent;
+  --sidera-button-hover-border: transparent;
+  --sidera-button-hover-color: var(--color-dark);
+  --sidera-button-active-background: transparent;
+  --sidera-button-inline-padding: 0.25rem;
+
+  min-block-size: 2.75rem;
+}
+
+.sidera-button--link:hover .sidera-button__label {
+  text-decoration: underline;
+}
+
+.sidera-button--danger {
+  --sidera-button-background: var(--color-primary);
+  --sidera-button-border: var(--color-primary);
+  --sidera-button-color: var(--color-white);
+  --sidera-button-hover-background: var(--color-primary-strong);
+  --sidera-button-hover-border: var(--color-primary-strong);
+  --sidera-button-hover-color: var(--color-white);
+  --sidera-button-active-background: var(--color-primary-strong);
+}
+
+.sidera-button--compact {
+  --sidera-button-block-size: 2.5rem;
+  --sidera-button-inline-padding: 1.125rem;
+  --sidera-button-font-size: 0.8125rem;
+}
+
+.sidera-button--large {
+  --sidera-button-block-size: 3.125rem;
+  --sidera-button-inline-padding: 1.625rem;
+  --sidera-button-font-size: 0.9375rem;
+}
+
+.sidera-button--rounded {
+  --sidera-button-radius: 0.625rem;
+}
+
+.sidera-button--full-width {
+  inline-size: 100%;
+}
+
+.sidera-button__label {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.sidera-button__icon {
+  inline-size: 1em;
+  block-size: 1em;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1em;
+  line-height: 1;
+}
+
+.sidera-button__icon :where(svg) {
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+.sidera-button__loading-indicator {
+  --loading-indicator-color: currentColor;
+  --loading-indicator-label: currentColor;
+
+  display: none;
+}
+
+.sidera-button[data-loading="true"] .sidera-button__loading-indicator {
+  display: inline-flex;
+}
+
+.sidera-button__loading-indicator .sidera-loading-indicator__label {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (max-width: 40rem) {
+  .sidera-button {
+    min-block-size: max(2.75rem, var(--sidera-button-block-size));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidera-button {
+    transition: none;
+  }
+
+  .sidera-button:hover {
+    transform: none;
+  }
+}

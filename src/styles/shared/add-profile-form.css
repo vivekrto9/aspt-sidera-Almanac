@@ -1,0 +1,39 @@
+.sidera-add-profile-form {
+  min-inline-size: 0;
+}
+
+.sidera-add-profile-form__form.astrology-profile-form {
+  gap: 1.25rem;
+}
+
+.sidera-add-profile-form__form .astrology-profile-form__profile {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.sidera-add-profile-form__form .astrology-profile-form__profile-heading {
+  margin-block-end: 1.25rem;
+}
+
+.sidera-add-profile-form__form .astrology-profile-form__footer {
+  margin-block-start: 0;
+}
+
+.sidera-add-profile-form__actions,
+.sidera-add-profile-form__actions .sidera-button {
+  inline-size: 100%;
+}
+
+.sidera-add-profile-form__status {
+  min-block-size: 1.4em;
+  margin: 0.75rem 0 0;
+  color: var(--color-primary);
+  font: 600 0.875rem / 1.4 var(--font-sans), system-ui, sans-serif;
+}
+
+@media (max-width: 40rem) {
+  .sidera-add-profile-form__form .astrology-profile-form__fields {
+    gap: 1rem;
+  }
+}

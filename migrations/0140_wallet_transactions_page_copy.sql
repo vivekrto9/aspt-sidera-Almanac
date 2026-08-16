@@ -1,0 +1,17 @@
+ALTER TABLE ec_site_wallet ADD COLUMN tx_seo_title TEXT;
+ALTER TABLE ec_site_wallet ADD COLUMN tx_seo_description TEXT;
+ALTER TABLE ec_site_wallet ADD COLUMN tx_kicker TEXT;
+ALTER TABLE ec_site_wallet ADD COLUMN tx_title TEXT;
+ALTER TABLE ec_site_wallet ADD COLUMN tx_body TEXT;
+ALTER TABLE ec_site_wallet ADD COLUMN tx_recharge TEXT;
+ALTER TABLE ec_site_wallet ADD COLUMN tx_total_records TEXT;
+ALTER TABLE ec_site_wallet ADD COLUMN tx_activity_title TEXT;
+ALTER TABLE ec_site_wallet ADD COLUMN tx_filter_all TEXT;
+ALTER TABLE ec_site_wallet ADD COLUMN tx_filter_credits TEXT;
+ALTER TABLE ec_site_wallet ADD COLUMN tx_filter_debits TEXT;
+ALTER TABLE ec_site_wallet ADD COLUMN tx_balance_after TEXT;
+ALTER TABLE ec_site_wallet ADD COLUMN tx_empty TEXT;
+ALTER TABLE ec_site_wallet ADD COLUMN tx_credit_fallback TEXT;
+ALTER TABLE ec_site_wallet ADD COLUMN tx_debit_fallback TEXT;
+ALTER TABLE ec_site_wallet ADD COLUMN tx_previous TEXT;
+ALTER TABLE ec_site_wallet ADD COLUMN tx_next TEXT;

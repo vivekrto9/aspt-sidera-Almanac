@@ -1,0 +1,151 @@
+---
+import generatedSettings from "../generated/site-settings.json";
+import {
+  activeLocaleCodes,
+  defaultLocale,
+  getLocaleFromUrl,
+  isActiveLocale,
+  type SupportedLocale,
+} from "../data/localization-contract.ts";
+import {
+  buildOrganizationJsonLd,
+  buildPublicSeo,
+  buildWebSiteJsonLd,
+} from "../server/generated-site/seo.ts";
+import BuilderToolbar from "../builder/BuilderToolbar.astro";
+import "../styles/base.css";
+
+type SeoContent = {
+  seo_title?: string;
+  seo_description?: string;
+  seo_canonical_path?: string;
+  seo_robots?: string;
+  og_title?: string;
+  og_description?: string;
+  og_image?: string;
+  og_image_alt?: string;
+  twitter_card?: string;
+  twitter_title?: string;
+  twitter_description?: string;
+  twitter_image?: string;
+};
+
+type BuilderToolbarProps = {
+  launcherEnabled: boolean;
+  studioModeEnabled: boolean;
+  collection: string;
+  entry: string;
+  locale: string;
+  csrfToken: string;
+  canPublish: boolean;
+  seo?: Record<string, string | undefined>;
+  hasSavedDraft?: boolean;
+  reviewTargets?: Array<{ collection: string; entry: string; locale: string }>;
+};
+
+const {
+  title,
+  description,
+  bodyClass = "",
+  seo: seoContent = {},
+  jsonLd = [],
+  builderToolbar,
+} = Astro.props as {
+  title?: string;
+  description?: string;
+  bodyClass?: string;
+  seo?: SeoContent;
+  jsonLd?: Array<Record<string, unknown>>;
+  builderToolbar?: BuilderToolbarProps;
+};
+const siteSettings = generatedSettings.siteSettings;
+const fallbackLocale = isActiveLocale(siteSettings.defaultLocale) ? siteSettings.defaultLocale : "en";
+const locale = getLocaleFromUrl(Astro.request.url, fallbackLocale as SupportedLocale);
+const activeLocaleCodesJson = JSON.stringify(activeLocaleCodes);
+const seo = buildPublicSeo({
+  requestUrl: Astro.request.url,
+  siteSettings,
+  locale,
+  title: title ?? seoContent.seo_title,
+  description: description ?? seoContent.seo_description,
+  canonicalPath: seoContent.seo_canonical_path,
+  robots: seoContent.seo_robots,
+  ogTitle: seoContent.og_title,
+  ogDescription: seoContent.og_description,
+  ogImage: seoContent.og_image,
+  ogImageAlt: seoContent.og_image_alt,
+  twitterCard: seoContent.twitter_card,
+  twitterTitle: seoContent.twitter_title,
+  twitterDescription: seoContent.twitter_description,
+  twitterImage: seoContent.twitter_image,
+  jsonLd: [
+    buildOrganizationJsonLd({ siteSettings, requestUrl: Astro.request.url }),
+    buildWebSiteJsonLd({ siteSettings, requestUrl: Astro.request.url }),
+    ...jsonLd,
+  ].filter(Boolean) as Array<Record<string, unknown>>,
+});
+---
+
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <meta charset="utf-8" />
+    <script is:inline define:vars={{ locale, defaultLocale, activeLocaleCodesJson }}>
+      (() => {
+        try {
+          const localeStorageKey = "sidera-almanac:selected-locale";
+          const activeLocaleSet = new Set(JSON.parse(activeLocaleCodesJson));
+          const currentUrl = new URL(window.location.href);
+          const requestedLocale = currentUrl.searchParams.get("locale");
+          const storedLocale = window.localStorage.getItem(localeStorageKey);
+          if (requestedLocale && activeLocaleSet.has(requestedLocale)) {
+            window.localStorage.setItem(localeStorageKey, requestedLocale);
+            return;
+          }
+          if (storedLocale && activeLocaleSet.has(storedLocale) && !requestedLocale && storedLocale !== defaultLocale) {
+            currentUrl.searchParams.set("locale", storedLocale);
+            window.location.replace(currentUrl.toString());
+            return;
+          }
+          window.localStorage.setItem(localeStorageKey, locale);
+        } catch {
+          // Render the requested URL when storage is unavailable.
+        }
+      })();
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{seo.title}</title>
+    <meta name="description" content={seo.description} />
+    <meta name="robots" content={seo.robots} />
+    <meta name="theme-color" content={siteSettings.primaryColor} />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700&family=Spectral:ital,wght@0,400;0,500;1,400&display=swap"
+    />
+    <link rel="icon" href="/_assets/aliases/logo/logo.svg" />
+    <link rel="canonical" href={seo.canonicalUrl} />
+    {seo.alternates.map((alternate) => (
+      <link rel="alternate" hreflang={alternate.locale} href={alternate.href} />
+    ))}
+    <meta name="twitter:card" content={seo.twitter.card} />
+    <meta name="twitter:title" content={seo.twitter.title} />
+    <meta name="twitter:description" content={seo.twitter.description} />
+    <meta name="twitter:image" content={seo.twitter.image} />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={seo.og.title} />
+    <meta property="og:description" content={seo.og.description} />
+    <meta property="og:image" content={seo.og.image} />
+    <meta property="og:image:alt" content={seo.og.imageAlt} />
+    <meta property="og:url" content={seo.canonicalUrl} />
+    <meta property="og:site_name" content={siteSettings.brandName} />
+    {seo.jsonLd.map((entry) => (
+      <script is:inline type="application/ld+json" set:html={JSON.stringify(entry).replace(/</g, "\\u003c")}></script>
+    ))}
+  </head>
+  <body data-runtime-substrate="cloudflare" data-site-source="sidera-almanac" data-locale={locale} class={bodyClass}>
+    <slot />
+    {builderToolbar ? <BuilderToolbar {...builderToolbar} /> : null}
+  </body>
+</html>

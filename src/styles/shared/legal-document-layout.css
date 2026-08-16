@@ -1,0 +1,106 @@
+.legal-document-layout {
+  inline-size: 100%;
+  min-inline-size: 0;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.legal-document-layout__content {
+  box-sizing: border-box;
+  inline-size: min(100%, 47.5rem);
+  min-inline-size: 0;
+  margin-inline: auto;
+  padding: 0.625rem 2.125rem 5.625rem;
+}
+
+.legal-document-layout__section {
+  min-inline-size: 0;
+  margin-block-start: 2.125rem;
+  scroll-margin-block-start: 6rem;
+}
+
+.legal-document-layout__section:first-child {
+  margin-block-start: 0.875rem;
+}
+
+.legal-document-layout__section h2 {
+  margin: 0 0 0.625rem;
+  color: var(--color-text);
+  font: 400 1.5rem / 1.15 var(--font-serif), Georgia, serif;
+  overflow-wrap: anywhere;
+}
+
+.legal-document-layout__section p {
+  margin: 0 0 0.75rem;
+  color: var(--color-muted);
+  font: 400 0.90625rem / 1.7 var(--font-sans), system-ui, sans-serif;
+  overflow-wrap: anywhere;
+}
+
+.legal-document-layout__section p:last-child {
+  margin-block-end: 0;
+}
+
+.legal-document-layout__contact {
+  margin-block-start: 2.5rem;
+  padding-block-start: 1.375rem;
+  border-block-start: 1px solid rgba(var(--color-text-rgb), 0.12);
+  color: var(--color-muted);
+  font: 400 0.84375rem / 1.6 var(--font-sans), system-ui, sans-serif;
+  overflow-wrap: anywhere;
+}
+
+.legal-document-layout__contact a,
+.legal-document-layout__contact strong {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.legal-document-layout__contact a {
+  border-radius: 0.1875rem;
+  text-decoration-color: rgba(var(--color-primary-rgb), 0.45);
+  text-underline-offset: 0.2em;
+  transition:
+    color 160ms ease,
+    text-decoration-color 160ms ease;
+}
+
+.legal-document-layout__contact a:hover {
+  color: var(--color-dark);
+  text-decoration-color: currentColor;
+}
+
+.legal-document-layout__contact a:active {
+  color: var(--color-dark);
+}
+
+.legal-document-layout__contact a:focus-visible {
+  outline: 0.1875rem solid rgba(var(--color-primary-rgb), 0.5);
+  outline-offset: 0.1875rem;
+}
+
+@media (max-width: 40rem) {
+  .legal-document-layout__content {
+    padding: 0.625rem 1.25rem 4.5rem;
+  }
+
+  .legal-document-layout__section {
+    margin-block-start: 1.875rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .legal-document-layout__contact a {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .legal-document-layout__contact {
+    border-color: CanvasText;
+  }
+
+  .legal-document-layout__contact a:focus-visible {
+    outline-color: Highlight;
+  }
+}

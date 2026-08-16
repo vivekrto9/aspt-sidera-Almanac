@@ -1,0 +1,28 @@
+.reports-detail-navigation-shell {
+  padding: 2.125rem 2.125rem 1.25rem;
+  background: var(--color-surface);
+}
+
+.reports-detail-navigation {
+  max-inline-size: 62.5rem;
+  margin-inline: auto;
+}
+
+.reports-detail-navigation__back {
+  --sidera-button-font-size: 0.84375rem;
+  --sidera-button-inline-padding: 0;
+
+  gap: 0.4375rem;
+}
+
+@media (max-width: 40rem) {
+  .reports-detail-navigation-shell {
+    padding: 1.5rem 1.25rem 1rem;
+  }
+}
+
+@media (forced-colors: active) {
+  .reports-detail-navigation__back {
+    color: LinkText;
+  }
+}

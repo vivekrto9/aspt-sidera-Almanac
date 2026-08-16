@@ -1,0 +1,292 @@
+---
+import type { BrowseAstrologer } from "../../../data/astrologers/browse.ts";
+import type { AstrologersBrowseCopy } from "../../../data/locale/astrologers/sections/browse.ts";
+import type { SynastrySetupCopy } from "../../../data/locale/synastry/sections/two-profile-setup.ts";
+import type { SupportedLocale } from "../../../data/localization-contract.ts";
+import AstrologerProfilePicker from "../shared/AstrologerProfilePicker.astro";
+import AstrologerCard from "../../shared/AstrologerCard.astro";
+import CardGrid from "../../shared/CardGrid.astro";
+import ChoiceChips from "../../shared/ChoiceChips.astro";
+import PageIntro from "../../shared/PageIntro.astro";
+import SearchField from "../../shared/SearchField.astro";
+import "../../../styles/astrologers/sections/browse.css";
+
+type EditAttributes = Record<string, string>;
+type CustomerProfile = {
+  id: string;
+  profileName: string;
+  birthDate: string;
+  birthPlace: string;
+  isDefault: boolean;
+};
+
+type Props = {
+  copy: AstrologersBrowseCopy;
+  astrologers: BrowseAstrologer[];
+  customerProfiles?: CustomerProfile[];
+  authenticated?: boolean;
+  csrfToken?: string;
+  profileFormCopy: SynastrySetupCopy;
+  locale: SupportedLocale;
+  localizePath: (path: string) => string;
+  editAttributes?: (field: string) => EditAttributes;
+};
+
+const {
+  copy,
+  astrologers,
+  customerProfiles = [],
+  authenticated = false,
+  csrfToken = "",
+  profileFormCopy,
+  locale,
+  localizePath,
+  editAttributes = () => ({}),
+} = Astro.props as Props;
+
+const filterOptions = [
+  ["all", copy.filterAll, "filter_all"],
+  ["love", copy.filterLove, "filter_love"],
+  ["career", copy.filterCareer, "filter_career"],
+  ["timing", copy.filterTiming, "filter_timing"],
+].map(([value, label, field]) => ({
+  value,
+  label,
+  editAttributes: editAttributes(field),
+}));
+
+const compactNumber = new Intl.NumberFormat(locale, {
+  notation: "compact",
+  maximumFractionDigits: 1,
+});
+const currency = new Intl.NumberFormat(locale, {
+  style: "currency",
+  currency: "USD",
+  minimumFractionDigits: 2,
+});
+const availabilityLabel = (availability: BrowseAstrologer["availability"]) =>
+  availability === "online"
+    ? copy.onlineNow
+    : availability === "busy"
+      ? copy.busyLabel
+      : copy.offlineLabel;
+const actionLabel = (availability: BrowseAstrologer["availability"]) =>
+  availability === "online"
+    ? copy.talkNow
+    : availability === "busy"
+      ? copy.bookNextSlot
+      : copy.schedule;
+const bookingHref = (slug: string) =>
+  localizePath(`/astrologers/${slug}?book=1`);
+const chatHref = () => localizePath("/chat");
+const loginHref = localizePath("/login");
+const loginHrefFor = (next: string) =>
+  `${loginHref}${loginHref.includes("?") ? "&" : "?"}next=${encodeURIComponent(next)}`;
+---
+
+<section
+  class="astrologers-browse"
+  id="browse"
+  aria-labelledby="astrologers-browse-title"
+  data-astrologers-browse
+>
+  <div class="astrologers-browse__intro">
+    <PageIntro
+      id="astrologers-browse"
+      headingId="astrologers-browse-title"
+      class="astrologers-browse__page-intro"
+      title={`${copy.titleAccent} ${copy.titleSuffix}`}
+      eyebrow={copy.eyebrow}
+      description={copy.description}
+      alignment="center"
+      density="standard"
+      eyebrowEditAttributes={editAttributes("browse_eyebrow")}
+      descriptionEditAttributes={editAttributes("browse_description")}
+    >
+      <Fragment slot="title">
+        <em {...editAttributes("browse_title_accent")}>{copy.titleAccent}</em>{" "}<span
+          {...editAttributes("browse_title_suffix")}>{copy.titleSuffix}</span
+        >
+      </Fragment>
+    </PageIntro>
+  </div>
+
+  <div class="astrologers-browse__directory">
+    <form class="astrologers-browse__toolbar" data-astrologer-filter-form>
+      <SearchField
+        id="astrologer-search"
+        name="query"
+        ariaLabel={copy.searchAria}
+        placeholder={copy.searchPlaceholder}
+        showSubmit={false}
+        clearable
+        clearLabel={copy.searchClear}
+        landmarkLabel={copy.searchAria}
+        class="astrologers-browse__search"
+        inputAttributes={editAttributes("search_placeholder")}
+      />
+
+      <div class="astrologers-browse__filters">
+        <ChoiceChips
+          id="astrologer-specialty"
+          name="specialty"
+          label={copy.filterLabel}
+          options={filterOptions}
+          value="all"
+          mode="single"
+          size="compact"
+          hideLabel
+          class="astrologers-browse__specialties"
+          labelEditAttributes={editAttributes("filter_label")}
+        />
+      </div>
+    </form>
+
+    <p class="astrologers-browse__count" aria-live="polite">
+      <strong data-astrologer-result-count>{astrologers.length}</strong>{" "}
+      <span {...editAttributes("results_suffix")}>{copy.resultsSuffix}</span>
+    </p>
+
+    <CardGrid
+      columns={3}
+      tabletColumns={2}
+      mobileColumns={1}
+      ariaLabelledby="astrologers-browse-title"
+      class="astrologers-browse__grid"
+    >
+      {
+        astrologers.map((astrologer) => (
+          <div
+            class="astrologers-browse__card-shell"
+            data-astrologer-card
+            data-name={astrologer.name.toLocaleLowerCase(locale)}
+            data-copy={`${astrologer.tradition} ${astrologer.specialties.join(" ")}`.toLocaleLowerCase(locale)}
+            data-categories={astrologer.categories.join(" ")}
+            data-availability={astrologer.availability}
+          >
+            <AstrologerCard
+              id={`astrologer-${astrologer.slug}`}
+              name={astrologer.name}
+              tradition={astrologer.tradition}
+              ratingValue={astrologer.rating}
+              ratingText={astrologer.rating.toFixed(1)}
+              ratingAriaLabel={`${astrologer.name}: ${astrologer.rating.toFixed(1)} / 5`}
+              reviewText={`${compactNumber.format(astrologer.reviews)} ${copy.reviewsSuffix}`}
+              availability={astrologer.availability}
+              availabilityLabel={availabilityLabel(astrologer.availability)}
+              rateText={currency.format(astrologer.rate)}
+              rateUnit={copy.rateUnit}
+              specialties={astrologer.specialties}
+              description={astrologer.description}
+              variant="detailed"
+              class="astrologers-browse__card"
+              avatarSrc={astrologer.imageUrl}
+              avatarAlt={astrologer.name}
+              avatarInitials={astrologer.name.split(" ").map((part) => part[0]).join("")}
+              avatarFallback="placeholder"
+              profileHref={localizePath(`/astrologers/${astrologer.slug}`)}
+              profileLabel={copy.profileAction}
+              actionHref={
+                authenticated && astrologer.availability === "online"
+                  ? undefined
+                  : astrologer.availability === "online"
+                    ? loginHrefFor(chatHref())
+                  : authenticated
+                    ? bookingHref(astrologer.slug)
+                    : loginHrefFor(bookingHref(astrologer.slug))
+              }
+              actionLabel={actionLabel(astrologer.availability)}
+              actionButtonAttributes={
+                authenticated && astrologer.availability === "online"
+                  ? {
+                      "data-dialog-open": "astrologer-profile-picker",
+                      "data-chat-booking-href": chatHref(),
+                      "data-chat-astrologer-slug": astrologer.slug,
+                      "data-chat-profile-type": astrologer.chatProfileType,
+                      "data-chat-csrf-token": csrfToken,
+                    }
+                  : undefined
+              }
+              profileEditAttributes={editAttributes("profile_action")}
+              actionEditAttributes={editAttributes(
+                astrologer.availability === "online"
+                  ? "talk_now"
+                  : astrologer.availability === "busy"
+                    ? "book_next_slot"
+                    : "schedule",
+              )}
+            />
+          </div>
+        ))
+      }
+    </CardGrid>
+
+    <div class="astrologers-browse__empty" data-astrologer-empty hidden>
+      <span aria-hidden="true">✦</span>
+      <h2 {...editAttributes("no_results_title")}>{copy.noResultsTitle}</h2>
+      <p {...editAttributes("no_results_body")}>{copy.noResultsBody}</p>
+    </div>
+  </div>
+
+  {authenticated ? (
+    <AstrologerProfilePicker
+      copy={copy}
+      customerProfiles={customerProfiles}
+      csrfToken={csrfToken}
+      profileFormCopy={profileFormCopy}
+      locale={locale}
+      editAttributes={editAttributes}
+    />
+  ) : null}
+</section>
+
+<script>
+  const initializeAstrologerBrowse = (root: HTMLElement) => {
+    if (root.dataset.astrologerBrowseReady === "true") return;
+    const form = root.querySelector<HTMLFormElement>("[data-astrologer-filter-form]");
+    const search = form?.querySelector<HTMLInputElement>('input[name="query"]');
+    const count = root.querySelector<HTMLElement>("[data-astrologer-result-count]");
+    const empty = root.querySelector<HTMLElement>("[data-astrologer-empty]");
+    const cards = Array.from(
+      root.querySelectorAll<HTMLElement>("[data-astrologer-card]"),
+    );
+    if (!form || !search || !count || !empty) return;
+
+    const filterCards = () => {
+      const query = search.value.trim().toLocaleLowerCase();
+      const specialty =
+        form.querySelector<HTMLInputElement>('input[name="specialty"]:checked')
+          ?.value ?? "all";
+      let visible = 0;
+
+      for (const card of cards) {
+        const matchesQuery =
+          !query ||
+          card.dataset.name?.includes(query) ||
+          card.dataset.copy?.includes(query);
+        const matchesSpecialty =
+          specialty === "all" ||
+          card.dataset.categories?.split(" ").includes(specialty);
+        const matches = Boolean(matchesQuery && matchesSpecialty);
+        card.hidden = !matches;
+        if (matches) visible += 1;
+      }
+
+      count.textContent = String(visible);
+      empty.hidden = visible !== 0;
+    };
+
+    form.addEventListener("input", filterCards);
+    form.addEventListener("change", filterCards);
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      filterCards();
+    });
+
+    root.dataset.astrologerBrowseReady = "true";
+  };
+
+  document
+    .querySelectorAll<HTMLElement>("[data-astrologers-browse]")
+    .forEach(initializeAstrologerBrowse);
+</script>

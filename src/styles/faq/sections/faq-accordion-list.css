@@ -1,0 +1,18 @@
+.faq-accordion-list {
+  padding: 1.25rem 2.125rem 0;
+  background: var(--color-surface);
+}
+
+.faq-accordion-list__inner {
+  inline-size: min(100%, 47.5rem);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+@media (max-width: 40rem) {
+  .faq-accordion-list {
+    padding: 1rem 1rem 0;
+  }
+}

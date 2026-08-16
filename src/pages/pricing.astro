@@ -1,0 +1,11 @@
+---
+import {
+  getLocaleFromUrl,
+  localizePath,
+} from "../data/localization-contract.ts";
+
+export const prerender = false;
+
+const locale = getLocaleFromUrl(Astro.request.url);
+return Astro.redirect(localizePath("/wallet", locale), 302);
+---

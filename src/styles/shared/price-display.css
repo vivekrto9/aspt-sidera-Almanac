@@ -1,0 +1,65 @@
+.sidera-price-display {
+  --price-display-current: var(--color-text);
+  --price-display-supporting: var(--color-muted);
+  --price-display-original: var(--color-muted-soft);
+  --price-display-current-size: 1.625rem;
+  --price-display-supporting-size: 0.8125rem;
+
+  max-inline-size: 100%;
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.5rem;
+  color: var(--price-display-current);
+  vertical-align: baseline;
+}
+
+.sidera-price-display--inverse {
+  --price-display-current: var(--color-surface-soft);
+  --price-display-supporting: var(--color-line);
+  --price-display-original: #b79f8b;
+}
+
+.sidera-price-display--compact {
+  --price-display-current-size: 1.1875rem;
+  --price-display-supporting-size: 0.75rem;
+}
+
+.sidera-price-display--large {
+  --price-display-current-size: 2.125rem;
+  --price-display-supporting-size: 0.875rem;
+}
+
+.sidera-price-display--display {
+  --price-display-current-size: 3.25rem;
+  --price-display-supporting-size: 0.875rem;
+}
+
+.sidera-price-display__current {
+  color: var(--price-display-current);
+  font-family: var(--font-serif), Georgia, "Times New Roman", serif;
+  font-size: var(--price-display-current-size);
+  font-weight: 400;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.sidera-price-display__original,
+.sidera-price-display__unit {
+  color: var(--price-display-supporting);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: var(--price-display-supporting-size);
+  line-height: 1.35;
+}
+
+.sidera-price-display__original {
+  color: var(--price-display-original);
+  text-decoration-thickness: 0.0625rem;
+  text-decoration-color: currentColor;
+}
+
+@media (max-width: 40rem) {
+  .sidera-price-display--display {
+    --price-display-current-size: 2.75rem;
+  }
+}

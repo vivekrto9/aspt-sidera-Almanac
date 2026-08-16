@@ -1,0 +1,33 @@
+---
+import type { SynastryOverlayingStateCopy } from "../../../data/locale/synastry/sections/overlaying-state.ts";
+import CastingState from "../../shared/CastingState.astro";
+import "../../../styles/synastry/sections/overlaying-state.css";
+
+type Props = {
+  copy: SynastryOverlayingStateCopy & {
+    person_one_title: string;
+    person_two_title: string;
+  };
+  editAttributes?: (
+    field: keyof SynastryOverlayingStateCopy,
+  ) => Record<string, string>;
+};
+
+const { copy, editAttributes = () => ({}) } = Astro.props as Props;
+---
+
+<CastingState
+  class="synastry-overlaying"
+  data-synastry-overlaying
+  title={copy.overlaying_title}
+  statusLabel={copy.overlaying_status}
+  summary={`${copy.person_one_title} × ${copy.person_two_title}`}
+  visual="synastry"
+  height="viewport"
+  headingTag="h1"
+  titleEditAttributes={editAttributes("overlaying_title")}
+  statusEditAttributes={editAttributes("overlaying_status")}
+  summaryEditAttributes={{ "data-synastry-overlaying-summary": "" }}
+  tabindex="-1"
+  hidden
+/>

@@ -1,0 +1,10 @@
+ALTER TABLE ec_site_forgot_password ADD COLUMN forgot_password_form_heading TEXT;
+ALTER TABLE ec_site_forgot_password ADD COLUMN forgot_password_form_subheading TEXT;
+ALTER TABLE ec_site_forgot_password ADD COLUMN forgot_password_email_label TEXT;
+ALTER TABLE ec_site_forgot_password ADD COLUMN forgot_password_email_placeholder TEXT;
+ALTER TABLE ec_site_forgot_password ADD COLUMN forgot_password_submit_label TEXT;
+ALTER TABLE ec_site_forgot_password ADD COLUMN forgot_password_loading_label TEXT;
+ALTER TABLE ec_site_forgot_password ADD COLUMN forgot_password_success_label TEXT;
+ALTER TABLE ec_site_forgot_password ADD COLUMN forgot_password_invalid_email_label TEXT;
+ALTER TABLE ec_site_forgot_password ADD COLUMN forgot_password_login_prompt TEXT;
+ALTER TABLE ec_site_forgot_password ADD COLUMN forgot_password_login_label TEXT;

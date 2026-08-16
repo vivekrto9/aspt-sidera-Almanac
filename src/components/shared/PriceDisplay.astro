@@ -1,0 +1,47 @@
+---
+import "../../styles/shared/price-display.css";
+
+type PriceDisplaySize = "compact" | "standard" | "large" | "display";
+type PriceDisplayTone = "default" | "inverse";
+
+type Props = {
+  current: string;
+  original?: string;
+  unit?: string;
+  size?: PriceDisplaySize;
+  tone?: PriceDisplayTone;
+  ariaLabel?: string;
+  originalAriaLabel?: string;
+  class?: string;
+  [attribute: string]: unknown;
+};
+
+const {
+  current,
+  original,
+  unit,
+  size = "standard",
+  tone = "default",
+  ariaLabel,
+  originalAriaLabel,
+  class: className,
+  ...priceAttributes
+} = Astro.props as Props;
+
+const classes = [
+  "sidera-price-display",
+  `sidera-price-display--${size}`,
+  `sidera-price-display--${tone}`,
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+---
+
+<span {...priceAttributes} class={classes} aria-label={ariaLabel}>
+  <span class="sidera-price-display__current">{current}</span>
+  {original ? (
+    <del class="sidera-price-display__original" aria-label={originalAriaLabel}>{original}</del>
+  ) : null}
+  {unit ? <span class="sidera-price-display__unit">{unit}</span> : null}
+</span>

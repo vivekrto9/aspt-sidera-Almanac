@@ -1,0 +1,9 @@
+import type { APIRoute } from "astro";
+import { createTransitReading, getTransitReading, transitFeature } from "../../../../server/aggregator/transit-api.ts";
+import { getRuntimeEnv, readJsonBody, requirePost } from "../../../../server/generated-site/request.ts";
+import { errorResponse } from "../../../../server/generated-site/responses.ts";
+
+export const prerender = false;
+export const GET: APIRoute = async (context) => { const url = new URL(context.request.url); const readingId = url.searchParams.get("readingId") || ""; const reading = await getTransitReading({ env: await getRuntimeEnv(context), request: context.request, readingId, date: url.searchParams.get("date"), locale: String(url.searchParams.get("locale") || "en") as never }); return reading ? Response.json({ ok: true, ...reading }) : errorResponse(transitFeature, "Transit reading was not found.", 404); };
+export const POST: APIRoute = async (context) => { const methodError = requirePost(context.request); if (methodError) return methodError; const parsed = await readJsonBody(context.request); if (!parsed.ok) return parsed.response; try { return Response.json(await createTransitReading({ env: await getRuntimeEnv(context), request: context.request, profileId: parsed.body.profileId, profile: parsed.body.profile as never, date: parsed.body.date, locale: String(parsed.body.locale || "en") as never })); } catch (error) { const message = error instanceof Error ? error.message : "Transit could not be calculated."; return errorResponse(transitFeature, message, /configured|storage/i.test(message) ? 503 : /provider|incomplete|no usable/i.test(message) ? 502 : /sign in/i.test(message) ? 401 : /verified/i.test(message) ? 403 : 400); } };
+export const ALL: APIRoute = async () => errorResponse(transitFeature, "Method not allowed.", 405);

@@ -1,0 +1,24 @@
+---
+import type { TrackedPersonRecord } from "../../../data/account/people.ts";
+import SectionHeading from "../../shared/SectionHeading.astro";
+import AccountCollectionEmptyState from "../shared/AccountCollectionEmptyState.astro";
+import AccountPeopleGrid from "../shared/AccountPeopleGrid.astro";
+import "../../../styles/account/sections/account-people.css";
+
+type Props = {
+  eyebrow: string; title: string; people: TrackedPersonRecord[];
+  synastryLabel: string; synastryHref: string; ownProfileLabel: string; generateBirthChartLabel: string; openBirthChartLabel: string; viewAllLabel: string; viewAllHref: string;
+  emptyTitle: string; emptyDescription: string; emptyActionLabel: string; emptyActionHref: string;
+  edit: (field: string) => Record<string, string>;
+};
+const props = Astro.props as Props;
+---
+
+<section class="account-people" id="people" aria-labelledby="account-people-title">
+  <SectionHeading class="account-people__header" eyebrow={props.eyebrow} title={props.title} headingId="account-people-title" actionLabel={props.people.length ? props.viewAllLabel : undefined} actionHref={props.people.length ? props.viewAllHref : undefined} eyebrowEditAttributes={props.edit("account_people_eyebrow")} titleEditAttributes={props.edit("account_people_title")} actionEditAttributes={props.edit("account_collection_view_all_label")} />
+  {props.people.length ? (
+    <AccountPeopleGrid {...props} people={props.people.slice(0, 4)} />
+  ) : (
+    <AccountCollectionEmptyState id="account-people-empty" title={props.emptyTitle} description={props.emptyDescription} actionLabel={props.emptyActionLabel} actionHref={props.emptyActionHref} titleField="account_people_empty_title" descriptionField="account_people_empty_description" actionField="account_people_empty_action_label" edit={props.edit} />
+  )}
+</section>

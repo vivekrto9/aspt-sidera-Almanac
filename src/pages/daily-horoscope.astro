@@ -1,0 +1,230 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { loadPublicPageContent } from "../builder/public-page.ts";
+import type { BuilderEditAttributes } from "../builder/builder.ts";
+import DailyHoroscopeSignPicker from "../components/daily-horoscope/sections/DailyHoroscopeSignPicker.astro";
+import Footer from "../components/shared/Footer.astro";
+import Header from "../components/shared/Header.astro";
+import { getDailyHoroscopeChooseSignCopy } from "../data/locale/daily-horoscope/sections/choose-sign.ts";
+import {
+  activeLocales,
+  defaultLocale,
+  localizePath,
+  type SupportedLocale,
+} from "../data/localization-contract.ts";
+import { createSharedFooterProps } from "../data/shared-footer-navigation.ts";
+import "../styles/daily-horoscope/daily-horoscope.css";
+
+export const prerender = false;
+
+const {
+  locale,
+  content,
+  builder,
+  builderPage,
+  chromePage,
+  reviewTargets,
+  builderEdit,
+  chromeEdit,
+} = await loadPublicPageContent(Astro, "daily_horoscope");
+
+const seoContent = {
+  seo_title: content.seo_title,
+  seo_description: content.seo_description,
+  seo_canonical_path: content.seo_canonical_path,
+  seo_robots: content.seo_robots,
+  og_title: content.og_title,
+  og_description: content.og_description,
+  og_image: content.og_image,
+  og_image_alt: content.og_image_alt,
+  twitter_card: content.twitter_card,
+  twitter_title: content.twitter_title,
+  twitter_description: content.twitter_description,
+  twitter_image: content.twitter_image,
+};
+
+const componentEditAttributes = (
+  attributes: BuilderEditAttributes,
+): Record<string, string> =>
+  Object.fromEntries(
+    Object.entries(attributes)
+      .filter((entry): entry is [string, string | true] => entry[1] !== undefined)
+      .map(([key, value]) => [key, value === true ? "true" : value]),
+  );
+
+const localeHref = (targetLocale: SupportedLocale) => {
+  const url = new URL(Astro.request.url);
+  if (targetLocale === defaultLocale) {
+    if (locale === defaultLocale) {
+      url.searchParams.delete("locale");
+    } else {
+      url.searchParams.set("locale", defaultLocale);
+    }
+  } else {
+    url.searchParams.set("locale", targetLocale);
+  }
+  return `${url.pathname}${url.search}${url.hash}`;
+};
+
+const navigation = [
+  {
+    label: content.nav_todays_sky,
+    href: localizePath("/todays-sky", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_todays_sky")),
+  },
+  {
+    label: content.nav_charts,
+    href: localizePath("/birth-chart", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_charts")),
+  },
+  {
+    label: content.nav_compatibility,
+    href: localizePath("/synastry", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_compatibility")),
+  },
+  {
+    label: content.nav_moon,
+    href: localizePath("/moon-calendar", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_moon")),
+  },
+  {
+    label: content.nav_horoscope,
+    href: localizePath("/daily-horoscope", locale),
+    current: true,
+    editAttributes: componentEditAttributes(chromeEdit("nav_horoscope")),
+  },
+  {
+    label: content.nav_astrologers,
+    href: localizePath("/astrologers", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_astrologers")),
+  },
+  {
+    label: content.nav_blog,
+    href: localizePath("/blog", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_blog")),
+  },
+];
+
+const actions = [
+  {
+    id: "sign-in",
+    label: content.action_sign_in,
+    href: localizePath("/login", locale),
+    variant: "ghost" as const,
+    editAttributes: componentEditAttributes(chromeEdit("action_sign_in")),
+  },
+  {
+    id: "get-chart",
+    label: content.action_get_chart,
+    href: localizePath("/birth-chart", locale),
+    variant: "primary" as const,
+    editAttributes: componentEditAttributes(chromeEdit("action_get_chart")),
+  },
+];
+
+const languageOptions = activeLocales.map((item) => {
+  const field = `language_option_${item.code}_label`;
+  return {
+    code: item.code,
+    label: content[field] || item.nativeName,
+    href: localeHref(item.code),
+    lang: item.code,
+    hreflang: item.hreflang,
+    editAttributes: componentEditAttributes(chromeEdit(field)),
+  };
+});
+
+const signDefinitions = getDailyHoroscopeChooseSignCopy(locale).signs;
+const signs = signDefinitions.map((sign, index) => {
+  const signNumber = index + 1;
+  const nameField = `picker_sign_${signNumber}_name`;
+  const datesField = `picker_sign_${signNumber}_dates`;
+  const elementField = `picker_sign_${signNumber}_element`;
+
+  return {
+    ...sign,
+    name: content[nameField],
+    dates: content[datesField],
+    element: content[elementField],
+    href: localizePath(`/daily-horoscope/${sign.slug}`, locale),
+    nameEditAttributes: componentEditAttributes(builderEdit(nameField)),
+    datesEditAttributes: componentEditAttributes(builderEdit(datesField)),
+    elementEditAttributes: componentEditAttributes(builderEdit(elementField)),
+  };
+});
+const footerProps = createSharedFooterProps({
+  content,
+  locale,
+  editAttributes: (field) => componentEditAttributes(chromeEdit(field)),
+});
+---
+
+<BaseLayout
+  seo={seoContent}
+  bodyClass="daily-horoscope-body"
+  builderToolbar={{
+    launcherEnabled: builder.launcherEnabled,
+    studioModeEnabled: builder.studioModeEnabled,
+    collection: builder.collection,
+    entry: builder.entry,
+    locale: builder.locale,
+    csrfToken: builder.csrfToken,
+    canPublish: builder.canPublish,
+    seo: seoContent,
+    hasSavedDraft: builderPage.hasSavedDraft || chromePage.hasSavedDraft,
+    reviewTargets,
+  }}
+>
+  <Header
+    id="daily-horoscope-header"
+    brandLabel={content.brand_name}
+    brandHref={localizePath("/", locale)}
+    brandAriaLabel={content.brand_aria_label}
+    navigationLabel={content.primary_navigation_label}
+    chromeNavigation={{ content, edit: chromeEdit }}
+    navigation={navigation}
+    actions={actions}
+    language={{
+      activeLocale: locale,
+      options: languageOptions,
+      triggerLabel: content.language_trigger_label,
+      menuLabel: content.language_menu_label,
+    }}
+    mobileUtilityActionId="sign-in"
+    menuLabel={content.menu_open_label}
+    closeMenuLabel={content.menu_close_label}
+    brandEditAttributes={componentEditAttributes(chromeEdit("brand_name"))}
+  />
+
+  <main class="daily-horoscope-page">
+    <DailyHoroscopeSignPicker
+      eyebrow={content.picker_eyebrow}
+      titleAccent={content.picker_title_accent}
+      titleRest={content.picker_title_rest}
+      description={content.picker_description}
+      helperPrefix={content.picker_helper_prefix}
+      helperCta={content.picker_helper_cta}
+      helperHref={localizePath("/birth-chart", locale)}
+      signs={signs}
+      eyebrowEditAttributes={componentEditAttributes(
+        builderEdit("picker_eyebrow"),
+      )}
+      titleAccentEditAttributes={componentEditAttributes(
+        builderEdit("picker_title_accent"),
+      )}
+      titleRestEditAttributes={componentEditAttributes(
+        builderEdit("picker_title_rest"),
+      )}
+      descriptionEditAttributes={componentEditAttributes(
+        builderEdit("picker_description"),
+      )}
+      helperPrefixEditAttributes={componentEditAttributes(
+        builderEdit("picker_helper_prefix"),
+      )}
+      helperCtaEditAttributes={componentEditAttributes(
+        builderEdit("picker_helper_cta"),
+      )}
+    />
+  </main>
+  <Footer {...footerProps} />
+</BaseLayout>

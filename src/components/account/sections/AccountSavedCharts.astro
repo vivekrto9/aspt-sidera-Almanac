@@ -1,0 +1,25 @@
+---
+import type { SavedChartRecord } from "../../../data/account/saved-charts.ts";
+import SectionHeading from "../../shared/SectionHeading.astro";
+import AccountCollectionEmptyState from "../shared/AccountCollectionEmptyState.astro";
+import AccountSavedChartGrid from "../shared/AccountSavedChartGrid.astro";
+import "../../../styles/account/sections/account-saved-charts.css";
+
+type Props = {
+  eyebrow: string; title: string; charts: SavedChartRecord[]; chartTypes: readonly string[];
+  openLabel: string; reportLabel: string; openHref: string; reportHref: string;
+  viewAllLabel: string; viewAllHref: string;
+  emptyTitle: string; emptyDescription: string; emptyActionLabel: string; emptyActionHref: string;
+  edit: (field: string) => Record<string, string>;
+};
+const props = Astro.props as Props;
+---
+
+<section class="account-saved-charts" id="charts" aria-labelledby="account-saved-charts-title">
+  <SectionHeading class="account-saved-charts__header" eyebrow={props.eyebrow} title={props.title} headingId="account-saved-charts-title" actionLabel={props.charts.length ? props.viewAllLabel : undefined} actionHref={props.charts.length ? props.viewAllHref : undefined} eyebrowEditAttributes={props.edit("account_saved_charts_eyebrow")} titleEditAttributes={props.edit("account_saved_charts_title")} actionEditAttributes={props.edit("account_collection_view_all_label")} />
+  {props.charts.length ? (
+    <AccountSavedChartGrid {...props} charts={props.charts.slice(0, 4)} />
+  ) : (
+    <AccountCollectionEmptyState id="account-saved-charts-empty" title={props.emptyTitle} description={props.emptyDescription} actionLabel={props.emptyActionLabel} actionHref={props.emptyActionHref} titleField="account_saved_charts_empty_title" descriptionField="account_saved_charts_empty_description" actionField="account_saved_charts_empty_action_label" edit={props.edit} />
+  )}
+</section>

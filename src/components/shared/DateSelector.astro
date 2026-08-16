@@ -1,0 +1,172 @@
+---
+import FormField from "./FormField.astro";
+import SelectField, { type SelectFieldOption } from "./SelectField.astro";
+import "../../styles/shared/date-selector.css";
+
+type DatePart = "month" | "day" | "year";
+type DateSelectorDensity = "standard" | "compact";
+type DateSelectorPresentation = "native" | "popover";
+
+type Props = {
+  id: string;
+  label: string;
+  monthLabel: string;
+  dayLabel: string;
+  yearLabel: string;
+  months: readonly SelectFieldOption[];
+  days: readonly SelectFieldOption[];
+  years: readonly SelectFieldOption[];
+  monthValue?: string | number;
+  dayValue?: string | number;
+  yearValue?: string | number;
+  monthName?: string;
+  dayName?: string;
+  yearName?: string;
+  monthPlaceholder?: string;
+  dayPlaceholder?: string;
+  yearPlaceholder?: string;
+  order?: readonly DatePart[];
+  autocompleteSection?: string;
+  helpText?: string;
+  errorText?: string;
+  optionalText?: string;
+  required?: boolean;
+  disabled?: boolean;
+  form?: string;
+  density?: DateSelectorDensity;
+  selectPresentation?: DateSelectorPresentation;
+  class?: string;
+  labelEditAttributes?: Record<string, string>;
+  helpEditAttributes?: Record<string, string>;
+  errorEditAttributes?: Record<string, string>;
+};
+
+const {
+  id,
+  label,
+  monthLabel,
+  dayLabel,
+  yearLabel,
+  months,
+  days,
+  years,
+  monthValue,
+  dayValue,
+  yearValue,
+  monthName = "month",
+  dayName = "day",
+  yearName = "year",
+  monthPlaceholder,
+  dayPlaceholder,
+  yearPlaceholder,
+  order = ["month", "day", "year"],
+  autocompleteSection,
+  helpText,
+  errorText,
+  optionalText,
+  required = false,
+  disabled = false,
+  form,
+  density = "standard",
+  selectPresentation = "native",
+  class: className,
+  labelEditAttributes,
+  helpEditAttributes,
+  errorEditAttributes,
+} = Astro.props as Props;
+
+const dateParts: readonly DatePart[] = ["month", "day", "year"];
+const safeOrder = [
+  ...new Set(order.filter((part): part is DatePart => dateParts.includes(part))),
+  ...dateParts.filter((part) => !order.includes(part)),
+];
+const describedBy = [helpText ? `${id}-help` : undefined, `${id}-error`]
+  .filter(Boolean)
+  .join(" ");
+const autocompleteToken = (part: DatePart) =>
+  [autocompleteSection, `bday-${part}`].filter(Boolean).join(" ");
+
+const fields: Record<
+  DatePart,
+  {
+    label: string;
+    options: readonly SelectFieldOption[];
+    value?: string | number;
+    name: string;
+    placeholder?: string;
+  }
+> = {
+  month: {
+    label: monthLabel,
+    options: months,
+    value: monthValue,
+    name: monthName,
+    placeholder: monthPlaceholder,
+  },
+  day: {
+    label: dayLabel,
+    options: days,
+    value: dayValue,
+    name: dayName,
+    placeholder: dayPlaceholder,
+  },
+  year: {
+    label: yearLabel,
+    options: years,
+    value: yearValue,
+    name: yearName,
+    placeholder: yearPlaceholder,
+  },
+};
+
+const classes = [
+  "sidera-date-selector",
+  `sidera-date-selector--${density}`,
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+---
+
+<FormField
+  id={id}
+  label={label}
+  helpText={helpText}
+  errorText={errorText}
+  optionalText={optionalText}
+  required={required}
+  group
+  class={classes}
+  labelEditAttributes={labelEditAttributes}
+  helpEditAttributes={helpEditAttributes}
+  errorEditAttributes={errorEditAttributes}
+>
+  <div class="sidera-date-selector__fields">
+    {
+      safeOrder.map((part) => {
+        const field = fields[part];
+
+        return (
+          <div class:list={["sidera-date-selector__part", `sidera-date-selector__part--${part}`]}>
+            <SelectField
+              id={`${id}-${part}`}
+              name={field.name}
+              value={field.value}
+              options={field.options}
+              placeholder={field.placeholder}
+              autocomplete={autocompleteToken(part)}
+              required={required}
+              disabled={disabled}
+              form={form}
+              density={density}
+              presentation={selectPresentation}
+              ariaLabel={field.label}
+              ariaDescribedby={describedBy}
+              invalid={Boolean(errorText)}
+            />
+          </div>
+        );
+      })
+    }
+  </div>
+</FormField>

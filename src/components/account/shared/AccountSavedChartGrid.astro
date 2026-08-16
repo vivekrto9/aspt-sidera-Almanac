@@ -1,0 +1,41 @@
+---
+import Button from "../../shared/Button.astro";
+import ChartWheel from "../../shared/ChartWheel.astro";
+import type { SavedChartRecord } from "../../../data/account/saved-charts.ts";
+import "../../../styles/account/sections/account-saved-charts.css";
+
+type Props = {
+  charts: SavedChartRecord[];
+  chartTypes: readonly string[];
+  openLabel: string;
+  reportLabel: string;
+  openHref: string;
+  reportHref: string;
+  edit?: (field: string) => Record<string, string>;
+};
+
+const props = Astro.props as Props;
+const edit = props.edit ?? (() => ({}));
+---
+
+<div class="account-saved-charts__grid">
+  {props.charts.map((chart) => (
+    <article class="account-saved-charts__card" data-saved-chart={chart.id}>
+      <a
+        class="account-saved-charts__card-link"
+        href={chart.href || props.openHref}
+        aria-label={`${props.openLabel}: ${chart.title}`}
+      ></a>
+      <ChartWheel class="account-saved-charts__wheel" title={chart.title} description={chart.detail} size="compact" rotation={chart.rotation} planets={chart.planets} showAspects={false} />
+      <div class="account-saved-charts__details">
+        <p class="account-saved-charts__type" style={{ "--chart-accent": chart.accent }} {...edit(`account_saved_charts_type_${chart.typeIndex + 1}`)}>{props.chartTypes[chart.typeIndex]}</p>
+        <h3>{chart.title}</h3>
+        <p class="account-saved-charts__meta">{chart.detail}</p>
+        <div class="account-saved-charts__actions">
+          <Button class="account-saved-charts__open" href={chart.href || props.openHref} variant="link" size="compact"><span {...edit("account_saved_charts_open_label")}>{props.openLabel}</span></Button>
+          <Button class="account-saved-charts__report" href={props.reportHref} variant="link" size="compact"><span {...edit("account_saved_charts_report_label")}>{props.reportLabel}</span></Button>
+        </div>
+      </div>
+    </article>
+  ))}
+</div>

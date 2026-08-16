@@ -1,0 +1,23 @@
+.transit-year-ahead-handoff {
+  --sidera-final-cta-background: var(--color-dark);
+  --sidera-final-cta-color: #f3f8f5;
+  --sidera-final-cta-accent: #9ec4b3;
+  --sidera-final-cta-muted: #bcd3c9;
+
+  inline-size: min(100% - 4.25rem, 73.75rem);
+  margin: 1.625rem auto 3.5rem;
+  box-shadow: none;
+}
+
+@media (max-width: 42rem) {
+  .transit-year-ahead-handoff {
+    inline-size: min(100% - 2rem, 73.75rem);
+    margin-block: 1.25rem 2rem;
+  }
+}
+
+@media (forced-colors: active) {
+  .transit-year-ahead-handoff {
+    border: 1px solid CanvasText;
+  }
+}

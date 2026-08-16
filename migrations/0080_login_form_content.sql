@@ -1,0 +1,14 @@
+ALTER TABLE ec_site_login ADD COLUMN login_form_heading TEXT;
+ALTER TABLE ec_site_login ADD COLUMN login_form_subheading TEXT;
+ALTER TABLE ec_site_login ADD COLUMN login_email_label TEXT;
+ALTER TABLE ec_site_login ADD COLUMN login_email_placeholder TEXT;
+ALTER TABLE ec_site_login ADD COLUMN login_password_label TEXT;
+ALTER TABLE ec_site_login ADD COLUMN login_password_placeholder TEXT;
+ALTER TABLE ec_site_login ADD COLUMN login_submit_label TEXT;
+ALTER TABLE ec_site_login ADD COLUMN login_terms_prefix TEXT;
+ALTER TABLE ec_site_login ADD COLUMN login_terms_label TEXT;
+ALTER TABLE ec_site_login ADD COLUMN login_terms_glue TEXT;
+ALTER TABLE ec_site_login ADD COLUMN login_privacy_label TEXT;
+ALTER TABLE ec_site_login ADD COLUMN login_terms_suffix TEXT;
+ALTER TABLE ec_site_login ADD COLUMN login_signup_prompt TEXT;
+ALTER TABLE ec_site_login ADD COLUMN login_signup_label TEXT;

@@ -1,0 +1,15 @@
+.faq-contact-cta {
+  padding: 2.125rem 2.125rem 5.625rem;
+  background: var(--color-surface);
+}
+
+.faq-contact-cta__inner {
+  inline-size: min(100%, 47.5rem);
+  margin-inline: auto;
+}
+
+@media (max-width: 40rem) {
+  .faq-contact-cta {
+    padding: 1.5rem 1rem 4rem;
+  }
+}

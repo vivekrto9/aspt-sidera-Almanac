@@ -1,0 +1,55 @@
+---
+import type { SupportedLocale } from "../../../data/localization-contract.ts";
+import type { TodaysSkyPersonalizedHandoffCopy } from "../../../data/locale/todays-sky/sections/personalized-handoff.ts";
+import FinalCtaSection from "../../shared/FinalCtaSection.astro";
+import "../../../styles/todays-sky/sections/todays-sky-personalized-handoff.css";
+
+type Props = {
+  copy: TodaysSkyPersonalizedHandoffCopy;
+  locale: SupportedLocale;
+  editAttributes?: (
+    field: keyof TodaysSkyPersonalizedHandoffCopy,
+  ) => Record<string, string>;
+};
+
+const { copy, locale, editAttributes = () => ({}) } = Astro.props as Props;
+const completeTitle = [
+  copy.sky_handoff_title_prefix,
+  copy.sky_handoff_title_accent,
+  copy.sky_handoff_title_suffix,
+].join(" ");
+---
+
+<FinalCtaSection
+  id="todays-sky-personalized-handoff"
+  class="todays-sky-personalized-handoff"
+  eyebrow={copy.sky_handoff_eyebrow}
+  title={completeTitle}
+  description={copy.sky_handoff_description}
+  primaryLabel={copy.sky_handoff_primary_label}
+  primaryHref="/transit"
+  primaryArrow="→"
+  secondaryLabel={copy.sky_handoff_secondary_label}
+  secondaryHref="/birth-chart"
+  locale={locale}
+  tone="dark"
+  layout="split"
+  surface="panel"
+  ambience
+  eyebrowEditAttributes={editAttributes("sky_handoff_eyebrow")}
+  descriptionEditAttributes={editAttributes("sky_handoff_description")}
+  primaryEditAttributes={editAttributes("sky_handoff_primary_label")}
+  secondaryEditAttributes={editAttributes("sky_handoff_secondary_label")}
+>
+  <Fragment slot="title">
+    <span {...editAttributes("sky_handoff_title_prefix")}>
+      {copy.sky_handoff_title_prefix}
+    </span>{" "}
+    <em {...editAttributes("sky_handoff_title_accent")}>
+      {copy.sky_handoff_title_accent}
+    </em>{" "}
+    <span {...editAttributes("sky_handoff_title_suffix")}>
+      {copy.sky_handoff_title_suffix}
+    </span>
+  </Fragment>
+</FinalCtaSection>

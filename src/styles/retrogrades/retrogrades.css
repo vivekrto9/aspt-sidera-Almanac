@@ -1,0 +1,11 @@
+.retrogrades-body {
+  background: var(--color-surface);
+}
+
+.retrogrades-page {
+  inline-size: 100%;
+  max-inline-size: none;
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+}

@@ -1,0 +1,180 @@
+.sidera-checkbox {
+  --checkbox-surface: #ffffff;
+  --checkbox-border: rgba(var(--color-text-rgb), 0.28);
+  --checkbox-hover-border: var(--color-primary);
+  --checkbox-checked-surface: var(--color-dark);
+  --checkbox-checked-border: var(--color-dark);
+  --checkbox-focus-ring: rgba(var(--color-primary-rgb), 0.2);
+  --checkbox-label: var(--color-text);
+  --checkbox-description: var(--color-muted);
+
+  max-inline-size: 100%;
+  min-block-size: 2.75rem;
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 0.6875rem;
+  color: var(--checkbox-label);
+  cursor: pointer;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sidera-checkbox__control {
+  appearance: none;
+  inline-size: 1.125rem;
+  block-size: 1.125rem;
+  flex: none;
+  position: relative;
+  margin: 0.1875rem 0 0;
+  border: 1px solid var(--checkbox-border);
+  border-radius: 0.25rem;
+  background: var(--checkbox-surface);
+  color: var(--color-surface);
+  cursor: inherit;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.sidera-checkbox:hover .sidera-checkbox__control:not(:disabled) {
+  border-color: var(--checkbox-hover-border);
+}
+
+.sidera-checkbox__control:checked {
+  border-color: var(--checkbox-checked-border);
+  background: var(--checkbox-checked-surface);
+}
+
+.sidera-checkbox__control:checked::after {
+  inline-size: 0.3125rem;
+  block-size: 0.5625rem;
+  position: absolute;
+  inset-block-start: 0.125rem;
+  inset-inline-start: 0.375rem;
+  border: solid currentColor;
+  border-width: 0 0.125rem 0.125rem 0;
+  content: "";
+  transform: rotate(45deg);
+}
+
+.sidera-checkbox__control:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 0.1875rem var(--checkbox-focus-ring);
+}
+
+.sidera-checkbox__copy {
+  min-inline-size: 0;
+  display: grid;
+  gap: 0.1875rem;
+}
+
+.sidera-checkbox__label {
+  color: var(--checkbox-label);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.sidera-checkbox__description {
+  color: var(--checkbox-description);
+  font-size: 0.78125rem;
+  font-weight: 400;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.sidera-checkbox--switch {
+  inline-size: 100%;
+  min-block-size: auto;
+  flex-direction: row-reverse;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.sidera-checkbox--switch .sidera-checkbox__control {
+  inline-size: 2.75rem;
+  block-size: 1.625rem;
+  margin: 0;
+  border: 0;
+  border-radius: 999px;
+  background: #d9cdbf;
+  color: var(--color-surface);
+}
+
+.sidera-checkbox--switch .sidera-checkbox__control::after {
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+  position: absolute;
+  inset-block-start: 0.1875rem;
+  inset-inline-start: 0.1875rem;
+  border: 0;
+  border-radius: 50%;
+  background: currentColor;
+  content: "";
+  transform: none;
+  transition: transform 160ms ease;
+}
+
+.sidera-checkbox--switch .sidera-checkbox__control:checked {
+  background: var(--color-dark);
+}
+
+.sidera-checkbox--switch .sidera-checkbox__control:checked::after {
+  transform: translateX(1.125rem);
+}
+
+.sidera-checkbox--invalid {
+  --checkbox-border: var(--color-primary);
+  --checkbox-hover-border: var(--color-primary-strong);
+  --checkbox-focus-ring: rgba(168, 77, 54, 0.2);
+}
+
+.sidera-checkbox:has(.sidera-checkbox__control:disabled) {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+@media (max-width: 40rem) {
+  .sidera-checkbox {
+    min-block-size: 3rem;
+  }
+
+  .sidera-checkbox__control {
+    inline-size: 1.25rem;
+    block-size: 1.25rem;
+  }
+
+  .sidera-checkbox__control:checked::after {
+    inset-block-start: 0.1875rem;
+    inset-inline-start: 0.4375rem;
+  }
+
+  .sidera-checkbox--switch .sidera-checkbox__control {
+    inline-size: 2.75rem;
+    block-size: 1.625rem;
+  }
+
+  .sidera-checkbox--switch .sidera-checkbox__control::after {
+    inset-block-start: 0.1875rem;
+    inset-inline-start: 0.1875rem;
+  }
+}
+
+@media (forced-colors: active) {
+  .sidera-checkbox__control {
+    appearance: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidera-checkbox__control {
+    transition: none;
+  }
+
+  .sidera-checkbox--switch .sidera-checkbox__control::after {
+    transition: none;
+  }
+}

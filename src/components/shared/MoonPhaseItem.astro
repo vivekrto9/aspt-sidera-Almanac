@@ -1,0 +1,116 @@
+---
+import Badge from "./Badge.astro";
+import "../../styles/shared/moon-phase-item.css";
+
+type MoonPhase =
+  | "new"
+  | "waxing-crescent"
+  | "first-quarter"
+  | "waxing-gibbous"
+  | "full"
+  | "waning-gibbous"
+  | "last-quarter"
+  | "waning-crescent";
+type MoonPhaseLayout = "compact" | "list";
+type MoonPhaseTone = "default" | "inverse";
+
+type Props = {
+  phase: MoonPhase;
+  name: string;
+  date?: string;
+  detail?: string;
+  badgeLabel?: string;
+  layout?: MoonPhaseLayout;
+  tone?: MoonPhaseTone;
+  current?: boolean;
+  class?: string;
+  nameEditAttributes?: Record<string, string>;
+  dateEditAttributes?: Record<string, string>;
+  detailEditAttributes?: Record<string, string>;
+};
+
+const {
+  phase,
+  name,
+  date,
+  detail,
+  badgeLabel,
+  layout = "compact",
+  tone = "default",
+  current = false,
+  class: className,
+  nameEditAttributes = {},
+  dateEditAttributes = {},
+  detailEditAttributes = {},
+} = Astro.props as Props;
+
+const phaseData: Record<MoonPhase, { illumination: number; waxing: boolean }> = {
+  new: { illumination: 0, waxing: true },
+  "waxing-crescent": { illumination: 0.18, waxing: true },
+  "first-quarter": { illumination: 0.5, waxing: true },
+  "waxing-gibbous": { illumination: 0.82, waxing: true },
+  full: { illumination: 1, waxing: true },
+  "waning-gibbous": { illumination: 0.82, waxing: false },
+  "last-quarter": { illumination: 0.5, waxing: false },
+  "waning-crescent": { illumination: 0.18, waxing: false },
+};
+
+function moonPath(illumination: number, waxing: boolean) {
+  const radius = 27;
+
+  if (illumination <= 0.01) return "";
+  if (illumination >= 0.99) {
+    return "M 30 3 A 27 27 0 1 1 30 57 A 27 27 0 1 1 30 3 Z";
+  }
+
+  const terminatorRadius = radius * Math.abs(2 * illumination - 1);
+  const gibbous = illumination > 0.5;
+  const limbSweep = waxing ? 1 : 0;
+  const terminatorSweep = waxing ? (gibbous ? 1 : 0) : gibbous ? 0 : 1;
+
+  return `M 30 3 A 27 27 0 0 ${limbSweep} 30 57 A ${terminatorRadius.toFixed(
+    2,
+  )} 27 0 0 ${terminatorSweep} 30 3 Z`;
+}
+
+const { illumination, waxing } = phaseData[phase];
+const path = moonPath(illumination, waxing);
+const classes = [
+  "sidera-moon-phase-item",
+  `sidera-moon-phase-item--${layout}`,
+  `sidera-moon-phase-item--${tone}`,
+  current && "sidera-moon-phase-item--current",
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+---
+
+<div class={classes} aria-current={current ? "true" : undefined}>
+  <svg
+    class="sidera-moon-phase-item__visual"
+    viewBox="0 0 60 60"
+    focusable="false"
+    aria-hidden="true"
+  >
+    <circle class="sidera-moon-phase-item__disc" cx="30" cy="30" r="27"></circle>
+    {path ? <path class="sidera-moon-phase-item__light" d={path}></path> : null}
+  </svg>
+
+  <div class="sidera-moon-phase-item__copy">
+    <div class="sidera-moon-phase-item__heading">
+      <span class="sidera-moon-phase-item__name" {...nameEditAttributes}>{name}</span>
+      {badgeLabel ? (
+        <Badge tone={tone === "inverse" ? "inverse" : "accent"} size="compact">
+          {badgeLabel}
+        </Badge>
+      ) : null}
+    </div>
+    {date ? (
+      <span class="sidera-moon-phase-item__date" {...dateEditAttributes}>{date}</span>
+    ) : null}
+    {detail ? (
+      <span class="sidera-moon-phase-item__detail" {...detailEditAttributes}>{detail}</span>
+    ) : null}
+  </div>
+</div>

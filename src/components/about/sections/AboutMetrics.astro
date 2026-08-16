@@ -1,0 +1,46 @@
+---
+import CardGrid from "../../shared/CardGrid.astro";
+import "../../../styles/about/sections/about-metrics.css";
+
+type Metric = {
+  value: string;
+  label: string;
+  valueEditAttributes?: Record<string, string>;
+  labelEditAttributes?: Record<string, string>;
+};
+
+type Props = {
+  metrics: Metric[];
+  ariaLabel: string;
+};
+
+const { metrics, ariaLabel } = Astro.props as Props;
+---
+
+<section class="about-metrics" data-screen-label="About · Metrics">
+  <div class="about-metrics__inner">
+    <CardGrid
+      as="ul"
+      columns={4}
+      tabletColumns={2}
+      mobileColumns={2}
+      gap="loose"
+      align="start"
+      ariaLabel={ariaLabel}
+      class="about-metrics__grid"
+    >
+      {
+        metrics.map((metric) => (
+          <li class="about-metrics__item">
+            <strong class="about-metrics__value" {...metric.valueEditAttributes}>
+              {metric.value}
+            </strong>
+            <span class="about-metrics__label" {...metric.labelEditAttributes}>
+              {metric.label}
+            </span>
+          </li>
+        ))
+      }
+    </CardGrid>
+  </div>
+</section>

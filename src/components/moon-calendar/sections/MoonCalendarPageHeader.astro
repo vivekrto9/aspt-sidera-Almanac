@@ -1,0 +1,65 @@
+---
+import PageIntro from "../../shared/PageIntro.astro";
+import "../../../styles/moon-calendar/sections/moon-calendar-page-header.css";
+
+type EditAttributes = Record<string, string>;
+
+type Props = {
+  eyebrow: string;
+  titleAccent: string;
+  titleSuffix: string;
+  metaPrimary: string;
+  metaSecondary: string;
+  eyebrowEditAttributes?: EditAttributes;
+  titleAccentEditAttributes?: EditAttributes;
+  titleSuffixEditAttributes?: EditAttributes;
+  metaPrimaryEditAttributes?: EditAttributes;
+  metaSecondaryEditAttributes?: EditAttributes;
+};
+
+const {
+  eyebrow,
+  titleAccent,
+  titleSuffix,
+  metaPrimary,
+  metaSecondary,
+  eyebrowEditAttributes = {},
+  titleAccentEditAttributes = {},
+  titleSuffixEditAttributes = {},
+  metaPrimaryEditAttributes = {},
+  metaSecondaryEditAttributes = {},
+} = Astro.props as Props;
+
+const visibleTitleSuffix = titleSuffix.trimStart();
+---
+
+<PageIntro
+  id="moon-calendar-page-header"
+  class="moon-calendar-page-header"
+  title={`${titleAccent} ${visibleTitleSuffix}`}
+  eyebrow={eyebrow}
+  alignment="left"
+  density="standard"
+  eyebrowEditAttributes={eyebrowEditAttributes}
+>
+  <Fragment slot="title">
+    <em {...titleAccentEditAttributes}>{titleAccent}</em>{" "}<span
+      {...titleSuffixEditAttributes}>{visibleTitleSuffix}</span
+    >
+  </Fragment>
+
+  <div slot="action" class="moon-calendar-page-header__context">
+    <p
+      class="moon-calendar-page-header__context-primary"
+      {...metaPrimaryEditAttributes}
+    >
+      {metaPrimary}
+    </p>
+    <p
+      class="moon-calendar-page-header__context-secondary"
+      {...metaSecondaryEditAttributes}
+    >
+      {metaSecondary}
+    </p>
+  </div>
+</PageIntro>

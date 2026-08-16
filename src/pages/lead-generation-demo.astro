@@ -1,0 +1,276 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { productLeadDemoContent as content } from "../data/product-lead-demo.ts";
+import Button from "../components/shared/Button.astro";
+import "../styles/product-lead-demo.css";
+
+export const prerender = false;
+
+const builderEdit = (_field: string) => ({});
+const chromeEdit = (_field: string) => ({});
+const demoUrl = new URL("/lead-generation-demo", Astro.url).toString();
+const seoContent = {
+  seo_title: content.seo_title,
+  seo_description: content.seo_description,
+  seo_canonical_path: content.seo_canonical_path,
+  seo_robots: content.seo_robots,
+  og_title: content.og_title,
+  og_description: content.og_description,
+  og_image: content.og_image,
+  og_image_alt: content.og_image_alt,
+  twitter_card: content.twitter_card,
+  twitter_title: content.twitter_title,
+  twitter_description: content.twitter_description,
+  twitter_image: content.twitter_image,
+};
+---
+
+<BaseLayout
+  seo={seoContent}
+  bodyClass="product-demo"
+>
+  <header class="site-header site-header--overlay">
+    <a class="brand" href="/" aria-label={`${content.brand_name} home`} {...chromeEdit("brand_name")}>{content.brand_name}</a>
+    <nav aria-label="Primary">
+      <a href="#design" {...chromeEdit("nav_home")}>{content.nav_home}</a>
+      <button class="nav-cta" type="button" data-open-lead>Request details</button>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <img
+        class="hero__image"
+        src={content.product_image}
+        alt={content.product_image_alt}
+        width="1586"
+        height="992"
+        loading="eager"
+        fetchpriority="high"
+        {...builderEdit("product_image")}
+      />
+      <div class="hero__shade"></div>
+      <div class="hero__content">
+        <p class="eyebrow" {...builderEdit("hero_kicker")}>{content.hero_kicker}</p>
+        <h1 {...builderEdit("product_name")}>{content.product_name}</h1>
+        <p class="hero__promise" {...builderEdit("hero_title")}>{content.hero_title}</p>
+        <p class="lead" {...builderEdit("hero_body")}>{content.hero_body}</p>
+        <div class="actions">
+          <button class="button primary hero-primary-cta" type="button" data-open-lead {...builderEdit("hero_primary_cta")}>
+            <span>{content.hero_primary_cta}</span>
+            <span class="hero-primary-cta__arrow" aria-hidden="true">↗</span>
+          </button>
+          <a class="button secondary" href="#design" {...builderEdit("hero_secondary_cta")}>{content.hero_secondary_cta}</a>
+        </div>
+        <p class="hero__price" {...builderEdit("product_price")}>{content.product_price}</p>
+      </div>
+    </section>
+
+    <section class="features" id="design" aria-label="Product highlights">
+      {[1, 2, 3].map((index) => (
+        <article>
+          <span aria-hidden="true">0{index}</span>
+          <h2 {...builderEdit(`feature_${index}_title`)}>{content[`feature_${index}_title`]}</h2>
+          <p {...builderEdit(`feature_${index}_body`)}>{content[`feature_${index}_body`]}</p>
+        </article>
+      ))}
+    </section>
+
+    <section class="product-detail">
+      <div>
+        <p class="eyebrow" {...builderEdit("detail_kicker")}>{content.detail_kicker}</p>
+        <h2 {...builderEdit("detail_title")}>{content.detail_title}</h2>
+      </div>
+      <p {...builderEdit("detail_body")}>{content.detail_body}</p>
+      <button class="text-link" type="button" data-open-lead>Check availability <span aria-hidden="true">↗</span></button>
+    </section>
+
+    <section class="closing-cta" aria-labelledby="closing-title">
+      <p class="eyebrow" {...builderEdit("form_kicker")}>{content.form_kicker}</p>
+      <h2 id="closing-title" {...builderEdit("form_title")}>{content.form_title}</h2>
+      <button class="button primary" type="button" data-open-lead {...builderEdit("form_submit")}>{content.form_submit}</button>
+    </section>
+
+    <section class="demo-url" aria-labelledby="demo-url-title">
+      <div>
+        <p class="eyebrow">Shareable route</p>
+        <h2 id="demo-url-title">Use one URL for the complete lead demo.</h2>
+      </div>
+      <div class="demo-url__action">
+        <a href={demoUrl} data-demo-url>{demoUrl}</a>
+        <button type="button" data-copy-demo-url data-url={demoUrl}>Copy URL</button>
+        <p data-copy-status aria-live="polite"></p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div>
+      <strong {...chromeEdit("footer_brand_name")}>{content.footer_brand_name}</strong>
+      <p {...chromeEdit("footer_about")}>{content.footer_about}</p>
+    </div>
+    <p class="site-footer__note" {...builderEdit("footer_note")}>{content.footer_note}</p>
+  </footer>
+
+  <dialog class="lead-dialog" aria-labelledby="lead-dialog-title">
+    <div class="lead-dialog__visual" aria-hidden="true">
+      <img src={content.product_image} alt="" width="1586" height="992" />
+      <p>{content.product_name}<span>{content.product_price}</span></p>
+    </div>
+    <div class="lead-dialog__content">
+      <button class="dialog-close" type="button" aria-label="Close enquiry form" data-close-lead>×</button>
+      <div data-form-copy>
+        <p class="eyebrow" {...builderEdit("form_kicker")}>{content.form_kicker}</p>
+        <h2 id="lead-dialog-title" {...builderEdit("form_title")}>{content.form_title}</h2>
+        <p class="dialog-intro" {...builderEdit("form_body")}>{content.form_body}</p>
+      </div>
+      <form class="lead-form" data-lead-form novalidate>
+        <div class="form-row">
+          <label>
+            <span>Your name</span>
+            <input name="fullName" type="text" autocomplete="name" maxlength="120" required />
+          </label>
+          <label>
+            <span>Phone</span>
+            <input name="phone" type="tel" autocomplete="tel" inputmode="tel" maxlength="32" />
+          </label>
+        </div>
+        <label>
+          <span>Email address</span>
+          <input name="email" type="email" autocomplete="email" maxlength="254" required />
+        </label>
+        <label>
+          <span>Anything we should know? <small>Optional</small></span>
+          <textarea name="message" rows="3" maxlength="500" placeholder="Preferred finish, city, or a question"></textarea>
+        </label>
+        <label class="consent">
+          <input name="consentContact" type="checkbox" required />
+          <span>I agree to be contacted about this chart enquiry.</span>
+        </label>
+        <input class="form-trap" name="company" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" />
+        <Button class="button primary form-submit" type="submit" shape="rounded" loading={false} loadingLabel="Sending your request">
+          <span {...builderEdit("form_submit")}>{content.form_submit}</span>
+          <span aria-hidden="true">↗</span>
+        </Button>
+        <p class="form-status" data-form-status aria-live="polite"></p>
+      </form>
+      <div class="form-success" data-form-success hidden>
+        <span class="success-mark" aria-hidden="true">✓</span>
+        <p class="eyebrow">Request received</p>
+        <h2 {...builderEdit("form_success_title")}>{content.form_success_title}</h2>
+        <p {...builderEdit("form_success_body")}>{content.form_success_body}</p>
+        <p class="lead-reference">Reference <strong data-lead-reference></strong></p>
+        <button class="button primary" type="button" data-close-lead>Done</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script>
+    import { setActionLoading } from "../scripts/action-loading.ts";
+
+    const dialog = document.querySelector(".lead-dialog");
+    const form = document.querySelector("[data-lead-form]");
+    const status = document.querySelector("[data-form-status]");
+    const success = document.querySelector("[data-form-success]");
+    const formCopy = document.querySelector("[data-form-copy]");
+    const leadReference = document.querySelector("[data-lead-reference]");
+
+    const freshIdempotencyKey = () =>
+      globalThis.crypto?.randomUUID?.() ?? `web-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+    let idempotencyKey = freshIdempotencyKey();
+
+    document.querySelectorAll("[data-open-lead]").forEach((trigger) => {
+      trigger.addEventListener("click", () => {
+        if (!(dialog instanceof HTMLDialogElement)) return;
+        dialog.showModal();
+        document.body.classList.add("dialog-open");
+        window.setTimeout(() => dialog.querySelector("input")?.focus(), 120);
+      });
+    });
+
+    document.querySelectorAll("[data-close-lead]").forEach((trigger) => {
+      trigger.addEventListener("click", () => {
+        if (dialog instanceof HTMLDialogElement) dialog.close();
+      });
+    });
+
+    dialog?.addEventListener("click", (event) => {
+      if (event.target === dialog && dialog instanceof HTMLDialogElement) dialog.close();
+    });
+
+    dialog?.addEventListener("close", () => {
+      document.body.classList.remove("dialog-open");
+    });
+
+    document.querySelector("[data-copy-demo-url]")?.addEventListener("click", async (event) => {
+      const button = event.currentTarget;
+      const copyStatus = document.querySelector("[data-copy-status]");
+      if (!(button instanceof HTMLButtonElement)) return;
+      const url = button.dataset.url ?? window.location.href;
+      try {
+        await navigator.clipboard.writeText(url);
+        button.textContent = "Copied";
+        if (copyStatus instanceof HTMLElement) copyStatus.textContent = "Demo URL copied to clipboard.";
+        window.setTimeout(() => {
+          button.textContent = "Copy URL";
+          if (copyStatus instanceof HTMLElement) copyStatus.textContent = "";
+        }, 1800);
+      } catch {
+        if (copyStatus instanceof HTMLElement) copyStatus.textContent = "Select and copy the URL above.";
+      }
+    });
+
+    form?.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!(form instanceof HTMLFormElement) || !(status instanceof HTMLElement)) return;
+      if (!form.reportValidity()) return;
+
+      const submit = form.querySelector<HTMLButtonElement>("button[type='submit']");
+      const data = new FormData(form);
+      const params = new URLSearchParams(window.location.search);
+      const payload = {
+        fullName: data.get("fullName"),
+        email: data.get("email"),
+        phone: data.get("phone"),
+        message: data.get("message"),
+        company: data.get("company"),
+        consentContact: data.get("consentContact") === "on",
+        idempotencyKey,
+        attribution: {
+          utmSource: params.get("utm_source") ?? "",
+          utmMedium: params.get("utm_medium") ?? "",
+          utmCampaign: params.get("utm_campaign") ?? "",
+          utmTerm: params.get("utm_term") ?? "",
+          utmContent: params.get("utm_content") ?? "",
+          referrer: document.referrer,
+        },
+      };
+
+      status.textContent = "";
+      setActionLoading(submit, true, "Sending your request");
+
+      try {
+        const response = await fetch("/api/astropages/generated-site/leads/product-interest", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const result = await response.json();
+        if (!response.ok || result.status !== "ready") {
+          throw new Error(result.message || "We couldn’t send your request. Please try again.");
+        }
+
+        if (leadReference instanceof HTMLElement) leadReference.textContent = result.data?.leadId ?? "";
+        form.hidden = true;
+        if (formCopy instanceof HTMLElement) formCopy.hidden = true;
+        if (success instanceof HTMLElement) success.hidden = false;
+        idempotencyKey = freshIdempotencyKey();
+      } catch (error) {
+        status.textContent = error instanceof Error ? error.message : "We couldn’t send your request. Please try again.";
+      } finally {
+        setActionLoading(submit, false);
+      }
+    });
+  </script>
+</BaseLayout>

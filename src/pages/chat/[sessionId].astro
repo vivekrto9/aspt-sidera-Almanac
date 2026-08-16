@@ -1,0 +1,43 @@
+---
+import {
+  getLocaleFromUrl,
+  localizePath,
+} from "../../data/localization-contract.ts";
+import { getAstrologyChatSessionDetail } from "../../server/aggregator/astrology-chat.ts";
+import { getCustomerSession } from "../../server/aggregator/customer-auth.ts";
+import { getRuntimeEnv } from "../../server/generated-site/request.ts";
+
+export const prerender = false;
+
+const locale = getLocaleFromUrl(Astro.request.url);
+const runtimeEnv = await getRuntimeEnv(Astro);
+const customerSession = await getCustomerSession(runtimeEnv, Astro.request).catch(
+  () => null,
+);
+if (!customerSession) {
+  const next = `${Astro.url.pathname}${Astro.url.search}`;
+  return Astro.redirect(
+    `${localizePath("/login", locale)}${localizePath("/login", locale).includes("?") ? "&" : "?"}next=${encodeURIComponent(next)}`,
+    302,
+  );
+}
+
+const sessionId = Astro.params.sessionId ?? "";
+const detail = sessionId
+  ? await getAstrologyChatSessionDetail(
+      runtimeEnv,
+      customerSession.account.id,
+      sessionId,
+    )
+  : null;
+if (!detail) {
+  return Astro.redirect(localizePath("/astrologers", locale), 302);
+}
+
+const target = new URL(
+  localizePath(`/astrologers/${detail.session.astrologerSlug}`, locale),
+  Astro.url.origin,
+);
+target.searchParams.set("sessionId", detail.session.id);
+return Astro.rewrite(`${target.pathname}${target.search}`);
+---

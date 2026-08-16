@@ -1,0 +1,29 @@
+---
+import type { BuilderEditAttributes } from "../../../builder/builder.ts";
+import { activeLocales, defaultLocale, localizePath, type SupportedLocale } from "../../../data/localization-contract.ts";
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import Footer from "../../shared/Footer.astro";
+import Header from "../../shared/Header.astro";
+
+type Props = { content: Record<string, string>; locale: SupportedLocale; requestUrl: string; seo: Record<string, string>; builderToolbar: any; chromeEdit: (field: string) => BuilderEditAttributes; };
+const props = Astro.props as Props;
+const attrs = (value: BuilderEditAttributes): Record<string, string> => Object.fromEntries(Object.entries(value).filter((entry): entry is [string, string | true] => entry[1] !== undefined).map(([key, value]) => [key, value === true ? "true" : value]));
+const localeHref = (targetLocale: SupportedLocale) => { const url = new URL(props.requestUrl); targetLocale === defaultLocale ? url.searchParams.delete("locale") : url.searchParams.set("locale", targetLocale); return `${url.pathname}${url.search}${url.hash}`; };
+const navigation = [["nav_todays_sky", "/todays-sky"], ["nav_charts", "/birth-chart"], ["nav_compatibility", "/synastry"], ["nav_moon", "/moon-calendar"], ["nav_horoscope", "/daily-horoscope"], ["nav_astrologers", "/astrologers"], ["nav_blog", "/blog"]].map(([field, path]) => ({ label: props.content[field], href: localizePath(path, props.locale), editAttributes: attrs(props.chromeEdit(field)) }));
+const actions = [{ id: "sign-in", label: props.content.action_sign_in, href: localizePath("/login", props.locale), variant: "ghost" as const, editAttributes: attrs(props.chromeEdit("action_sign_in")) }, { id: "get-chart", label: props.content.action_get_chart, href: localizePath("/birth-chart", props.locale), variant: "primary" as const, editAttributes: attrs(props.chromeEdit("action_get_chart")) }];
+const languageOptions = activeLocales.map((item) => { const field = `language_option_${item.code}_label`; return { code: item.code, label: props.content[field] || item.nativeName, href: localeHref(item.code), lang: item.code, hreflang: item.hreflang, editAttributes: attrs(props.chromeEdit(field)) }; });
+const groups = [
+  ["footer_group_charts", [["footer_link_birth_chart", "/birth-chart"], ["footer_link_transit", "/transit"], ["footer_link_synastry", "/synastry"]]],
+  ["footer_group_tools", [["footer_link_todays_sky", "/todays-sky"], ["footer_link_moon_calendar", "/moon-calendar"], ["footer_link_retrogrades", "/retrogrades"], ["footer_link_reports", "/reports"]]],
+  ["footer_group_learn", [["footer_link_blog", "/blog"], ["footer_link_daily_horoscope", "/daily-horoscope"], ["footer_link_glossary", "/glossary"], ["footer_link_faq", "/faq"]]],
+  ["footer_group_company", [["footer_link_about", "/about"], ["footer_link_account", "/account"], ["footer_link_shop", "/shop"]]],
+] as const;
+const footerGroups = groups.map(([field, links]) => ({ label: props.content[field], labelEditAttributes: attrs(props.chromeEdit(field)), links: links.map(([linkField, path]) => ({ label: props.content[linkField], href: localizePath(path, props.locale), editAttributes: attrs(props.chromeEdit(linkField)) })) }));
+const legalLinks = [["footer_link_privacy", "/privacy"], ["footer_link_terms", "/terms"]].map(([field, path]) => ({ label: props.content[field], href: localizePath(path, props.locale), editAttributes: attrs(props.chromeEdit(field)) }));
+---
+
+<BaseLayout seo={props.seo} bodyClass="sidera-account-body" builderToolbar={props.builderToolbar}>
+  <Header id="account-header" brandLabel={props.content.brand_name} brandHref={localizePath("/", props.locale)} brandAriaLabel={props.content.brand_aria_label} navigationLabel={props.content.primary_navigation_label} chromeNavigation={{ content: props.content, edit: props.chromeEdit }} {navigation} {actions} language={{ activeLocale: props.locale, options: languageOptions, triggerLabel: props.content.language_trigger_label, menuLabel: props.content.language_menu_label }} mobileUtilityActionId="sign-in" menuLabel={props.content.menu_open_label} closeMenuLabel={props.content.menu_close_label} brandEditAttributes={attrs(props.chromeEdit("brand_name"))} />
+  <slot />
+  <Footer brandLabel={props.content.footer_brand_name} brandHref={localizePath("/", props.locale)} description={props.content.footer_about} groups={footerGroups} legalLinks={legalLinks} copyrightText={props.content.footer_copyright} navigationLabel={props.content.footer_navigation_label} legalNavigationLabel={props.content.footer_legal_navigation_label} brandEditAttributes={attrs(props.chromeEdit("footer_brand_name"))} descriptionEditAttributes={attrs(props.chromeEdit("footer_about"))} copyrightEditAttributes={attrs(props.chromeEdit("footer_copyright"))} />
+</BaseLayout>

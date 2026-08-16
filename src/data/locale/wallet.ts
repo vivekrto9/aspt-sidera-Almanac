@@ -1,0 +1,74 @@
+import type { SupportedLocale } from "../localization-contract.ts";
+
+const en = {
+  seo_title: "Wallet | Sidera", seo_description: "Add funds securely and review your Sidera wallet activity.",
+  eyebrow: "Your wallet", title: "A clear balance for every conversation.", body: "Add funds securely with Stripe, then use your balance for astrologer chats.",
+  available: "Available balance", add_funds: "Add funds", choose_amount: "Choose an amount", custom_amount: "Or enter a custom amount", minimum: "Minimum recharge is $20.",
+  pay: "Continue to secure payment", preparing: "Preparing Stripe Checkout…", activity: "Recent activity", empty: "Your wallet activity will appear here.", balance_after: "Balance after transaction",
+  success_title: "Payment successful", success_body: "Your payment is verified and your wallet balance has been updated.", verifying: "Verifying your payment with Stripe…",
+  cancelled_title: "Payment cancelled", cancelled_body: "Nothing was charged. Choose an amount whenever you are ready.", failed_title: "Payment failed", failed_body: "We could not confirm this payment. Your wallet was not credited.", retry: "Try again", browse: "Browse astrologers", bonus: "bonus", secure: "Secure payment powered by Stripe",
+};
+const localized: Record<SupportedLocale, typeof en> = {
+  en,
+  es: { ...en, eyebrow: "Tu cartera", title: "Un saldo claro para cada conversación.", body: "Añade fondos de forma segura con Stripe y usa tu saldo para hablar con astrólogos.", available: "Saldo disponible", add_funds: "Añadir fondos", choose_amount: "Elige una cantidad", custom_amount: "O introduce otra cantidad", minimum: "La recarga mínima es de $20.", pay: "Continuar al pago seguro", preparing: "Preparando Stripe Checkout…", activity: "Actividad reciente", empty: "La actividad de tu cartera aparecerá aquí.", success_title: "Pago realizado", success_body: "Tu pago se verificó y el saldo se actualizó.", verifying: "Verificando tu pago con Stripe…", cancelled_title: "Pago cancelado", cancelled_body: "No se realizó ningún cargo. Elige una cantidad cuando quieras.", failed_title: "Pago fallido", failed_body: "No pudimos confirmar este pago. Tu cartera no recibió fondos.", retry: "Intentar de nuevo", browse: "Ver astrólogos", bonus: "extra", secure: "Pago seguro con Stripe" },
+  fr: { ...en, eyebrow: "Votre portefeuille", title: "Un solde clair pour chaque conversation.", body: "Ajoutez des fonds en toute sécurité avec Stripe, puis utilisez-les pour vos consultations.", available: "Solde disponible", add_funds: "Ajouter des fonds", choose_amount: "Choisissez un montant", custom_amount: "Ou saisissez un montant", minimum: "La recharge minimale est de 20 $.", pay: "Continuer vers le paiement sécurisé", preparing: "Préparation de Stripe Checkout…", activity: "Activité récente", empty: "L’activité de votre portefeuille apparaîtra ici.", success_title: "Paiement réussi", success_body: "Votre paiement est vérifié et votre solde a été mis à jour.", verifying: "Vérification du paiement avec Stripe…", cancelled_title: "Paiement annulé", cancelled_body: "Aucun débit. Choisissez un montant quand vous le souhaitez.", failed_title: "Échec du paiement", failed_body: "Nous n’avons pas pu confirmer ce paiement. Votre portefeuille n’a pas été crédité.", retry: "Réessayer", browse: "Voir les astrologues", bonus: "bonus", secure: "Paiement sécurisé par Stripe" },
+  de: { ...en, eyebrow: "Deine Wallet", title: "Ein klarer Kontostand für jedes Gespräch.", body: "Lade sicher mit Stripe auf und nutze dein Guthaben für Astrologen-Chats.", available: "Verfügbares Guthaben", add_funds: "Guthaben hinzufügen", choose_amount: "Betrag auswählen", custom_amount: "Oder eigenen Betrag eingeben", minimum: "Die Mindestaufladung beträgt 20 $.", pay: "Weiter zur sicheren Zahlung", preparing: "Stripe Checkout wird vorbereitet…", activity: "Letzte Aktivitäten", empty: "Deine Wallet-Aktivitäten erscheinen hier.", success_title: "Zahlung erfolgreich", success_body: "Deine Zahlung wurde bestätigt und dein Guthaben aktualisiert.", verifying: "Zahlung wird mit Stripe geprüft…", cancelled_title: "Zahlung abgebrochen", cancelled_body: "Es wurde nichts belastet. Wähle einen Betrag, wenn du bereit bist.", failed_title: "Zahlung fehlgeschlagen", failed_body: "Die Zahlung konnte nicht bestätigt werden. Es wurde kein Guthaben hinzugefügt.", retry: "Erneut versuchen", browse: "Astrologen ansehen", bonus: "Bonus", secure: "Sichere Zahlung mit Stripe" },
+  pt: { ...en, eyebrow: "Sua carteira", title: "Um saldo claro para cada conversa.", body: "Adicione fundos com segurança pelo Stripe e use o saldo em conversas com astrólogos.", available: "Saldo disponível", add_funds: "Adicionar fundos", choose_amount: "Escolha um valor", custom_amount: "Ou digite outro valor", minimum: "A recarga mínima é de US$ 20.", pay: "Continuar para pagamento seguro", preparing: "Preparando o Stripe Checkout…", activity: "Atividade recente", empty: "A atividade da sua carteira aparecerá aqui.", success_title: "Pagamento concluído", success_body: "Seu pagamento foi verificado e o saldo foi atualizado.", verifying: "Verificando seu pagamento com o Stripe…", cancelled_title: "Pagamento cancelado", cancelled_body: "Nada foi cobrado. Escolha um valor quando quiser.", failed_title: "Falha no pagamento", failed_body: "Não foi possível confirmar o pagamento. Sua carteira não recebeu créditos.", retry: "Tentar novamente", browse: "Ver astrólogos", bonus: "bônus", secure: "Pagamento seguro pelo Stripe" },
+  ru: { ...en, eyebrow: "Ваш кошелёк", title: "Понятный баланс для каждого разговора.", body: "Безопасно пополняйте баланс через Stripe и используйте его для чатов с астрологами.", available: "Доступный баланс", add_funds: "Пополнить баланс", choose_amount: "Выберите сумму", custom_amount: "Или введите свою сумму", minimum: "Минимальное пополнение — 20 $. ", pay: "Перейти к безопасной оплате", preparing: "Подготавливаем Stripe Checkout…", activity: "Последние операции", empty: "История операций кошелька появится здесь.", success_title: "Оплата прошла успешно", success_body: "Платёж подтверждён, баланс кошелька обновлён.", verifying: "Проверяем платёж в Stripe…", cancelled_title: "Оплата отменена", cancelled_body: "Списаний не было. Выберите сумму, когда будете готовы.", failed_title: "Ошибка оплаты", failed_body: "Не удалось подтвердить платёж. Баланс кошелька не изменился.", retry: "Повторить", browse: "Выбрать астролога", bonus: "бонус", secure: "Безопасная оплата через Stripe" },
+  it: { ...en, eyebrow: "Il tuo portafoglio", title: "Un saldo chiaro per ogni conversazione.", body: "Aggiungi fondi in sicurezza con Stripe e usa il saldo per le chat con gli astrologi.", available: "Saldo disponibile", add_funds: "Aggiungi fondi", choose_amount: "Scegli un importo", custom_amount: "Oppure inserisci un altro importo", minimum: "La ricarica minima è di 20 $.", pay: "Continua al pagamento sicuro", preparing: "Preparazione di Stripe Checkout…", activity: "Attività recente", empty: "Le attività del portafoglio appariranno qui.", success_title: "Pagamento riuscito", success_body: "Il pagamento è stato verificato e il saldo aggiornato.", verifying: "Verifica del pagamento con Stripe…", cancelled_title: "Pagamento annullato", cancelled_body: "Non è stato addebitato nulla. Scegli un importo quando vuoi.", failed_title: "Pagamento non riuscito", failed_body: "Non è stato possibile confermare il pagamento. Il portafoglio non è stato accreditato.", retry: "Riprova", browse: "Vedi gli astrologi", bonus: "bonus", secure: "Pagamento sicuro con Stripe" },
+};
+const structure = {
+  en: { transactions: "Transactions", recharge_title: "Recharge wallet", amount: "Amount", current_balance: "Current balance", recharge_amount: "Recharge amount", after_recharge: "After recharge", add_amount: "Add", recent: "Recent", view_all: "View all" },
+  es: { transactions: "Transacciones", recharge_title: "Recargar cartera", amount: "Cantidad", current_balance: "Saldo actual", recharge_amount: "Importe de recarga", after_recharge: "Después de recargar", add_amount: "Añadir", recent: "Reciente", view_all: "Ver todo" },
+  fr: { transactions: "Transactions", recharge_title: "Recharger le portefeuille", amount: "Montant", current_balance: "Solde actuel", recharge_amount: "Montant de la recharge", after_recharge: "Après recharge", add_amount: "Ajouter", recent: "Récent", view_all: "Tout voir" },
+  pt: { transactions: "Transações", recharge_title: "Recarregar carteira", amount: "Valor", current_balance: "Saldo atual", recharge_amount: "Valor da recarga", after_recharge: "Após a recarga", add_amount: "Adicionar", recent: "Recente", view_all: "Ver tudo" },
+  ru: { transactions: "Операции", recharge_title: "Пополнить кошелёк", amount: "Сумма", current_balance: "Текущий баланс", recharge_amount: "Сумма пополнения", after_recharge: "После пополнения", add_amount: "Добавить", recent: "Недавние", view_all: "Смотреть все" },
+  it: { transactions: "Transazioni", recharge_title: "Ricarica portafoglio", amount: "Importo", current_balance: "Saldo attuale", recharge_amount: "Importo ricarica", after_recharge: "Dopo la ricarica", add_amount: "Aggiungi", recent: "Recenti", view_all: "Vedi tutto" },
+  de: { transactions: "Transaktionen", recharge_title: "Wallet aufladen", amount: "Betrag", current_balance: "Aktuelles Guthaben", recharge_amount: "Aufladebetrag", after_recharge: "Nach der Aufladung", add_amount: "Hinzufügen", recent: "Zuletzt", view_all: "Alle anzeigen" },
+} satisfies Record<SupportedLocale, Record<string, string>>;
+
+const history = {
+  en: {
+    tx_seo_title: "Wallet transactions | Sidera",
+    tx_seo_description: "Review your Sidera wallet recharge and chat transactions.",
+    tx_kicker: "Transactions",
+    tx_title: "Wallet history.",
+    tx_body: "Every recharge and paid chat appears here with the running wallet balance.",
+    tx_recharge: "Recharge wallet",
+    tx_total_records: "Total records",
+    tx_activity_title: "All wallet activity",
+    tx_filter_all: "All",
+    tx_filter_credits: "Credits",
+    tx_filter_debits: "Debits",
+    tx_balance_after: "Balance after {amount}",
+    tx_empty: "No wallet transactions for this filter.",
+    tx_credit_fallback: "Wallet credit",
+    tx_debit_fallback: "Paid chat",
+    tx_previous: "Previous",
+    tx_next: "Next",
+  },
+  es: {
+    tx_seo_title: "Transacciones de cartera | Sidera", tx_seo_description: "Revisa las recargas y chats de tu cartera Sidera.", tx_kicker: "Transacciones", tx_title: "Historial de cartera.", tx_body: "Cada recarga y chat de pago aparece aquí con el saldo acumulado de la cartera.", tx_recharge: "Recargar cartera", tx_total_records: "Registros totales", tx_activity_title: "Toda la actividad", tx_filter_all: "Todo", tx_filter_credits: "Créditos", tx_filter_debits: "Débitos", tx_balance_after: "Saldo después: {amount}", tx_empty: "No hay transacciones para este filtro.", tx_credit_fallback: "Crédito de cartera", tx_debit_fallback: "Chat de pago", tx_previous: "Anterior", tx_next: "Siguiente",
+  },
+  fr: {
+    tx_seo_title: "Transactions du portefeuille | Sidera", tx_seo_description: "Consultez les recharges et les chats de votre portefeuille Sidera.", tx_kicker: "Transactions", tx_title: "Historique du portefeuille.", tx_body: "Chaque recharge et chat payant apparaît ici avec le solde courant du portefeuille.", tx_recharge: "Recharger le portefeuille", tx_total_records: "Total des opérations", tx_activity_title: "Toute l’activité du portefeuille", tx_filter_all: "Tout", tx_filter_credits: "Crédits", tx_filter_debits: "Débits", tx_balance_after: "Solde après : {amount}", tx_empty: "Aucune transaction pour ce filtre.", tx_credit_fallback: "Crédit du portefeuille", tx_debit_fallback: "Chat payant", tx_previous: "Précédent", tx_next: "Suivant",
+  },
+  pt: {
+    tx_seo_title: "Transações da carteira | Sidera", tx_seo_description: "Veja as recargas e conversas da sua carteira Sidera.", tx_kicker: "Transações", tx_title: "Histórico da carteira.", tx_body: "Cada recarga e conversa paga aparece aqui com o saldo corrente da carteira.", tx_recharge: "Recarregar carteira", tx_total_records: "Total de registros", tx_activity_title: "Toda a atividade da carteira", tx_filter_all: "Tudo", tx_filter_credits: "Créditos", tx_filter_debits: "Débitos", tx_balance_after: "Saldo após: {amount}", tx_empty: "Nenhuma transação para este filtro.", tx_credit_fallback: "Crédito da carteira", tx_debit_fallback: "Conversa paga", tx_previous: "Anterior", tx_next: "Próxima",
+  },
+  ru: {
+    tx_seo_title: "Операции кошелька | Sidera", tx_seo_description: "Просматривайте пополнения и платные чаты в кошельке Sidera.", tx_kicker: "Операции", tx_title: "История кошелька.", tx_body: "Здесь отображаются все пополнения и платные чаты с текущим остатком кошелька.", tx_recharge: "Пополнить кошелёк", tx_total_records: "Всего операций", tx_activity_title: "Все операции кошелька", tx_filter_all: "Все", tx_filter_credits: "Пополнения", tx_filter_debits: "Списания", tx_balance_after: "Баланс после: {amount}", tx_empty: "Для этого фильтра операций нет.", tx_credit_fallback: "Пополнение кошелька", tx_debit_fallback: "Платный чат", tx_previous: "Назад", tx_next: "Далее",
+  },
+  it: {
+    tx_seo_title: "Transazioni del portafoglio | Sidera", tx_seo_description: "Controlla ricariche e chat del tuo portafoglio Sidera.", tx_kicker: "Transazioni", tx_title: "Cronologia del portafoglio.", tx_body: "Ogni ricarica e chat a pagamento appare qui con il saldo corrente del portafoglio.", tx_recharge: "Ricarica portafoglio", tx_total_records: "Totale operazioni", tx_activity_title: "Tutte le attività", tx_filter_all: "Tutte", tx_filter_credits: "Crediti", tx_filter_debits: "Addebiti", tx_balance_after: "Saldo dopo: {amount}", tx_empty: "Nessuna transazione per questo filtro.", tx_credit_fallback: "Credito del portafoglio", tx_debit_fallback: "Chat a pagamento", tx_previous: "Precedente", tx_next: "Successiva",
+  },
+  de: {
+    tx_seo_title: "Wallet-Transaktionen | Sidera", tx_seo_description: "Prüfe Aufladungen und Chats in deinem Sidera-Wallet.", tx_kicker: "Transaktionen", tx_title: "Wallet-Verlauf.", tx_body: "Jede Aufladung und jeder bezahlte Chat erscheint hier mit dem laufenden Wallet-Guthaben.", tx_recharge: "Wallet aufladen", tx_total_records: "Einträge insgesamt", tx_activity_title: "Alle Wallet-Aktivitäten", tx_filter_all: "Alle", tx_filter_credits: "Gutschriften", tx_filter_debits: "Abbuchungen", tx_balance_after: "Guthaben danach: {amount}", tx_empty: "Keine Transaktionen für diesen Filter.", tx_credit_fallback: "Wallet-Gutschrift", tx_debit_fallback: "Bezahlter Chat", tx_previous: "Zurück", tx_next: "Weiter",
+  },
+} satisfies Record<SupportedLocale, Record<string, string>>;
+
+export const getWalletCopy = (locale: SupportedLocale = "en") => ({
+  ...(localized[locale] ?? en),
+  ...structure[locale],
+  ...history[locale],
+});

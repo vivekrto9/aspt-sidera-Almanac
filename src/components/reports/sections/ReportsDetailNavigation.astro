@@ -1,0 +1,38 @@
+---
+import Button from "../../shared/Button.astro";
+import "../../../styles/reports/sections/detail-navigation.css";
+
+type Props = {
+  backHref: string;
+  backLabel: string;
+  backLabelEditAttributes?: Record<string, string>;
+};
+
+const {
+  backHref,
+  backLabel,
+  backLabelEditAttributes = {},
+} = Astro.props as Props;
+---
+
+<section
+  class="reports-detail-navigation-shell"
+  data-screen-label="Reports · Detail"
+>
+  <nav
+    class="reports-detail-navigation"
+    aria-label={backLabel}
+  >
+    <Button
+      href={backHref}
+      variant="link"
+      size="compact"
+      shape="rounded"
+      class="reports-detail-navigation__back"
+      editAttributes={backLabelEditAttributes}
+    >
+      <span slot="leading-icon">←</span>
+      {backLabel}
+    </Button>
+  </nav>
+</section>

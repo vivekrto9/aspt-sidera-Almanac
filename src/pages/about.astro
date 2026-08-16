@@ -1,0 +1,353 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { loadPublicPageContent } from "../builder/public-page.ts";
+import type { BuilderEditAttributes } from "../builder/builder.ts";
+import AboutMetrics from "../components/about/sections/AboutMetrics.astro";
+import AboutPageIntro from "../components/about/sections/AboutPageIntro.astro";
+import AboutPrinciples from "../components/about/sections/AboutPrinciples.astro";
+import AboutStoryStatement from "../components/about/sections/AboutStoryStatement.astro";
+import AboutTeam from "../components/about/sections/AboutTeam.astro";
+import Footer from "../components/shared/Footer.astro";
+import Header from "../components/shared/Header.astro";
+import { getAboutTeamCopy } from "../data/locale/about/sections/team.ts";
+import {
+  activeLocales,
+  defaultLocale,
+  localizePath,
+  type SupportedLocale,
+} from "../data/localization-contract.ts";
+import "../styles/about/about.css";
+
+export const prerender = false;
+
+const {
+  locale,
+  content,
+  builder,
+  builderPage,
+  chromePage,
+  reviewTargets,
+  builderEdit,
+  chromeEdit,
+} = await loadPublicPageContent(Astro, "about");
+const aboutTeamDefaults = getAboutTeamCopy(locale);
+
+const seoContent = {
+  seo_title: content.seo_title,
+  seo_description: content.seo_description,
+  seo_canonical_path: content.seo_canonical_path,
+  seo_robots: content.seo_robots,
+  og_title: content.og_title,
+  og_description: content.og_description,
+  og_image: content.og_image,
+  og_image_alt: content.og_image_alt,
+  twitter_card: content.twitter_card,
+  twitter_title: content.twitter_title,
+  twitter_description: content.twitter_description,
+  twitter_image: content.twitter_image,
+};
+
+const componentEditAttributes = (
+  attributes: BuilderEditAttributes,
+): Record<string, string> =>
+  Object.fromEntries(
+    Object.entries(attributes)
+      .filter((entry): entry is [string, string | true] => entry[1] !== undefined)
+      .map(([key, value]) => [key, value === true ? "true" : value]),
+  );
+
+const localeHref = (targetLocale: SupportedLocale) => {
+  const url = new URL(Astro.request.url);
+  if (targetLocale === defaultLocale) {
+    if (locale === defaultLocale) {
+      url.searchParams.delete("locale");
+    } else {
+      url.searchParams.set("locale", defaultLocale);
+    }
+  } else {
+    url.searchParams.set("locale", targetLocale);
+  }
+  return `${url.pathname}${url.search}${url.hash}`;
+};
+
+const navigation = [
+  {
+    label: content.nav_todays_sky,
+    href: localizePath("/todays-sky", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_todays_sky")),
+  },
+  {
+    label: content.nav_charts,
+    href: localizePath("/birth-chart", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_charts")),
+  },
+  {
+    label: content.nav_compatibility,
+    href: localizePath("/synastry", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_compatibility")),
+  },
+  {
+    label: content.nav_moon,
+    href: localizePath("/moon-calendar", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_moon")),
+  },
+  {
+    label: content.nav_horoscope,
+    href: localizePath("/daily-horoscope", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_horoscope")),
+  },
+  {
+    label: content.nav_astrologers,
+    href: localizePath("/astrologers", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_astrologers")),
+  },
+  {
+    label: content.nav_blog,
+    href: localizePath("/blog", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_blog")),
+  },
+];
+
+const actions = [
+  {
+    id: "sign-in",
+    label: content.action_sign_in,
+    href: localizePath("/login", locale),
+    variant: "ghost" as const,
+    editAttributes: componentEditAttributes(chromeEdit("action_sign_in")),
+  },
+  {
+    id: "get-chart",
+    label: content.action_get_chart,
+    href: localizePath("/birth-chart", locale),
+    variant: "primary" as const,
+    editAttributes: componentEditAttributes(chromeEdit("action_get_chart")),
+  },
+];
+
+const languageOptions = activeLocales.map((item) => {
+  const field = `language_option_${item.code}_label`;
+  return {
+    code: item.code,
+    label: content[field] || item.nativeName,
+    href: localeHref(item.code),
+    lang: item.code,
+    hreflang: item.hreflang,
+    editAttributes: componentEditAttributes(chromeEdit(field)),
+  };
+});
+
+const principles = Array.from({ length: 3 }, (_, index) => {
+  const itemNumber = index + 1;
+  const titleField = `about_principle_${itemNumber}_title`;
+  const bodyField = `about_principle_${itemNumber}_body`;
+
+  return {
+    title: content[titleField],
+    body: content[bodyField],
+    titleEditAttributes: componentEditAttributes(builderEdit(titleField)),
+    bodyEditAttributes: componentEditAttributes(builderEdit(bodyField)),
+  };
+});
+
+const metrics = Array.from({ length: 4 }, (_, index) => {
+  const itemNumber = index + 1;
+  const valueField = `about_metric_${itemNumber}_value`;
+  const labelField = `about_metric_${itemNumber}_label`;
+
+  return {
+    value: content[valueField],
+    label: content[labelField],
+    valueEditAttributes: componentEditAttributes(builderEdit(valueField)),
+    labelEditAttributes: componentEditAttributes(builderEdit(labelField)),
+  };
+});
+
+const teamMembers = Array.from({ length: 4 }, (_, index) => {
+  const itemNumber = index + 1;
+  const nameField = `about_team_member_${itemNumber}_name`;
+  const roleField = `about_team_member_${itemNumber}_role`;
+  const defaultMember = aboutTeamDefaults.members[index];
+
+  return {
+    name: content[nameField],
+    role: content[roleField],
+    imageSrc: defaultMember.imageSrc,
+    nameEditAttributes: componentEditAttributes(builderEdit(nameField)),
+    roleEditAttributes: componentEditAttributes(builderEdit(roleField)),
+  };
+});
+
+const footerGroups = [
+  {
+    label: content.footer_group_charts,
+    labelEditAttributes: componentEditAttributes(
+      chromeEdit("footer_group_charts"),
+    ),
+    links: [
+      ["footer_link_birth_chart", "/birth-chart"],
+      ["footer_link_transit", "/transit"],
+      ["footer_link_synastry", "/synastry"],
+    ].map(([field, path]) => ({
+      label: content[field],
+      href: localizePath(path, locale),
+      editAttributes: componentEditAttributes(chromeEdit(field)),
+    })),
+  },
+  {
+    label: content.footer_group_tools,
+    labelEditAttributes: componentEditAttributes(
+      chromeEdit("footer_group_tools"),
+    ),
+    links: [
+      ["footer_link_todays_sky", "/todays-sky"],
+      ["footer_link_moon_calendar", "/moon-calendar"],
+      ["footer_link_retrogrades", "/retrogrades"],
+      ["footer_link_reports", "/reports"],
+    ].map(([field, path]) => ({
+      label: content[field],
+      href: localizePath(path, locale),
+      editAttributes: componentEditAttributes(chromeEdit(field)),
+    })),
+  },
+  {
+    label: content.footer_group_learn,
+    labelEditAttributes: componentEditAttributes(
+      chromeEdit("footer_group_learn"),
+    ),
+    links: [
+      ["footer_link_blog", "/blog"],
+      ["footer_link_daily_horoscope", "/daily-horoscope"],
+      ["footer_link_glossary", "/glossary"],
+      ["footer_link_faq", "/faq"],
+    ].map(([field, path]) => ({
+      label: content[field],
+      href: localizePath(path, locale),
+      editAttributes: componentEditAttributes(chromeEdit(field)),
+    })),
+  },
+  {
+    label: content.footer_group_company,
+    labelEditAttributes: componentEditAttributes(
+      chromeEdit("footer_group_company"),
+    ),
+    links: [
+      ["footer_link_about", "/about"],
+      ["footer_link_account", "/account"],
+      ["footer_link_shop", "/shop"],
+    ].map(([field, path]) => ({
+      label: content[field],
+      href: localizePath(path, locale),
+      editAttributes: componentEditAttributes(chromeEdit(field)),
+    })),
+  },
+];
+
+const footerLegalLinks = [
+  ["footer_link_privacy", "/privacy"],
+  ["footer_link_terms", "/terms"],
+].map(([field, path]) => ({
+  label: content[field],
+  href: localizePath(path, locale),
+  editAttributes: componentEditAttributes(chromeEdit(field)),
+}));
+---
+
+<BaseLayout
+  seo={seoContent}
+  bodyClass="sidera-about-body"
+  builderToolbar={{
+    launcherEnabled: builder.launcherEnabled,
+    studioModeEnabled: builder.studioModeEnabled,
+    collection: builder.collection,
+    entry: builder.entry,
+    locale: builder.locale,
+    csrfToken: builder.csrfToken,
+    canPublish: builder.canPublish,
+    seo: seoContent,
+    hasSavedDraft: builderPage.hasSavedDraft || chromePage.hasSavedDraft,
+    reviewTargets,
+  }}
+>
+  <Header
+    id="about-header"
+    brandLabel={content.brand_name}
+    brandHref={localizePath("/", locale)}
+    brandAriaLabel={content.brand_aria_label}
+    navigationLabel={content.primary_navigation_label}
+    chromeNavigation={{ content, edit: chromeEdit }}
+    navigation={navigation}
+    actions={actions}
+    language={{
+      activeLocale: locale,
+      options: languageOptions,
+      triggerLabel: content.language_trigger_label,
+      menuLabel: content.language_menu_label,
+    }}
+    mobileUtilityActionId="sign-in"
+    menuLabel={content.menu_open_label}
+    closeMenuLabel={content.menu_close_label}
+    brandEditAttributes={componentEditAttributes(chromeEdit("brand_name"))}
+  />
+
+  <main class="sidera-about">
+    <AboutPageIntro
+      eyebrow={content.about_intro_eyebrow}
+      titleLead={content.about_intro_title_lead}
+      titleEmphasis={content.about_intro_title_emphasis}
+      description={content.about_intro_description}
+      eyebrowEditAttributes={componentEditAttributes(
+        builderEdit("about_intro_eyebrow"),
+      )}
+      titleLeadEditAttributes={componentEditAttributes(
+        builderEdit("about_intro_title_lead"),
+      )}
+      titleEmphasisEditAttributes={componentEditAttributes(
+        builderEdit("about_intro_title_emphasis"),
+      )}
+      descriptionEditAttributes={componentEditAttributes(
+        builderEdit("about_intro_description"),
+      )}
+    />
+    <AboutStoryStatement
+      statement={content.about_story_statement}
+      statementEditAttributes={componentEditAttributes(
+        builderEdit("about_story_statement"),
+      )}
+    />
+    <AboutPrinciples {principles} />
+    <AboutMetrics metrics={metrics} ariaLabel={content.about_metrics_aria_label} />
+    <AboutTeam
+      titleAccent={content.about_team_title_accent}
+      titleRest={content.about_team_title_rest}
+      ariaLabel={content.about_team_aria_label}
+      members={teamMembers}
+      titleAccentEditAttributes={componentEditAttributes(
+        builderEdit("about_team_title_accent"),
+      )}
+      titleRestEditAttributes={componentEditAttributes(
+        builderEdit("about_team_title_rest"),
+      )}
+    />
+  </main>
+
+  <Footer
+    brandLabel={content.footer_brand_name}
+    brandHref={localizePath("/", locale)}
+    description={content.footer_about}
+    groups={footerGroups}
+    legalLinks={footerLegalLinks}
+    copyrightText={content.footer_copyright}
+    navigationLabel={content.footer_navigation_label}
+    legalNavigationLabel={content.footer_legal_navigation_label}
+    brandEditAttributes={componentEditAttributes(
+      chromeEdit("footer_brand_name"),
+    )}
+    descriptionEditAttributes={componentEditAttributes(
+      chromeEdit("footer_about"),
+    )}
+    copyrightEditAttributes={componentEditAttributes(
+      chromeEdit("footer_copyright"),
+    )}
+  />
+</BaseLayout>

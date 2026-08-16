@@ -1,0 +1,89 @@
+---
+import type { BuilderEditAttributes } from "../../builder/builder.ts";
+import { loadPublicPageContent } from "../../builder/public-page.ts";
+import WalletTransactionsWorkspace from "../../components/wallet/sections/WalletTransactionsWorkspace.astro";
+import Header from "../../components/shared/Header.astro";
+import Footer from "../../components/shared/Footer.astro";
+import { activeLocales, defaultLocale, localizePath, type SupportedLocale } from "../../data/localization-contract.ts";
+import { createSharedFooterProps } from "../../data/shared-footer-navigation.ts";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getAccountLoginRedirect } from "../../server/aggregator/account-access.ts";
+import { getCustomerSession } from "../../server/aggregator/customer-auth.ts";
+import { listWalletTransactionsPage, type WalletTransactionFilter } from "../../server/aggregator/wallet-store.ts";
+import { getRuntimeEnv } from "../../server/generated-site/request.ts";
+import "../../styles/wallet/wallet.css";
+import "../../styles/wallet/wallet-transactions.css";
+
+export const prerender = false;
+
+const loaded = await loadPublicPageContent(Astro, "wallet");
+const { content, locale, chromeEdit } = loaded;
+const copy = content;
+const env = await getRuntimeEnv(Astro);
+const session = await getCustomerSession(env, Astro.request).catch(() => null);
+if (!session) {
+  return Astro.redirect(getAccountLoginRedirect(Astro.url));
+}
+
+const rawFilter = Astro.url.searchParams.get("filter");
+const filter: WalletTransactionFilter = rawFilter === "credit" || rawFilter === "debit" ? rawFilter : "all";
+const requestedPage = Number(Astro.url.searchParams.get("page") ?? "1");
+const transactions = await listWalletTransactionsPage(env, session.account.id, {
+  filter,
+  page: Number.isFinite(requestedPage) ? requestedPage : 1,
+  pageSize: 12,
+  locale,
+});
+
+const routeHref = (nextFilter: WalletTransactionFilter, nextPage = 1) => {
+  const url = new URL(localizePath("/account/wallet-transactions", locale), "https://sidera.local");
+  nextFilter === "all" ? url.searchParams.delete("filter") : url.searchParams.set("filter", nextFilter);
+  nextPage > 1 ? url.searchParams.set("page", String(nextPage)) : url.searchParams.delete("page");
+  return `${url.pathname}${url.search}`;
+};
+const filterHrefs = {
+  all: routeHref("all"),
+  credit: routeHref("credit"),
+  debit: routeHref("debit"),
+};
+const previousHref = transactions.page > 1 ? routeHref(transactions.filter, transactions.page - 1) : undefined;
+const nextHref = transactions.page < transactions.totalPages ? routeHref(transactions.filter, transactions.page + 1) : undefined;
+
+const edit = (attributes: BuilderEditAttributes): Record<string, string> => Object.fromEntries(
+  Object.entries(attributes)
+    .filter((entry): entry is [string, string | true] => entry[1] !== undefined)
+    .map(([key, value]) => [key, value === true ? "true" : value]),
+);
+const localeHref = (target: SupportedLocale) => {
+  const url = new URL(Astro.request.url);
+  target === defaultLocale ? url.searchParams.delete("locale") : url.searchParams.set("locale", target);
+  return `${url.pathname}${url.search}`;
+};
+const navigation = [["nav_todays_sky", "/todays-sky"], ["nav_charts", "/birth-chart"], ["nav_compatibility", "/synastry"], ["nav_moon", "/moon-calendar"], ["nav_horoscope", "/daily-horoscope"], ["nav_astrologers", "/astrologers"], ["nav_blog", "/blog"]].map(([field, path]) => ({ label: content[field], href: localizePath(path, locale), editAttributes: edit(chromeEdit(field)) }));
+const actions = [
+  { id: "sign-in", label: "My Account", href: localizePath("/account", locale), variant: "ghost" as const },
+  { id: "get-chart", label: content.action_get_chart, href: localizePath("/birth-chart", locale), variant: "primary" as const },
+];
+const languageOptions = activeLocales.map((item) => ({ code: item.code, label: content[`language_option_${item.code}_label`] || item.nativeName, href: localeHref(item.code), lang: item.code, hreflang: item.hreflang, editAttributes: edit(chromeEdit(`language_option_${item.code}_label`)) }));
+const footerProps = createSharedFooterProps({ content, locale, editAttributes: (field) => edit(chromeEdit(field)) });
+const seo = {
+  seo_title: copy.tx_seo_title,
+  seo_description: copy.tx_seo_description,
+  seo_canonical_path: "/account/wallet-transactions",
+  seo_robots: "noindex,follow",
+  og_title: copy.tx_seo_title,
+  og_description: copy.tx_seo_description,
+  og_image: "/_assets/aliases/logo/logo.svg",
+  og_image_alt: "Sidera wallet transactions",
+  twitter_card: "summary",
+  twitter_title: copy.tx_seo_title,
+  twitter_description: copy.tx_seo_description,
+  twitter_image: "/_assets/aliases/logo/logo.svg",
+};
+---
+
+<BaseLayout seo={seo} bodyClass="sidera-wallet-body">
+  <Header id="wallet-transactions-header" brandLabel={content.brand_name} brandHref={localizePath("/", locale)} brandAriaLabel={content.brand_aria_label} navigationLabel={content.primary_navigation_label} chromeNavigation={{ content, edit: chromeEdit }} navigation={navigation} actions={actions} language={{ activeLocale: locale, options: languageOptions, triggerLabel: content.language_trigger_label, menuLabel: content.language_menu_label }} mobileUtilityActionId="sign-in" menuLabel={content.menu_open_label} closeMenuLabel={content.menu_close_label} brandEditAttributes={edit(chromeEdit("brand_name"))} />
+  <WalletTransactionsWorkspace copy={copy} locale={locale} transactions={transactions} walletHref={localizePath("/wallet", locale)} browseHref={localizePath("/astrologers", locale)} filterHrefs={filterHrefs} previousHref={previousHref} nextHref={nextHref} />
+  <Footer {...footerProps} />
+</BaseLayout>

@@ -1,0 +1,40 @@
+---
+import Accordion from "../../shared/Accordion.astro";
+import "../../../styles/faq/sections/faq-accordion-list.css";
+
+type AccordionItem = {
+  category: string;
+  question: string;
+  answer: string;
+  categoryEditAttributes?: Record<string, string>;
+  questionEditAttributes?: Record<string, string>;
+  answerEditAttributes?: Record<string, string>;
+};
+
+type Props = {
+  label: string;
+  items: AccordionItem[];
+};
+
+const { label, items } = Astro.props as Props;
+---
+
+<section class="faq-accordion-list" aria-label={label}>
+  <div class="faq-accordion-list__inner">
+    {
+      items.map((item, index) => (
+        <Accordion
+          id={`faq-question-${index + 1}`}
+          name="faq-questions"
+          category={item.category}
+          question={item.question}
+          open={index === 0}
+          categoryEditAttributes={item.categoryEditAttributes}
+          questionEditAttributes={item.questionEditAttributes}
+        >
+          <p {...item.answerEditAttributes}>{item.answer}</p>
+        </Accordion>
+      ))
+    }
+  </div>
+</section>

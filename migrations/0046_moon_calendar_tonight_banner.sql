@@ -1,0 +1,10 @@
+ALTER TABLE ec_site_moon_calendar ADD COLUMN tonight_eyebrow TEXT;
+ALTER TABLE ec_site_moon_calendar ADD COLUMN tonight_phase_name TEXT;
+ALTER TABLE ec_site_moon_calendar ADD COLUMN tonight_phase_detail TEXT;
+ALTER TABLE ec_site_moon_calendar ADD COLUMN tonight_meaning TEXT;
+ALTER TABLE ec_site_moon_calendar ADD COLUMN tonight_next_full_label TEXT;
+ALTER TABLE ec_site_moon_calendar ADD COLUMN tonight_next_full_date TEXT;
+ALTER TABLE ec_site_moon_calendar ADD COLUMN tonight_next_full_countdown TEXT;
+ALTER TABLE ec_site_moon_calendar ADD COLUMN tonight_next_new_label TEXT;
+ALTER TABLE ec_site_moon_calendar ADD COLUMN tonight_next_new_date TEXT;
+ALTER TABLE ec_site_moon_calendar ADD COLUMN tonight_next_new_countdown TEXT;

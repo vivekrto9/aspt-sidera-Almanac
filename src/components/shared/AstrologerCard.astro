@@ -1,0 +1,187 @@
+---
+import Button from "./Button.astro";
+import ProfileSummary from "./ProfileSummary.astro";
+import RatingSummary from "./RatingSummary.astro";
+import "../../styles/shared/astrologer-card.css";
+
+type CardVariant = "compact" | "detailed";
+type Availability = "online" | "busy" | "offline";
+type AvatarFallback = "placeholder" | "initials";
+
+type Props = {
+  name: string;
+  tradition: string;
+  ratingValue: number;
+  ratingText: string;
+  ratingAriaLabel: string;
+  availability: Availability;
+  availabilityLabel: string;
+  rateText: string;
+  rateUnit?: string;
+  reviewText?: string;
+  specialties?: string[];
+  description?: string;
+  variant?: CardVariant;
+  avatarSrc?: string;
+  avatarAlt?: string;
+  avatarInitials?: string;
+  avatarFallback?: AvatarFallback;
+  profileHref?: string;
+  profileLabel?: string;
+  actionHref?: string;
+  actionLabel?: string;
+  actionAriaLabel?: string;
+  class?: string;
+  id?: string;
+  rateEditAttributes?: Record<string, string>;
+  unitEditAttributes?: Record<string, string>;
+  descriptionEditAttributes?: Record<string, string>;
+  nameEditAttributes?: Record<string, string>;
+  traditionEditAttributes?: Record<string, string>;
+  availabilityEditAttributes?: Record<string, string>;
+  ratingEditAttributes?: Record<string, string>;
+  profileEditAttributes?: Record<string, string>;
+  actionEditAttributes?: Record<string, string>;
+  actionButtonAttributes?: Record<string, string>;
+};
+
+const {
+  name,
+  tradition,
+  ratingValue,
+  ratingText,
+  ratingAriaLabel,
+  availability,
+  availabilityLabel,
+  rateText,
+  rateUnit = "/min",
+  reviewText,
+  specialties = [],
+  description,
+  variant = "detailed",
+  avatarSrc,
+  avatarAlt,
+  avatarInitials,
+  avatarFallback = "placeholder",
+  profileHref,
+  profileLabel,
+  actionHref,
+  actionLabel,
+  actionAriaLabel,
+  class: className,
+  id,
+  rateEditAttributes = {},
+  unitEditAttributes = {},
+  descriptionEditAttributes = {},
+  nameEditAttributes = {},
+  traditionEditAttributes = {},
+  availabilityEditAttributes = {},
+  ratingEditAttributes = {},
+  profileEditAttributes = {},
+  actionEditAttributes = {},
+  actionButtonAttributes = {},
+} = Astro.props as Props;
+
+const statusTone = {
+  online: "success",
+  busy: "warning",
+  offline: "neutral",
+}[availability] as "success" | "warning" | "neutral";
+const actionVariant = availability === "online" ? "primary" : "secondary";
+const hasActionButton = Boolean(actionLabel && (actionHref || Object.keys(actionButtonAttributes).length));
+const hasActions = Boolean((profileHref && profileLabel) || hasActionButton);
+const classes = [
+  "sidera-astrologer-card",
+  `sidera-astrologer-card--${variant}`,
+  `sidera-astrologer-card--${availability}`,
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+---
+
+<article id={id} class={classes}>
+  <ProfileSummary
+    name={name}
+    subtitle={tradition}
+    layout={variant === "compact" ? "stacked" : "horizontal"}
+    size={variant === "compact" ? "standard" : "compact"}
+    nameTag="h3"
+    avatarSrc={avatarSrc}
+    avatarAlt={avatarAlt}
+    avatarInitials={avatarInitials}
+    avatarFallback={avatarFallback}
+    avatarSize={variant === "compact" ? "large" : "standard"}
+    statusLabel={availabilityLabel}
+    statusTone={statusTone}
+    nameEditAttributes={nameEditAttributes}
+    subtitleEditAttributes={traditionEditAttributes}
+    statusLabelEditAttributes={availabilityEditAttributes}
+  />
+
+  <div class="sidera-astrologer-card__rating">
+    <RatingSummary
+      value={ratingValue}
+      ratingText={ratingText}
+      ariaLabel={ratingAriaLabel}
+      countText={reviewText}
+      size="compact"
+      ratingEditAttributes={ratingEditAttributes}
+    />
+  </div>
+
+  {
+    specialties.length > 0 ? (
+      <ul class="sidera-astrologer-card__specialties" aria-label={`${name} specialties`}>
+        {specialties.map((specialty) => (
+          <li>{specialty}</li>
+        ))}
+      </ul>
+    ) : null
+  }
+
+  {
+    description ? (
+      <p class="sidera-astrologer-card__description" {...descriptionEditAttributes}>
+        {description}
+      </p>
+    ) : null
+  }
+
+  <div class="sidera-astrologer-card__footer">
+    <p class="sidera-astrologer-card__rate">
+      <strong {...rateEditAttributes}>{rateText}</strong>
+      {rateUnit ? <span {...unitEditAttributes}>{rateUnit}</span> : null}
+    </p>
+
+    {
+      hasActions ? (
+        <div class="sidera-astrologer-card__actions">
+          {profileHref && profileLabel ? (
+            <Button
+              href={profileHref}
+              variant="outline"
+              size="compact"
+              editAttributes={profileEditAttributes}
+            >
+              {profileLabel}
+            </Button>
+          ) : null}
+          {hasActionButton ? (
+            <Button
+              href={actionHref}
+              variant={actionVariant}
+              size="compact"
+              ariaLabel={actionAriaLabel}
+              fullWidth={variant === "compact"}
+              editAttributes={actionEditAttributes}
+              {...actionButtonAttributes}
+            >
+              {actionLabel}
+            </Button>
+          ) : null}
+        </div>
+      ) : null
+    }
+  </div>
+</article>

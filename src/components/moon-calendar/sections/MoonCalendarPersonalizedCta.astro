@@ -1,0 +1,50 @@
+---
+import type { SupportedLocale } from "../../../data/localization-contract.ts";
+import type { MoonCalendarPersonalizedCtaCopy } from "../../../data/locale/moon-calendar/sections/personalized-cta.ts";
+import FinalCtaSection from "../../shared/FinalCtaSection.astro";
+import "../../../styles/moon-calendar/sections/moon-calendar-personalized-cta.css";
+
+type EditAttributes = Record<string, string>;
+type PersonalizedCtaField = keyof MoonCalendarPersonalizedCtaCopy;
+
+type Props = {
+  copy: MoonCalendarPersonalizedCtaCopy;
+  locale: SupportedLocale;
+  editAttributes?: (field: PersonalizedCtaField) => EditAttributes;
+};
+
+const { copy, locale, editAttributes = () => ({}) } = Astro.props as Props;
+const completeTitle = [
+  copy.titlePrefix,
+  copy.titleAccent,
+  copy.titleSuffix,
+].join(" ");
+---
+
+<FinalCtaSection
+  id="moon-calendar-personalized-cta"
+  class="moon-calendar-personalized-cta"
+  eyebrow={copy.eyebrow}
+  title={completeTitle}
+  description={copy.description}
+  primaryLabel={copy.primaryLabel}
+  primaryHref="/birth-chart"
+  primaryArrow="→"
+  secondaryLabel={copy.secondaryLabel}
+  secondaryHref="/todays-sky"
+  locale={locale}
+  tone="dark"
+  layout="split"
+  surface="panel"
+  ambience
+  eyebrowEditAttributes={editAttributes("eyebrow")}
+  descriptionEditAttributes={editAttributes("description")}
+  primaryEditAttributes={editAttributes("primaryLabel")}
+  secondaryEditAttributes={editAttributes("secondaryLabel")}
+>
+  <Fragment slot="title">
+    <span {...editAttributes("titlePrefix")}>{copy.titlePrefix}</span>{" "}
+    <em {...editAttributes("titleAccent")}>{copy.titleAccent}</em>{" "}
+    <span {...editAttributes("titleSuffix")}>{copy.titleSuffix}</span>
+  </Fragment>
+</FinalCtaSection>

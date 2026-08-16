@@ -1,0 +1,140 @@
+.sidera-search-field {
+  --search-field-background: #ffffff;
+  --search-field-border: rgba(var(--color-text-rgb), 0.18);
+  --search-field-hover-border: rgba(var(--color-text-rgb), 0.34);
+  --search-field-focus-border: var(--color-primary);
+  --search-field-focus-ring: rgba(var(--color-primary-rgb), 0.16);
+  --search-field-icon: var(--color-muted-soft);
+
+  inline-size: 100%;
+  min-inline-size: 0;
+  min-block-size: 2.875rem;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.25rem;
+  border: 1px solid var(--search-field-border);
+  border-radius: 999px;
+  padding: 0.1875rem;
+  padding-inline-start: 0.875rem;
+  background: var(--search-field-background);
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.sidera-search-field--rounded {
+  border-radius: 0.6875rem;
+}
+
+.sidera-search-field:hover:not(.sidera-search-field--disabled) {
+  border-color: var(--search-field-hover-border);
+}
+
+.sidera-search-field:focus-within:not(.sidera-search-field--disabled) {
+  border-color: var(--search-field-focus-border);
+  box-shadow: 0 0 0 0.1875rem var(--search-field-focus-ring);
+}
+
+.sidera-search-field--invalid {
+  --search-field-border: var(--color-primary);
+  --search-field-focus-border: var(--color-primary-strong);
+  --search-field-focus-ring: rgba(168, 77, 54, 0.18);
+}
+
+.sidera-search-field--disabled {
+  --search-field-background: var(--color-surface-soft);
+  --search-field-border: rgba(var(--color-text-rgb), 0.1);
+  --search-field-icon: #a89789;
+
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+.sidera-search-field__leading-icon {
+  inline-size: 1rem;
+  block-size: 1rem;
+  display: inline-flex;
+  color: var(--search-field-icon);
+  pointer-events: none;
+}
+
+.sidera-search-field__leading-icon svg,
+.sidera-search-field :where(.icon-button__icon svg) {
+  inline-size: 100%;
+  block-size: 100%;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.75;
+}
+
+.sidera-search-field .sidera-search-field__input {
+  min-inline-size: 0;
+  min-block-size: 2.375rem;
+  border: 0;
+  padding: 0.4375rem 0.25rem;
+  background: transparent;
+  box-shadow: none;
+}
+
+.sidera-search-field .sidera-search-field__input:focus-visible {
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.sidera-search-field .sidera-search-field__input::-webkit-search-cancel-button {
+  display: none;
+  appearance: none;
+}
+
+.sidera-search-field__clear,
+.sidera-search-field__submit {
+  display: inline-flex;
+}
+
+.sidera-search-field__clear[hidden] {
+  display: none;
+}
+
+.sidera-search-field :where(.icon-button--compact) {
+  --icon-button-size: 2.25rem;
+}
+
+.sidera-search-field__clear :where(.icon-button) {
+  --icon-button-color: var(--color-muted);
+  --icon-button-hover-background: #f3ecdf;
+}
+
+@media (max-width: 40rem) {
+  .sidera-search-field {
+    min-block-size: 3rem;
+  }
+
+  .sidera-search-field .sidera-search-field__input {
+    min-block-size: 2.5rem;
+    font-size: 1rem;
+  }
+
+  .sidera-search-field :where(.icon-button--compact) {
+    --icon-button-size: 2.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidera-search-field {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .sidera-search-field {
+    border-color: CanvasText;
+  }
+
+  .sidera-search-field:focus-within {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+    box-shadow: none;
+  }
+}

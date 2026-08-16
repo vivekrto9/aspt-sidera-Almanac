@@ -1,0 +1,141 @@
+---
+import type { SupportedLocale } from "../../data/localization-contract.ts";
+import "../../styles/shared/legal-document-layout.css";
+import PageIntro from "./PageIntro.astro";
+
+type BreadcrumbSeparator = "chevron" | "slash";
+
+type BreadcrumbItem = {
+  label: string;
+  href?: string;
+  current?: boolean;
+  editAttributes?: Record<string, string>;
+};
+
+type LegalSection = {
+  id: string;
+  title: string;
+  paragraphs: string[];
+  headingEditAttributes?: Record<string, string>;
+  paragraphEditAttributes?: Record<string, string>[];
+};
+
+type Props = {
+  id: string;
+  title: string;
+  eyebrow?: string;
+  updatedLabel?: string;
+  sections: LegalSection[];
+  contactPrefix?: string;
+  contactLabel?: string;
+  contactHref?: string;
+  contactSuffix?: string;
+  breadcrumbs?: BreadcrumbItem[];
+  breadcrumbAriaLabel?: string;
+  breadcrumbSeparator?: BreadcrumbSeparator;
+  locale?: SupportedLocale;
+  class?: string;
+  titleEditAttributes?: Record<string, string>;
+  eyebrowEditAttributes?: Record<string, string>;
+  updatedEditAttributes?: Record<string, string>;
+  contactEditAttributes?: Record<string, string>;
+  [attribute: string]: unknown;
+};
+
+const {
+  id,
+  title,
+  eyebrow = "Legal",
+  updatedLabel,
+  sections,
+  contactPrefix,
+  contactLabel,
+  contactHref,
+  contactSuffix,
+  breadcrumbs = [],
+  breadcrumbAriaLabel,
+  breadcrumbSeparator = "chevron",
+  locale,
+  class: className,
+  titleEditAttributes = {},
+  eyebrowEditAttributes = {},
+  updatedEditAttributes = {},
+  contactEditAttributes = {},
+  ...rootAttributes
+} = Astro.props as Props;
+
+const headingId = `${id}-heading`;
+const classes = ["legal-document-layout", className].filter(Boolean).join(" ");
+const visibleSections = sections.filter(
+  (section) => section.id.trim().length > 0 && section.title.trim().length > 0,
+);
+const hasContact = Boolean(contactPrefix || contactLabel || contactSuffix);
+---
+
+<article
+  {...rootAttributes}
+  id={id}
+  class={classes}
+  aria-labelledby={headingId}
+  data-legal-document-layout
+>
+  <PageIntro
+    id={`${id}-intro`}
+    headingId={headingId}
+    title={title}
+    eyebrow={eyebrow}
+    meta={updatedLabel}
+    density="compact"
+    breadcrumbs={breadcrumbs}
+    breadcrumbAriaLabel={breadcrumbAriaLabel}
+    breadcrumbSeparator={breadcrumbSeparator}
+    locale={locale}
+    titleEditAttributes={titleEditAttributes}
+    eyebrowEditAttributes={eyebrowEditAttributes}
+    metaEditAttributes={updatedEditAttributes}
+    class="legal-document-layout__intro"
+  />
+
+  <div class="legal-document-layout__content">
+    {
+      visibleSections.map((section) => {
+        const sectionId = `${id}-${section.id}`;
+        const paragraphAttributes = section.paragraphEditAttributes ?? [];
+
+        return (
+          <section
+            class="legal-document-layout__section"
+            id={sectionId}
+            aria-labelledby={`${sectionId}-heading`}
+          >
+            <h2
+              id={`${sectionId}-heading`}
+              {...section.headingEditAttributes}
+            >
+              {section.title}
+            </h2>
+            {section.paragraphs.map((paragraph, paragraphIndex) => (
+              <p {...(paragraphAttributes[paragraphIndex] ?? {})}>{paragraph}</p>
+            ))}
+          </section>
+        );
+      })
+    }
+
+    {
+      hasContact ? (
+        <footer class="legal-document-layout__contact" {...contactEditAttributes}>
+          {contactPrefix}
+          {contactLabel ? (
+            contactHref ? (
+              <a href={contactHref}>{contactLabel}</a>
+            ) : (
+              <strong>{contactLabel}</strong>
+            )
+          ) : null}
+          {contactSuffix}
+        </footer>
+      ) : null
+    }
+  </div>
+</article>

@@ -1,0 +1,120 @@
+.sidera-profile-summary {
+  --profile-summary-name: var(--color-text);
+  --profile-summary-copy: var(--color-muted);
+  --profile-summary-muted: var(--color-muted);
+
+  max-inline-size: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  color: var(--profile-summary-copy);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+.sidera-profile-summary--stacked {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.sidera-profile-summary--inverse {
+  --profile-summary-name: var(--color-surface-soft);
+  --profile-summary-copy: var(--color-on-dark-muted);
+  --profile-summary-muted: var(--color-on-dark-muted);
+}
+
+.sidera-profile-summary__avatar {
+  flex: none;
+}
+
+.sidera-profile-summary__content {
+  min-inline-size: 0;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.sidera-profile-summary--stacked .sidera-profile-summary__content {
+  justify-items: center;
+}
+
+.sidera-profile-summary__name {
+  min-inline-size: 0;
+  margin: 0;
+  color: var(--profile-summary-name);
+  font-family: var(--font-serif), Georgia, "Times New Roman", serif;
+  font-size: 1.375rem;
+  font-weight: 400;
+  line-height: 1.08;
+  overflow-wrap: anywhere;
+}
+
+.sidera-profile-summary--compact .sidera-profile-summary__name {
+  font-size: 1.1875rem;
+}
+
+.sidera-profile-summary--large .sidera-profile-summary__name {
+  font-size: clamp(2.125rem, 5vw, 3.25rem);
+  line-height: 1;
+}
+
+.sidera-profile-summary__subtitle {
+  min-inline-size: 0;
+  margin: 0;
+  color: var(--profile-summary-copy);
+  font-size: 0.78125rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.sidera-profile-summary--large .sidera-profile-summary__subtitle {
+  margin-block-start: 0.25rem;
+  font-size: 0.90625rem;
+}
+
+.sidera-profile-summary__meta {
+  min-inline-size: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  margin-block-start: 0.375rem;
+  color: var(--profile-summary-muted);
+  font-size: 0.78125rem;
+  line-height: 1.4;
+}
+
+.sidera-profile-summary--stacked .sidera-profile-summary__meta {
+  justify-content: center;
+}
+
+.sidera-profile-summary__rating {
+  min-inline-size: 0;
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.sidera-profile-summary__rating strong {
+  color: var(--profile-summary-name);
+  font-weight: 700;
+}
+
+.sidera-profile-summary__reviews {
+  color: var(--profile-summary-muted);
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 40rem) {
+  .sidera-profile-summary {
+    gap: 0.75rem;
+  }
+
+  .sidera-profile-summary--horizontal.sidera-profile-summary--large {
+    flex-direction: column;
+  }
+
+  .sidera-profile-summary__meta {
+    row-gap: 0.625rem;
+  }
+}

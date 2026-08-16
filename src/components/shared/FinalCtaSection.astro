@@ -1,0 +1,176 @@
+---
+import {
+  defaultLocale,
+  localizePath,
+  type SupportedLocale,
+} from "../../data/localization-contract.ts";
+import Button from "./Button.astro";
+import SectionHeading from "./SectionHeading.astro";
+import "../../styles/shared/final-cta-section.css";
+
+type FinalCtaTone = "dark" | "light";
+type FinalCtaLayout = "centered" | "split";
+type FinalCtaSurface = "band" | "panel";
+type FinalCtaActionAppearance = "button" | "text";
+type FinalCtaDensity = "standard" | "compact";
+
+type Props = {
+  title: string;
+  eyebrow?: string;
+  description?: string;
+  primaryLabel: string;
+  primaryHref: string;
+  primaryAriaLabel?: string;
+  primaryAppearance?: FinalCtaActionAppearance;
+  primaryArrow?: string;
+  secondaryLabel?: string;
+  secondaryHref?: string;
+  secondaryAriaLabel?: string;
+  tone?: FinalCtaTone;
+  layout?: FinalCtaLayout;
+  surface?: FinalCtaSurface;
+  density?: FinalCtaDensity;
+  ambience?: boolean;
+  locale?: SupportedLocale;
+  id?: string;
+  headingId?: string;
+  class?: string;
+  eyebrowEditAttributes?: Record<string, string>;
+  titleEditAttributes?: Record<string, string>;
+  descriptionEditAttributes?: Record<string, string>;
+  primaryEditAttributes?: Record<string, string>;
+  secondaryEditAttributes?: Record<string, string>;
+};
+
+const {
+  title,
+  eyebrow,
+  description,
+  primaryLabel,
+  primaryHref,
+  primaryAriaLabel,
+  primaryAppearance = "button",
+  primaryArrow,
+  secondaryLabel,
+  secondaryHref,
+  secondaryAriaLabel,
+  tone = "dark",
+  layout = "centered",
+  surface = "band",
+  density = "standard",
+  ambience = false,
+  locale = defaultLocale,
+  id,
+  headingId = id ? `${id}-heading` : undefined,
+  class: className,
+  eyebrowEditAttributes = {},
+  titleEditAttributes = {},
+  descriptionEditAttributes = {},
+  primaryEditAttributes = {},
+  secondaryEditAttributes = {},
+} = Astro.props as Props;
+
+const hasTitleSlot = Astro.slots.has("title");
+const hasVisualSlot = Astro.slots.has("visual");
+const localizedPrimaryHref = localizePath(primaryHref, locale);
+const localizedSecondaryHref =
+  secondaryHref ? localizePath(secondaryHref, locale) : undefined;
+const alignment: "center" | "left" = layout === "centered" ? "center" : "left";
+const headingTone: "inverse" | "default" = tone === "dark" ? "inverse" : "default";
+const headingProps = {
+  title,
+  eyebrow,
+  description,
+  headingLevel: 2 as const,
+  headingId,
+  alignment,
+  tone: headingTone,
+  size: "page" as const,
+  eyebrowEditAttributes,
+  titleEditAttributes,
+  descriptionEditAttributes,
+};
+const classes = [
+  "sidera-final-cta",
+  `sidera-final-cta--${tone}`,
+  `sidera-final-cta--${layout}`,
+  `sidera-final-cta--${surface}`,
+  `sidera-final-cta--${density}`,
+  ambience && "sidera-final-cta--ambience",
+  hasVisualSlot && "sidera-final-cta--with-visual",
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+---
+
+<section id={id} class={classes} aria-labelledby={headingId}>
+  <div class="sidera-final-cta__inner">
+    {
+      hasVisualSlot ? (
+        <div class="sidera-final-cta__visual" aria-hidden="true">
+          <slot name="visual" />
+        </div>
+      ) : null
+    }
+
+    <div class="sidera-final-cta__content">
+      {
+        hasTitleSlot ? (
+          <SectionHeading {...headingProps}>
+            <Fragment slot="title"><slot name="title" /></Fragment>
+          </SectionHeading>
+        ) : (
+          <SectionHeading {...headingProps} />
+        )
+      }
+
+      <div class="sidera-final-cta__actions">
+        <Button
+          href={localizedPrimaryHref}
+          ariaLabel={primaryAriaLabel}
+          variant={
+            primaryAppearance === "text"
+              ? "link"
+              : tone === "dark"
+                ? "secondary"
+                : "primary"
+          }
+          size={
+            primaryAppearance === "text" || density === "compact"
+              ? "standard"
+              : "large"
+          }
+          class={`sidera-final-cta__primary sidera-final-cta__primary--${primaryAppearance}`}
+          editAttributes={primaryEditAttributes}
+        >
+          {primaryLabel}
+          {
+            primaryArrow ? (
+              <Fragment slot="trailing-icon">
+                <span class="sidera-final-cta__arrow" aria-hidden="true">
+                  {primaryArrow}
+                </span>
+              </Fragment>
+            ) : null
+          }
+        </Button>
+
+        {
+          secondaryLabel && localizedSecondaryHref ? (
+            <Button
+              href={localizedSecondaryHref}
+              ariaLabel={secondaryAriaLabel}
+              variant="outline"
+              size={density === "compact" ? "standard" : "large"}
+              class="sidera-final-cta__secondary"
+              editAttributes={secondaryEditAttributes}
+            >
+              {secondaryLabel}
+            </Button>
+          ) : null
+        }
+      </div>
+    </div>
+  </div>
+</section>

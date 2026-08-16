@@ -1,0 +1,196 @@
+.chart-wheel {
+  --chart-wheel-size: 31.25rem;
+  --chart-disc-outer: var(--color-panel);
+  --chart-disc-signs: var(--color-surface-soft);
+  --chart-disc-inner: var(--color-panel);
+  --chart-line: rgba(var(--color-text-rgb), 0.14);
+  --chart-line-soft: rgba(var(--color-text-rgb), 0.1);
+  --chart-accent: var(--color-primary);
+  --chart-glyph: var(--color-muted);
+  --chart-planet-fill: var(--color-panel);
+  --chart-planet-outer-fill: var(--color-dark);
+  --chart-planet-outer-text: var(--color-surface);
+  --chart-caption: var(--color-muted);
+  --chart-color-fire: var(--color-primary);
+  --chart-color-earth: var(--color-muted);
+  --chart-color-air: var(--color-primary-soft);
+  --chart-color-water: var(--color-dark);
+  --chart-color-venus: var(--color-primary-strong);
+  --chart-color-uranus: var(--color-success);
+  --chart-color-neptune: var(--color-info);
+  --chart-color-pluto: var(--color-muted-soft);
+  --chart-color-transit: var(--color-dark-strong);
+
+  inline-size: min(100%, var(--chart-wheel-size));
+  margin: 0;
+  display: grid;
+  justify-items: center;
+  gap: 0.75rem;
+}
+
+.chart-wheel--compact {
+  --chart-wheel-size: 18.75rem;
+}
+
+.chart-wheel--large {
+  --chart-wheel-size: 37.5rem;
+}
+
+.chart-wheel--inverse {
+  --chart-disc-outer: rgba(237, 234, 248, 0.05);
+  --chart-disc-signs: rgba(176, 140, 240, 0.1);
+  --chart-disc-inner: rgba(237, 234, 248, 0.04);
+  --chart-line: rgba(237, 234, 248, 0.2);
+  --chart-line-soft: rgba(237, 234, 248, 0.13);
+  --chart-accent: var(--color-primary-soft);
+  --chart-glyph: var(--color-primary-soft);
+  --chart-planet-fill: var(--color-dark-strong);
+  --chart-caption: var(--color-line);
+}
+
+.chart-wheel__svg {
+  inline-size: 100%;
+  block-size: auto;
+  display: block;
+  overflow: visible;
+}
+
+.chart-wheel__disc {
+  stroke: var(--chart-line);
+  stroke-width: 1;
+}
+
+.chart-wheel__disc--outer {
+  fill: var(--chart-disc-outer);
+}
+
+.chart-wheel__disc--signs {
+  fill: var(--chart-disc-signs);
+}
+
+.chart-wheel__disc--inner {
+  fill: var(--chart-disc-inner);
+}
+
+.chart-wheel__sign-band line,
+.chart-wheel__houses line {
+  stroke: var(--chart-line);
+  stroke-width: 1;
+}
+
+.chart-wheel__sign-band text,
+.chart-wheel__houses text,
+.chart-wheel__planets text,
+.chart-wheel__center text {
+  text-anchor: middle;
+  dominant-baseline: central;
+  font-family: var(--font-serif), Georgia, "Times New Roman", serif;
+}
+
+.chart-wheel__sign-band text {
+  fill: var(--chart-glyph);
+  font-size: 19px;
+}
+
+.chart-wheel__houses line {
+  stroke: var(--chart-line-soft);
+  stroke-dasharray: 3 4;
+}
+
+.chart-wheel__houses .chart-wheel__house-angle {
+  stroke: color-mix(in srgb, var(--chart-accent) 55%, transparent);
+  stroke-width: 1.6;
+  stroke-dasharray: none;
+}
+
+.chart-wheel__houses text {
+  fill: var(--chart-caption);
+  font: 400 11px / 1 var(--font-sans), system-ui, sans-serif;
+}
+
+.chart-wheel__aspects line {
+  stroke: var(--aspect-color, var(--chart-accent));
+  stroke-width: 1.2;
+  opacity: 0.65;
+}
+
+.chart-wheel__planet {
+  outline: none;
+}
+
+.chart-wheel__planet circle {
+  fill: var(--chart-planet-fill);
+  stroke: var(--planet-color, var(--chart-accent));
+  stroke-width: 1.5;
+  transition:
+    r 160ms ease,
+    stroke-width 160ms ease,
+    filter 160ms ease;
+}
+
+.chart-wheel__planet text {
+  fill: var(--planet-color, var(--chart-accent));
+  font-size: 15px;
+  pointer-events: none;
+}
+
+.chart-wheel__planet--outer circle {
+  fill: var(--chart-planet-outer-fill);
+}
+
+.chart-wheel__planet--outer text {
+  fill: var(--chart-planet-outer-text);
+}
+
+.chart-wheel--interactive .chart-wheel__planet {
+  cursor: pointer;
+}
+
+.chart-wheel--interactive .chart-wheel__planet:hover circle,
+.chart-wheel__planet--selected circle {
+  stroke-width: 2.5;
+  filter: drop-shadow(0 3px 5px rgba(var(--color-text-rgb), 0.2));
+}
+
+.chart-wheel--interactive .chart-wheel__planet:focus-visible circle {
+  stroke: var(--chart-accent);
+  stroke-width: 4;
+}
+
+.chart-wheel__center circle {
+  fill: var(--color-dark);
+}
+
+.chart-wheel__center text {
+  fill: var(--color-bg);
+  font-size: 34px;
+}
+
+.chart-wheel__caption {
+  max-inline-size: 42ch;
+  color: var(--chart-caption);
+  font: 400 0.8125rem / 1.5 var(--font-sans), system-ui, sans-serif;
+  text-align: center;
+}
+
+@media (max-width: 40rem) {
+  .chart-wheel,
+  .chart-wheel--large {
+    --chart-wheel-size: 31.25rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chart-wheel__planet circle {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .chart-wheel__disc,
+  .chart-wheel__sign-band line,
+  .chart-wheel__houses line,
+  .chart-wheel__planet circle {
+    stroke: CanvasText;
+  }
+}

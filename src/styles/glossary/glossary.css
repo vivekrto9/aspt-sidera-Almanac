@@ -1,0 +1,27 @@
+html {
+  scroll-behavior: smooth;
+}
+
+.sidera-glossary-body,
+.sidera-glossary {
+  min-inline-size: 0;
+  margin: 0;
+  background: var(--color-surface);
+}
+
+.sidera-glossary {
+  inline-size: 100%;
+  min-block-size: calc(100svh - 4.625rem);
+}
+
+@media (max-width: 63.999rem) {
+  .sidera-glossary {
+    min-block-size: calc(100svh - 4.25rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}

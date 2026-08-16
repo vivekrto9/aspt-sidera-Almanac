@@ -1,0 +1,17 @@
+.sidera-faq-body,
+.sidera-faq {
+  min-inline-size: 0;
+  margin: 0;
+  background: var(--color-surface);
+}
+
+.sidera-faq {
+  inline-size: 100%;
+  min-block-size: calc(100svh - 4.625rem);
+}
+
+@media (max-width: 63.999rem) {
+  .sidera-faq {
+    min-block-size: calc(100svh - 4.25rem);
+  }
+}

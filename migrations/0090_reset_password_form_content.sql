@@ -1,0 +1,14 @@
+ALTER TABLE ec_site_reset_password ADD COLUMN reset_password_form_heading TEXT;
+ALTER TABLE ec_site_reset_password ADD COLUMN reset_password_form_subheading TEXT;
+ALTER TABLE ec_site_reset_password ADD COLUMN reset_password_password_label TEXT;
+ALTER TABLE ec_site_reset_password ADD COLUMN reset_password_password_placeholder TEXT;
+ALTER TABLE ec_site_reset_password ADD COLUMN reset_password_confirm_label TEXT;
+ALTER TABLE ec_site_reset_password ADD COLUMN reset_password_confirm_placeholder TEXT;
+ALTER TABLE ec_site_reset_password ADD COLUMN reset_password_password_hint TEXT;
+ALTER TABLE ec_site_reset_password ADD COLUMN reset_password_submit_label TEXT;
+ALTER TABLE ec_site_reset_password ADD COLUMN reset_password_loading_label TEXT;
+ALTER TABLE ec_site_reset_password ADD COLUMN reset_password_success_label TEXT;
+ALTER TABLE ec_site_reset_password ADD COLUMN reset_password_mismatch_label TEXT;
+ALTER TABLE ec_site_reset_password ADD COLUMN reset_password_invalid_password_label TEXT;
+ALTER TABLE ec_site_reset_password ADD COLUMN reset_password_login_prompt TEXT;
+ALTER TABLE ec_site_reset_password ADD COLUMN reset_password_login_label TEXT;

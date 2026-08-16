@@ -1,0 +1,46 @@
+---
+import type { SupportedLocale } from "../../../data/localization-contract.ts";
+import type { DailyHoroscopePersonalizedCtaCopy } from "../../../data/locale/daily-horoscope/sections/personalized-cta.ts";
+import FinalCtaSection from "../../shared/FinalCtaSection.astro";
+import "../../../styles/daily-horoscope/sections/daily-horoscope-personalized-cta.css";
+
+type EditAttributes = Record<string, string>;
+type PersonalizedCtaField = keyof DailyHoroscopePersonalizedCtaCopy;
+
+type Props = {
+  copy: DailyHoroscopePersonalizedCtaCopy;
+  locale: SupportedLocale;
+  editAttributes?: (field: PersonalizedCtaField) => EditAttributes;
+};
+
+const { copy, locale, editAttributes = () => ({}) } = Astro.props as Props;
+const title = `${copy.titleLead} ${copy.titleAccent} ${copy.titleRest}`;
+---
+
+<FinalCtaSection
+  id="daily-horoscope-personalized-cta"
+  class="daily-horoscope-personalized-cta"
+  eyebrow={copy.eyebrow}
+  title={title}
+  description={copy.description}
+  primaryLabel={copy.primaryLabel}
+  primaryHref="/birth-chart"
+  primaryArrow="→"
+  secondaryLabel={copy.secondaryLabel}
+  secondaryHref="/todays-sky"
+  tone="dark"
+  layout="split"
+  surface="panel"
+  ambience
+  locale={locale}
+  eyebrowEditAttributes={editAttributes("eyebrow")}
+  descriptionEditAttributes={editAttributes("description")}
+  primaryEditAttributes={editAttributes("primaryLabel")}
+  secondaryEditAttributes={editAttributes("secondaryLabel")}
+>
+  <Fragment slot="title">
+    <span {...editAttributes("titleLead")}>{copy.titleLead}</span>{" "}
+    <em {...editAttributes("titleAccent")}>{copy.titleAccent}</em>{" "}
+    <span {...editAttributes("titleRest")}>{copy.titleRest}</span>
+  </Fragment>
+</FinalCtaSection>

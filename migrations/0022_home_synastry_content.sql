@@ -1,0 +1,11 @@
+ALTER TABLE ec_site_home_sections ADD COLUMN home_synastry_eyebrow TEXT;
+ALTER TABLE ec_site_home_sections ADD COLUMN home_synastry_title_accent TEXT;
+ALTER TABLE ec_site_home_sections ADD COLUMN home_synastry_title_rest TEXT;
+ALTER TABLE ec_site_home_sections ADD COLUMN home_synastry_description TEXT;
+ALTER TABLE ec_site_home_sections ADD COLUMN home_synastry_primary_cta TEXT;
+ALTER TABLE ec_site_home_sections ADD COLUMN home_synastry_secondary_cta TEXT;
+ALTER TABLE ec_site_home_sections ADD COLUMN home_synastry_person_a_name TEXT;
+ALTER TABLE ec_site_home_sections ADD COLUMN home_synastry_person_a_detail TEXT;
+ALTER TABLE ec_site_home_sections ADD COLUMN home_synastry_person_b_name TEXT;
+ALTER TABLE ec_site_home_sections ADD COLUMN home_synastry_person_b_detail TEXT;
+ALTER TABLE ec_site_home_sections ADD COLUMN home_synastry_resonance TEXT;

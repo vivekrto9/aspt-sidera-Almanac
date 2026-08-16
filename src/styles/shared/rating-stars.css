@@ -1,0 +1,112 @@
+.sidera-rating-stars {
+  --rating-stars-color: var(--color-primary-soft);
+  --rating-stars-empty-color: rgba(176, 122, 60, 0.34);
+  --rating-stars-focus-ring: rgba(var(--color-primary-rgb), 0.22);
+
+  max-inline-size: 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.125rem;
+  color: var(--rating-stars-color);
+  font-family: Georgia, "Times New Roman", serif;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.sidera-rating-stars--compact {
+  gap: 0.0625rem;
+  font-size: 0.75rem;
+}
+
+.sidera-rating-stars--standard {
+  font-size: 0.875rem;
+}
+
+.sidera-rating-stars--large {
+  gap: 0.25rem;
+  font-size: 2.125rem;
+}
+
+.sidera-rating-stars--inverse {
+  --rating-stars-color: var(--color-primary-soft);
+  --rating-stars-empty-color: rgba(240, 230, 214, 0.28);
+  --rating-stars-focus-ring: rgba(240, 230, 214, 0.34);
+}
+
+.sidera-rating-stars__symbol {
+  display: block;
+  flex: none;
+}
+
+.sidera-rating-stars__symbol--empty {
+  color: var(--rating-stars-empty-color);
+}
+
+.sidera-rating-stars--interactive {
+  gap: 0.125rem;
+}
+
+.sidera-rating-stars__choice {
+  min-inline-size: 2.75rem;
+  min-block-size: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: var(--rating-stars-empty-color);
+  cursor: pointer;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease,
+    transform 150ms ease;
+}
+
+.sidera-rating-stars__input {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.sidera-rating-stars__choice:has(input:checked),
+.sidera-rating-stars__choice:has(~ .sidera-rating-stars__choice input:checked) {
+  color: var(--rating-stars-color);
+}
+
+.sidera-rating-stars--interactive:not(.sidera-rating-stars--disabled)
+  .sidera-rating-stars__choice:hover,
+.sidera-rating-stars--interactive:not(.sidera-rating-stars--disabled)
+  .sidera-rating-stars__choice:has(~ .sidera-rating-stars__choice:hover) {
+  background: color-mix(in srgb, currentColor 10%, transparent);
+  color: var(--rating-stars-color);
+  transform: translateY(-0.0625rem);
+}
+
+.sidera-rating-stars__choice:focus-within {
+  outline: 0.1875rem solid var(--rating-stars-focus-ring);
+  outline-offset: 0.0625rem;
+}
+
+.sidera-rating-stars--disabled {
+  opacity: 0.48;
+}
+
+.sidera-rating-stars--disabled .sidera-rating-stars__choice {
+  cursor: not-allowed;
+}
+
+@media (max-width: 40rem) {
+  .sidera-rating-stars--interactive {
+    inline-size: min(100%, 18rem);
+    justify-content: space-between;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidera-rating-stars__choice {
+    transition: none;
+  }
+}

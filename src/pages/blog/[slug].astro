@@ -1,0 +1,249 @@
+---
+import type { BuilderEditAttributes } from "../../builder/builder.ts";
+import { loadPublicPageContent } from "../../builder/public-page.ts";
+import BlogArticleBody from "../../components/blog/sections/BlogArticleBody.astro";
+import BlogArticleHeader from "../../components/blog/sections/BlogArticleHeader.astro";
+import BlogRelatedArticles from "../../components/blog/sections/BlogRelatedArticles.astro";
+import Footer from "../../components/shared/Footer.astro";
+import Header from "../../components/shared/Header.astro";
+import {
+  blogArticleBodyKinds,
+  blogArticles,
+} from "../../data/blog/articles.ts";
+import { getBlogPost, listBlogPosts } from "../../data/blog/posts.ts";
+import {
+  activeLocales,
+  defaultLocale,
+  localizePath,
+  type SupportedLocale,
+} from "../../data/localization-contract.ts";
+import { createSharedFooterProps } from "../../data/shared-footer-navigation.ts";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import "../../styles/blog/blog.css";
+
+export const prerender = false;
+
+const {
+  locale,
+  content,
+  builder,
+  builderPage,
+  chromePage,
+  reviewTargets,
+  builderEdit,
+  chromeEdit,
+} = await loadPublicPageContent(Astro, "blog");
+
+const slug = Astro.params.slug ?? "";
+const article = blogArticles.find((item) => item.slug === slug);
+if (!article) {
+  return Astro.redirect(localizePath("/blog", locale));
+}
+
+const dynamicPost = await getBlogPost(article.slug, locale);
+const dynamicPosts = dynamicPost ? await listBlogPosts(locale) : [];
+const dynamicPostBySlug = new Map(dynamicPosts.map((post) => [post.slug, post]));
+
+const title = dynamicPost?.title ?? content[article.titleField];
+const excerpt = dynamicPost?.excerpt ?? content[article.excerptField];
+const category = dynamicPost?.category ?? content[article.categoryField];
+const author = dynamicPost?.author ?? content[article.authorField];
+const publishedDate = content[article.dateField];
+const readTime = dynamicPost?.readTime ?? content[article.readTimeField];
+const bodyFieldPrefix = `blog_article_${article.key.replaceAll("-", "_")}_body_`;
+const staticBodyBlocks = blogArticleBodyKinds[article.key].map((kind, index) => {
+  const field = `${bodyFieldPrefix}${index + 1}`;
+  return {
+    kind,
+    field,
+    text: content[field],
+  };
+});
+const bodyBlocks = dynamicPost?.blocks.length
+  ? dynamicPost.blocks.map((block, index) => ({ ...block, field: `${bodyFieldPrefix}${index + 1}` }))
+  : staticBodyBlocks;
+const relatedDefinitions = dynamicPost?.relatedSlugs.length
+  ? dynamicPost.relatedSlugs
+      .map((relatedSlug) => blogArticles.find((item) => item.slug === relatedSlug))
+      .filter((item): item is (typeof blogArticles)[number] => Boolean(item))
+      .slice(0, 3)
+  : blogArticles.filter((item) => item.key !== article.key).slice(0, 3);
+const relatedArticles = relatedDefinitions
+  .map((item) => ({
+    ...item,
+    image: dynamicPostBySlug.get(item.slug)?.image ?? item.image,
+    category: dynamicPostBySlug.get(item.slug)?.category ?? content[item.categoryField],
+    title: dynamicPostBySlug.get(item.slug)?.title ?? content[item.titleField],
+    href: localizePath(`/blog/${item.slug}`, locale),
+  }));
+const articleEditAttributes = (field: string) =>
+  dynamicPost && ![
+    "blog_article_back_label",
+    "blog_article_author_bio",
+    "blog_related_title",
+    article.dateField,
+  ].includes(field)
+    ? {}
+    : componentEditAttributes(builderEdit(field));
+const seoContent = {
+  seo_title: `${title} | Sidera`,
+  seo_description: excerpt,
+  seo_canonical_path: `/blog/${article.slug}`,
+  seo_robots: "index,follow",
+  og_title: title,
+  og_description: excerpt,
+  og_image: content.og_image,
+  og_image_alt: title,
+  twitter_card: content.twitter_card,
+  twitter_title: title,
+  twitter_description: excerpt,
+  twitter_image: content.twitter_image,
+};
+
+const componentEditAttributes = (
+  attributes: BuilderEditAttributes,
+): Record<string, string> =>
+  Object.fromEntries(
+    Object.entries(attributes)
+      .filter((entry): entry is [string, string | true] => entry[1] !== undefined)
+      .map(([key, value]) => [key, value === true ? "true" : value]),
+  );
+
+const localeHref = (targetLocale: SupportedLocale) => {
+  const url = new URL(Astro.request.url);
+  if (targetLocale === defaultLocale) {
+    if (locale === defaultLocale) url.searchParams.delete("locale");
+    else url.searchParams.set("locale", defaultLocale);
+  } else {
+    url.searchParams.set("locale", targetLocale);
+  }
+  return `${url.pathname}${url.search}${url.hash}`;
+};
+
+const navigationDefinitions = [
+  ["nav_todays_sky", "/todays-sky"],
+  ["nav_charts", "/birth-chart"],
+  ["nav_compatibility", "/synastry"],
+  ["nav_moon", "/moon-calendar"],
+  ["nav_horoscope", "/daily-horoscope"],
+  ["nav_astrologers", "/astrologers"],
+  ["nav_blog", "/blog"],
+] as const;
+const navigation = navigationDefinitions.map(([field, path]) => ({
+  label: content[field],
+  href: localizePath(path, locale),
+  current: path === "/blog",
+  editAttributes: componentEditAttributes(chromeEdit(field)),
+}));
+const actions = [
+  {
+    id: "sign-in",
+    label: content.action_sign_in,
+    href: localizePath("/login", locale),
+    variant: "ghost" as const,
+    editAttributes: componentEditAttributes(chromeEdit("action_sign_in")),
+  },
+  {
+    id: "get-chart",
+    label: content.action_get_chart,
+    href: localizePath("/birth-chart", locale),
+    variant: "primary" as const,
+    editAttributes: componentEditAttributes(chromeEdit("action_get_chart")),
+  },
+];
+const languageOptions = activeLocales.map((item) => {
+  const field = `language_option_${item.code}_label`;
+  return {
+    code: item.code,
+    label: content[field] || item.nativeName,
+    href: localeHref(item.code),
+    lang: item.code,
+    hreflang: item.hreflang,
+    editAttributes: componentEditAttributes(chromeEdit(field)),
+  };
+});
+const footerProps = createSharedFooterProps({
+  content,
+  locale,
+  editAttributes: (field) => componentEditAttributes(chromeEdit(field)),
+});
+---
+
+<BaseLayout
+  seo={seoContent}
+  bodyClass="sidera-blog-body"
+  builderToolbar={{
+    launcherEnabled: builder.launcherEnabled,
+    studioModeEnabled: builder.studioModeEnabled,
+    collection: builder.collection,
+    entry: builder.entry,
+    locale: builder.locale,
+    csrfToken: builder.csrfToken,
+    canPublish: builder.canPublish,
+    seo: seoContent,
+    hasSavedDraft: builderPage.hasSavedDraft || chromePage.hasSavedDraft,
+    reviewTargets,
+  }}
+>
+  <Header
+    id="blog-article-site-header"
+    brandLabel={content.brand_name}
+    brandHref={localizePath("/", locale)}
+    brandAriaLabel={content.brand_aria_label}
+    navigationLabel={content.primary_navigation_label}
+    chromeNavigation={{ content, edit: chromeEdit }}
+    navigation={navigation}
+    actions={actions}
+    language={{
+      activeLocale: locale,
+      options: languageOptions,
+      triggerLabel: content.language_trigger_label,
+      menuLabel: content.language_menu_label,
+    }}
+    mobileUtilityActionId="sign-in"
+    menuLabel={content.menu_open_label}
+    closeMenuLabel={content.menu_close_label}
+    brandEditAttributes={componentEditAttributes(chromeEdit("brand_name"))}
+  />
+
+  <main class="sidera-blog">
+    <BlogArticleHeader
+      backHref={localizePath("/blog", locale)}
+      backLabel={content.blog_article_back_label}
+      {category}
+      {title}
+      {author}
+      {publishedDate}
+      {readTime}
+      glyph={article.glyph}
+      coverTone={article.coverTone}
+      coverSrc={(dynamicPost?.image ?? article.image).src}
+      coverAlt={(dynamicPost?.image ?? article.image).alt}
+      coverWidth={(dynamicPost?.image ?? article.image).width}
+      coverHeight={(dynamicPost?.image ?? article.image).height}
+      fields={{
+        category: article.categoryField,
+        title: article.titleField,
+        author: article.authorField,
+        publishedDate: article.dateField,
+        readTime: article.readTimeField,
+      }}
+      editAttributes={articleEditAttributes}
+    />
+    <BlogArticleBody
+      {title}
+      blocks={bodyBlocks}
+      {author}
+      authorField={article.authorField}
+      authorBio={content.blog_article_author_bio}
+      editAttributes={articleEditAttributes}
+    />
+    <BlogRelatedArticles
+      title={content.blog_related_title}
+      articles={relatedArticles}
+      editAttributes={articleEditAttributes}
+    />
+  </main>
+
+  <Footer {...footerProps} />
+</BaseLayout>

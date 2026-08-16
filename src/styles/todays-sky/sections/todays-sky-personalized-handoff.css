@@ -1,0 +1,63 @@
+.todays-sky-personalized-handoff {
+  --sidera-final-cta-background: var(--color-dark);
+  --sidera-final-cta-color: #f3f8f5;
+  --sidera-final-cta-accent: #9ec4b3;
+  --sidera-final-cta-muted: #bcd3c9;
+
+  inline-size: min(100% - 4.25rem, 73.75rem);
+  margin: 1.625rem auto 3.75rem;
+  box-shadow: none;
+}
+
+.todays-sky-personalized-handoff.sidera-final-cta--split
+  .sidera-final-cta__inner {
+  gap: clamp(1.5rem, 4vw, 3rem);
+  padding: 2.625rem 2.5rem;
+}
+
+.todays-sky-personalized-handoff.sidera-final-cta--split
+  .sidera-section-heading {
+  max-inline-size: 35rem;
+}
+
+.todays-sky-personalized-handoff.sidera-final-cta--split
+  .sidera-section-heading__title {
+  font-size: clamp(1.75rem, 3.4vw, 2.5rem);
+}
+
+.todays-sky-personalized-handoff.sidera-final-cta--split:not(
+    .sidera-final-cta--with-visual
+  )
+  .sidera-final-cta__actions {
+  min-inline-size: min(100%, 13.5rem);
+}
+
+.todays-sky-personalized-handoff .sidera-final-cta__actions .sidera-button {
+  justify-content: center;
+}
+
+@media (max-width: 42rem) {
+  .todays-sky-personalized-handoff {
+    inline-size: min(100% - 2rem, 73.75rem);
+    margin-block: 1.25rem 2rem;
+  }
+
+  .todays-sky-personalized-handoff.sidera-final-cta--split
+    .sidera-final-cta__inner {
+    padding: 2rem 1.25rem;
+  }
+
+  .todays-sky-personalized-handoff.sidera-final-cta--split:not(
+      .sidera-final-cta--with-visual
+    )
+    .sidera-final-cta__actions {
+    inline-size: 100%;
+    margin-block-start: 0;
+  }
+}
+
+@media (forced-colors: active) {
+  .todays-sky-personalized-handoff {
+    border: 1px solid CanvasText;
+  }
+}

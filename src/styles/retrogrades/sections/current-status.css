@@ -1,0 +1,114 @@
+.retrogrades-current-status {
+  inline-size: 100%;
+  padding: 2.5rem 2.125rem 1.875rem;
+  background: var(--color-surface);
+}
+
+.retrogrades-current-status__grid.sidera-card-grid {
+  --sidera-card-grid-gap: 1.125rem;
+
+  max-inline-size: 70rem;
+  margin-inline: auto;
+}
+
+.retrogrades-current-status__card {
+  min-inline-size: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(240, 230, 214, 0.14);
+  border-radius: 1.125rem;
+  padding: 1.5rem;
+  background: var(--color-dark-strong);
+  color: var(--color-surface);
+}
+
+.retrogrades-current-status__topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.retrogrades-current-status__glyph {
+  flex: none;
+  color: var(--color-primary-soft);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 2.125rem;
+  line-height: 1;
+}
+
+.retrogrades-current-status__badge {
+  padding: 0.25rem 0.625rem;
+}
+
+.retrogrades-current-status__title {
+  max-inline-size: none;
+  margin: 0.875rem 0 0;
+  color: var(--color-surface);
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  font-weight: 400;
+  line-height: 1.15;
+}
+
+.retrogrades-current-status__position {
+  margin: 0.125rem 0 0;
+  color: var(--color-line);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
+.retrogrades-current-status__description {
+  margin: 0.875rem 0 0;
+  color: var(--color-muted-soft);
+  font-size: 0.78125rem;
+  line-height: 1.5;
+}
+
+.retrogrades-current-status__dates {
+  min-inline-size: 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-block-start: 1rem;
+  padding-block-start: 0.875rem;
+  border-block-start: 1px solid rgba(240, 230, 214, 0.14);
+  color: #a68a76;
+  font-size: 0.71875rem;
+  line-height: 1.4;
+}
+
+.retrogrades-current-status__period {
+  color: var(--color-primary-soft);
+  font-weight: 600;
+}
+
+.retrogrades-current-status__shadow {
+  text-align: end;
+}
+
+@media (max-width: 42rem) {
+  .retrogrades-current-status {
+    padding: 2.25rem 1.25rem 2.5rem;
+  }
+
+  .retrogrades-current-status__card {
+    padding: 1.25rem;
+  }
+}
+
+@media (max-width: 24rem) {
+  .retrogrades-current-status__dates {
+    flex-direction: column;
+  }
+
+  .retrogrades-current-status__shadow {
+    text-align: start;
+  }
+}
+
+@media (forced-colors: active) {
+  .retrogrades-current-status__card {
+    border-color: CanvasText;
+  }
+}

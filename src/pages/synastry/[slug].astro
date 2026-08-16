@@ -1,0 +1,204 @@
+---
+import type { BuilderEditAttributes } from "../../builder/builder.ts";
+import { loadPublicPageContent } from "../../builder/public-page.ts";
+import Footer from "../../components/shared/Footer.astro";
+import Header from "../../components/shared/Header.astro";
+import SynastryRelationshipReportHandoff from "../../components/synastry/sections/SynastryRelationshipReportHandoff.astro";
+import SynastryResults from "../../components/synastry/sections/SynastryResults.astro";
+import type { SynastryRelationshipReportHandoffCopy } from "../../data/locale/synastry/sections/relationship-report-handoff.ts";
+import type { SynastryResultsCopy } from "../../data/locale/synastry/sections/results.ts";
+import {
+  activeLocales,
+  defaultLocale,
+  localizePath,
+  type SupportedLocale,
+} from "../../data/localization-contract.ts";
+import { createSharedFooterProps } from "../../data/shared-footer-navigation.ts";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getSynastryReading } from "../../server/aggregator/synastry-api.ts";
+import { getRuntimeEnv } from "../../server/generated-site/request.ts";
+import "../../styles/synastry/synastry.css";
+
+export const prerender = false;
+
+const {
+  locale,
+  content,
+  builder,
+  builderPage,
+  chromePage,
+  reviewTargets,
+  builderEdit,
+  chromeEdit,
+} = await loadPublicPageContent(Astro, "synastry");
+const slug = Astro.params.slug;
+const reading = slug
+  ? await getSynastryReading({ env: await getRuntimeEnv(Astro), request: Astro.request, readingId: slug })
+  : null;
+if (!reading) return Astro.redirect(localizePath("/synastry", locale), 302);
+const preparedResult = reading.result;
+
+const seoContent = {
+  seo_title: `${preparedResult.personA.name} & ${preparedResult.personB.name} · ${content.seo_title}`,
+  seo_description: content.seo_description,
+  seo_canonical_path: `/synastry/${slug}`,
+  seo_robots: "noindex,nofollow",
+  og_title: `${preparedResult.personA.name} & ${preparedResult.personB.name} · ${content.og_title}`,
+  og_description: content.og_description,
+  og_image: content.og_image,
+  og_image_alt: content.og_image_alt,
+  twitter_card: content.twitter_card,
+  twitter_title: `${preparedResult.personA.name} & ${preparedResult.personB.name} · ${content.twitter_title}`,
+  twitter_description: content.twitter_description,
+  twitter_image: content.twitter_image,
+};
+const componentEditAttributes = (
+  attributes: BuilderEditAttributes,
+): Record<string, string> =>
+  Object.fromEntries(
+    Object.entries(attributes)
+      .filter((entry): entry is [string, string | true] => entry[1] !== undefined)
+      .map(([key, value]) => [key, value === true ? "true" : value]),
+  );
+const localeHref = (targetLocale: SupportedLocale) => {
+  const url = new URL(Astro.request.url);
+  if (targetLocale === defaultLocale) {
+    if (locale === defaultLocale) {
+      url.searchParams.delete("locale");
+    } else {
+      url.searchParams.set("locale", defaultLocale);
+    }
+  } else {
+    url.searchParams.set("locale", targetLocale);
+  }
+  return `${url.pathname}${url.search}${url.hash}`;
+};
+const homeHref = localizePath("/", locale);
+const navigation = [
+  {
+    label: content.nav_todays_sky,
+    href: localizePath("/todays-sky", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_todays_sky")),
+  },
+  {
+    label: content.nav_charts,
+    href: `${homeHref}#birth-chart`,
+    editAttributes: componentEditAttributes(chromeEdit("nav_charts")),
+  },
+  {
+    label: content.nav_compatibility,
+    href: localizePath("/synastry", locale),
+    current: true,
+    editAttributes: componentEditAttributes(chromeEdit("nav_compatibility")),
+  },
+  {
+    label: content.nav_moon,
+    href: localizePath("/moon-calendar", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_moon")),
+  },
+  {
+    label: content.nav_horoscope,
+    href: localizePath("/daily-horoscope", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_horoscope")),
+  },
+  {
+    label: content.nav_astrologers,
+    href: localizePath("/astrologers", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_astrologers")),
+  },
+  {
+    label: content.nav_blog,
+    href: `${homeHref}#blog`,
+    editAttributes: componentEditAttributes(chromeEdit("nav_blog")),
+  },
+];
+const actions = [
+  {
+    id: "sign-in",
+    label: content.action_sign_in,
+    href: localizePath("/login", locale),
+    variant: "ghost" as const,
+    editAttributes: componentEditAttributes(chromeEdit("action_sign_in")),
+  },
+  {
+    id: "get-chart",
+    label: content.action_get_chart,
+    href: localizePath("/birth-chart", locale),
+    variant: "primary" as const,
+    editAttributes: componentEditAttributes(chromeEdit("action_get_chart")),
+  },
+];
+const languageOptions = activeLocales.map((item) => {
+  const field = `language_option_${item.code}_label`;
+  return {
+    code: item.code,
+    label: content[field] || item.nativeName,
+    href: localeHref(item.code),
+    lang: item.code,
+    hreflang: item.hreflang,
+    editAttributes: componentEditAttributes(chromeEdit(field)),
+  };
+});
+type SynastryResultPageCopy =
+  & SynastryResultsCopy
+  & SynastryRelationshipReportHandoffCopy;
+const footerProps = createSharedFooterProps({
+  content,
+  locale,
+  editAttributes: (field) => componentEditAttributes(chromeEdit(field)),
+});
+---
+
+<BaseLayout
+  seo={seoContent}
+  bodyClass="synastry-body"
+  builderToolbar={{
+    launcherEnabled: builder.launcherEnabled,
+    studioModeEnabled: builder.studioModeEnabled,
+    collection: builder.collection,
+    entry: builder.entry,
+    locale: builder.locale,
+    csrfToken: builder.csrfToken,
+    canPublish: builder.canPublish,
+    seo: seoContent,
+    hasSavedDraft: builderPage.hasSavedDraft || chromePage.hasSavedDraft,
+    reviewTargets,
+  }}
+>
+  <Header
+    id="synastry-result-header"
+    brandLabel={content.brand_name}
+    brandHref={localizePath("/", locale)}
+    brandAriaLabel={content.brand_aria_label}
+    navigationLabel={content.primary_navigation_label}
+    chromeNavigation={{ content, edit: chromeEdit }}
+    navigation={navigation}
+    actions={actions}
+    language={{
+      activeLocale: locale,
+      options: languageOptions,
+      triggerLabel: content.language_trigger_label,
+      menuLabel: content.language_menu_label,
+    }}
+    mobileUtilityActionId="sign-in"
+    menuLabel={content.menu_open_label}
+    closeMenuLabel={content.menu_close_label}
+    brandEditAttributes={componentEditAttributes(chromeEdit("brand_name"))}
+  />
+
+  <main class="synastry-main">
+    <SynastryResults
+      copy={content as SynastryResultPageCopy}
+      result={preparedResult}
+      editAttributes={(field) =>
+        componentEditAttributes(builderEdit(field))}
+    />
+    <SynastryRelationshipReportHandoff
+      copy={content as SynastryResultPageCopy}
+      locale={locale}
+      editAttributes={(field) =>
+        componentEditAttributes(builderEdit(field))}
+    />
+  </main>
+  <Footer {...footerProps} />
+</BaseLayout>

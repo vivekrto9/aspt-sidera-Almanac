@@ -1,0 +1,125 @@
+.sidera-pagination {
+  inline-size: max-content;
+  max-inline-size: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  margin: 2rem auto 0;
+}
+
+.sidera-pagination__pages {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sidera-pagination__page {
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--color-text);
+  font:
+    600 0.8125rem / 1 var(--font-sans),
+    system-ui,
+    sans-serif;
+  text-decoration: none;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.sidera-pagination__page:not(.sidera-pagination__page--current):hover {
+  background: rgba(var(--color-text-rgb), 0.07);
+  color: var(--color-primary);
+}
+
+.sidera-pagination__page--current {
+  background: var(--color-dark);
+  color: var(--color-surface);
+}
+
+.sidera-pagination__ellipsis {
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+  display: grid;
+  place-items: center;
+  color: var(--color-muted);
+  font-weight: 600;
+}
+
+.sidera-pagination__direction {
+  --sidera-button-inline-padding: 0;
+
+  inline-size: 2.5rem;
+  min-inline-size: 2.5rem;
+  padding: 0;
+}
+
+.sidera-pagination__direction .sidera-button__label {
+  inline-size: 100%;
+  block-size: 100%;
+  display: grid;
+  place-items: center;
+  line-height: 0;
+}
+
+.sidera-pagination__direction svg {
+  inline-size: 1.125rem;
+  block-size: 1.125rem;
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.75;
+}
+
+.sidera-pagination__page:focus-visible {
+  outline: 0.1875rem solid rgba(var(--color-primary-rgb), 0.45);
+  outline-offset: 0.125rem;
+}
+
+@media (max-width: 40rem) {
+  .sidera-pagination,
+  .sidera-pagination__pages {
+    gap: 0.25rem;
+  }
+}
+
+@view-transition {
+  navigation: auto;
+}
+
+::view-transition-old(account-collection) {
+  animation: sidera-pagination-exit 140ms ease both;
+}
+
+::view-transition-new(account-collection) {
+  animation: sidera-pagination-enter 200ms ease both;
+}
+
+@keyframes sidera-pagination-exit {
+  to { opacity: 0; transform: translateY(-0.25rem); }
+}
+
+@keyframes sidera-pagination-enter {
+  from { opacity: 0; transform: translateY(0.375rem); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidera-pagination__page {
+    transition: none;
+  }
+
+  ::view-transition-old(account-collection),
+  ::view-transition-new(account-collection) {
+    animation: none;
+  }
+}

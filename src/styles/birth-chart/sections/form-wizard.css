@@ -1,0 +1,364 @@
+.birth-chart-wizard {
+  min-block-size: calc(100svh - 4.625rem);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+.birth-chart-wizard__layout {
+  min-block-size: calc(100svh - 4.625rem);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.birth-chart-wizard__story {
+  position: relative;
+  min-inline-size: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: clamp(2.5rem, 5vw, 3.5rem);
+  background: var(--color-dark-strong);
+  color: var(--color-surface);
+}
+
+.birth-chart-wizard__story::before {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 14% 22%, rgba(240, 230, 214, 0.42) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 78% 18%, rgba(214, 154, 106, 0.5) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 66% 72%, rgba(240, 230, 214, 0.34) 0 1px, transparent 1.5px);
+  background-size: 8rem 9rem, 11rem 10rem, 9rem 12rem;
+  content: "";
+  pointer-events: none;
+}
+
+.birth-chart-wizard__story-copy,
+.birth-chart-wizard__wheel,
+.birth-chart-wizard__steps {
+  position: relative;
+  z-index: 1;
+}
+
+.birth-chart-wizard__eyebrow {
+  margin: 0;
+  color: var(--color-primary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.17em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.birth-chart-wizard__story .birth-chart-wizard__eyebrow {
+  color: var(--color-primary-soft);
+}
+
+.birth-chart-wizard__story h1 {
+  max-inline-size: 100%;
+  margin: 1rem 0 0;
+  color: var(--color-surface-soft);
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: clamp(2.5rem, 5vw, 3.5rem);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  line-height: 1.02;
+}
+
+.birth-chart-wizard__story h1 em {
+  color: var(--color-primary-soft);
+  font-weight: 400;
+}
+
+.birth-chart-wizard__story-copy > p:last-child {
+  max-inline-size: 100%;
+  margin: 1.125rem 0 0;
+  color: var(--color-muted-soft);
+  font-size: 0.9375rem;
+  line-height: 1.65;
+}
+
+.birth-chart-wizard__wheel {
+  inline-size: min(18.75rem, 80%);
+  margin: 1rem auto;
+}
+
+.birth-chart-wizard__wheel svg {
+  display: block;
+  inline-size: 100%;
+  overflow: visible;
+}
+
+.birth-chart-wizard__wheel-ring {
+  transform-origin: 160px 160px;
+}
+
+.birth-chart-wizard__wheel-ring circle,
+.birth-chart-wizard__wheel-inner {
+  fill: none;
+  stroke: rgba(240, 230, 214, 0.17);
+}
+
+.birth-chart-wizard__wheel-ring text {
+  fill: rgba(214, 154, 106, 0.88);
+  font-family: Georgia, serif;
+  font-size: 1.0625rem;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+.birth-chart-wizard__wheel-inner {
+  stroke: rgba(240, 230, 214, 0.13);
+}
+
+.birth-chart-wizard__wheel-core {
+  fill: var(--color-dark);
+  stroke: rgba(240, 230, 214, 0.2);
+}
+
+.birth-chart-wizard__wheel-mark {
+  fill: var(--color-surface);
+  font-family: Georgia, serif;
+  font-size: 1.625rem;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+.birth-chart-wizard__steps {
+  display: grid;
+  gap: 0.125rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.birth-chart-wizard__steps li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0;
+  color: #a68a76;
+  opacity: 0.58;
+  transition: opacity 160ms ease;
+}
+
+.birth-chart-wizard__steps li[data-active="true"] {
+  opacity: 1;
+}
+
+.birth-chart-wizard__step-badge {
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(240, 230, 214, 0.24);
+  border-radius: 50%;
+  font-size: 0.75rem;
+}
+
+.birth-chart-wizard__steps li[data-active="true"] .birth-chart-wizard__step-badge {
+  border-color: var(--color-primary-soft);
+  background: var(--color-primary-soft);
+  color: var(--color-dark-strong);
+}
+
+.birth-chart-wizard__steps strong,
+.birth-chart-wizard__steps small {
+  display: block;
+}
+
+.birth-chart-wizard__steps strong {
+  color: var(--color-surface);
+  font-size: 0.8125rem;
+}
+
+.birth-chart-wizard__steps small {
+  margin-block-start: 0.125rem;
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+
+.birth-chart-wizard__form-panel {
+  min-inline-size: 0;
+  display: grid;
+  place-items: center;
+  padding: clamp(2rem, 5vw, 3.5rem) clamp(1.25rem, 4vw, 3rem);
+}
+
+.birth-chart-wizard__form {
+  inline-size: min(100%, 27rem);
+}
+
+.birth-chart-wizard__form-step[hidden] {
+  display: none;
+}
+
+.birth-chart-wizard__form-step h2 {
+  margin: 0.75rem 0 0;
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: clamp(2rem, 4vw, 2.375rem);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  line-height: 1.05;
+}
+
+.birth-chart-wizard__step-copy {
+  margin: 0.75rem 0 1.875rem;
+  color: var(--color-muted);
+  font-size: 0.90625rem;
+  line-height: 1.55;
+}
+
+.birth-chart-wizard__form-step {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.birth-chart-wizard__form-step > .step-progress {
+  margin-block-end: -0.625rem;
+}
+
+.birth-chart-wizard__form-step > .sidera-form-field,
+.birth-chart-wizard__form-step > .sidera-date-selector,
+.birth-chart-wizard__form-step > .sidera-time-selector,
+.birth-chart-wizard__form-step > .sidera-location-autocomplete {
+  margin: 0;
+}
+
+.birth-chart-wizard__status {
+  min-block-size: 1.25rem;
+  margin: 1rem 0 0;
+  color: var(--color-primary-strong);
+  font-size: 0.78125rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.birth-chart-wizard__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  margin-block-start: 1rem;
+}
+
+.birth-chart-wizard__actions [data-wizard-back-wrap][hidden] {
+  display: none;
+}
+
+.birth-chart-wizard__actions [data-wizard-back-wrap] {
+  flex: none;
+}
+
+.birth-chart-wizard__actions .birth-chart-wizard__next {
+  flex: 1;
+}
+
+.birth-chart-wizard__actions .birth-chart-wizard__next[hidden],
+.birth-chart-wizard__actions [data-wizard-cast-wrap][hidden] {
+  display: none;
+}
+
+.birth-chart-wizard__cast-wrap {
+  flex: 1;
+}
+
+.birth-chart-wizard__cast-wrap .sidera-button {
+  inline-size: 100%;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .birth-chart-wizard__wheel-ring {
+    animation: birth-chart-wheel-spin 160s linear infinite;
+  }
+
+  .birth-chart-wizard__form-step:not([hidden]) {
+    animation: birth-chart-step-in 220ms ease both;
+  }
+}
+
+@keyframes birth-chart-wheel-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes birth-chart-step-in {
+  from { opacity: 0; transform: translateY(0.5rem); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 50rem) {
+  .birth-chart-wizard,
+  .birth-chart-wizard__layout {
+    min-block-size: calc(100svh - 4.25rem);
+  }
+
+  .birth-chart-wizard__layout {
+    grid-template-columns: 1fr;
+  }
+
+  .birth-chart-wizard__story {
+    min-block-size: auto;
+    gap: 1.75rem;
+    padding: 2.25rem clamp(1.25rem, 6vw, 2.5rem);
+  }
+
+  .birth-chart-wizard__wheel {
+    display: none;
+  }
+
+  .birth-chart-wizard__steps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+
+  .birth-chart-wizard__steps li {
+    align-items: flex-start;
+  }
+
+  .birth-chart-wizard__steps small {
+    display: none;
+  }
+}
+
+@media (max-width: 35rem) {
+  .birth-chart-wizard__story {
+    padding-block: 1.75rem;
+  }
+
+  .birth-chart-wizard__story h1 {
+    font-size: 2.375rem;
+  }
+
+  .birth-chart-wizard__story-copy > p:last-child {
+    display: none;
+  }
+
+  .birth-chart-wizard__steps li {
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .birth-chart-wizard__steps strong {
+    font-size: 0.75rem;
+    hyphens: auto;
+  }
+
+  .birth-chart-wizard__form-panel {
+    padding-block: 2.25rem 3rem;
+  }
+
+  .birth-chart-wizard__actions {
+    align-items: stretch;
+  }
+}
+
+@media (forced-colors: active) {
+  .birth-chart-wizard__story,
+  .birth-chart-wizard__step-badge,
+  .birth-chart-wizard__wheel circle {
+    border-color: CanvasText;
+    forced-color-adjust: auto;
+  }
+}

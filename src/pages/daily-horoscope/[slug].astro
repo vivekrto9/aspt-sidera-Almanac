@@ -1,0 +1,350 @@
+---
+import type { BuilderEditAttributes } from "../../builder/builder.ts";
+import { loadPublicPageContent } from "../../builder/public-page.ts";
+import DailyHoroscopePersonalizedCta from "../../components/daily-horoscope/sections/DailyHoroscopePersonalizedCta.astro";
+import DailyHoroscopeReading from "../../components/daily-horoscope/sections/DailyHoroscopeReading.astro";
+import Footer from "../../components/shared/Footer.astro";
+import Header from "../../components/shared/Header.astro";
+import {
+  getDailyHoroscopeFixture,
+  type DailyHoroscopePeriodId,
+} from "../../data/daily-horoscope/dummy-readings.ts";
+import { getDailyHoroscopeChooseSignCopy } from "../../data/locale/daily-horoscope/sections/choose-sign.ts";
+import { getDailyHoroscopePersonalizedCtaCopy } from "../../data/locale/daily-horoscope/sections/personalized-cta.ts";
+import { getDailyHoroscopeReadingCopy } from "../../data/locale/daily-horoscope/sections/reading.ts";
+import {
+  activeLocales,
+  defaultLocale,
+  localizePath,
+  type SupportedLocale,
+} from "../../data/localization-contract.ts";
+import { createSharedFooterProps } from "../../data/shared-footer-navigation.ts";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getHoroscopePrediction, type HoroscopePeriod } from "../../server/aggregator/horoscope-api.ts";
+import { getRuntimeEnv } from "../../server/generated-site/request.ts";
+import "../../styles/daily-horoscope/daily-horoscope.css";
+
+export const prerender = false;
+
+const {
+  locale,
+  content,
+  builder,
+  builderPage,
+  chromePage,
+  reviewTargets,
+  builderEdit,
+  chromeEdit,
+} = await loadPublicPageContent(Astro, "daily_horoscope");
+
+const slug = Astro.params.slug ?? "";
+const fixture = getDailyHoroscopeFixture(slug);
+const localizedSignDefaults = getDailyHoroscopeChooseSignCopy(locale).signs;
+
+if (!fixture) {
+  return Astro.redirect(localizePath("/daily-horoscope", locale), 302);
+}
+
+const componentEditAttributes = (
+  attributes: BuilderEditAttributes,
+): Record<string, string> =>
+  Object.fromEntries(
+    Object.entries(attributes)
+      .filter((entry): entry is [string, string | true] => entry[1] !== undefined)
+      .map(([key, value]) => [key, value === true ? "true" : value]),
+  );
+
+const signs = localizedSignDefaults.map((sign, index) => ({
+  ...sign,
+  name: content[`picker_sign_${index + 1}_name`] || sign.name,
+  dates: content[`picker_sign_${index + 1}_dates`] || sign.dates,
+  element: content[`picker_sign_${index + 1}_element`] || sign.element,
+}));
+const signIndex = signs.findIndex((sign) => sign.slug === slug);
+const sign = signs[signIndex];
+const previousSign = signs[(signIndex + signs.length - 1) % signs.length];
+const nextSign = signs[(signIndex + 1) % signs.length];
+const sourceCopy = getDailyHoroscopeReadingCopy(locale);
+const sourcePersonalizedCtaCopy =
+  getDailyHoroscopePersonalizedCtaCopy(locale);
+const copy = {
+  ...sourceCopy,
+  breadcrumbLabel:
+    content.reading_breadcrumb_label || sourceCopy.breadcrumbLabel,
+  changeSign: content.reading_change_sign || sourceCopy.changeSign,
+  signLabel: content.reading_sign_label || sourceCopy.signLabel,
+  ruledByLabel: content.reading_ruled_by_label || sourceCopy.ruledByLabel,
+  periods: sourceCopy.periods
+    .filter((period) => ["today", "week", "month"].includes(period.id))
+    .map((period) => ({
+      ...period,
+      label:
+        content[`reading_period_${period.id}_label`] || period.label,
+      overline:
+        content[`reading_period_${period.id}_label`] || period.overline,
+    })),
+  themeLabels: sourceCopy.themeLabels.map(
+    (label, index) => content[`reading_theme_${index + 1}_label`] || label,
+  ) as [string, string, string],
+  themeTexts: sourceCopy.themeTexts.map(
+    (text, index) => content[`reading_theme_${index + 1}_text`] || text,
+  ) as [string, string, string],
+  browseSigns: content.reading_browse_signs || sourceCopy.browseSigns,
+  dayGlance: content.reading_day_glance || sourceCopy.dayGlance,
+  ratingLabels: sourceCopy.ratingLabels.map(
+    (label, index) => content[`reading_rating_${index + 1}_label`] || label,
+  ) as [string, string, string, string],
+  luckyToday: content.reading_lucky_today || sourceCopy.luckyToday,
+  mood: content.reading_mood_label || sourceCopy.mood,
+  number: content.reading_number_label || sourceCopy.number,
+  colour: content.reading_colour_label || sourceCopy.colour,
+  bestMatch: content.reading_best_match_label || sourceCopy.bestMatch,
+  skyBehind: content.reading_sky_behind_label || sourceCopy.skyBehind,
+  fullSky: content.reading_full_sky_label || sourceCopy.fullSky,
+};
+const personalizedCtaCopy = {
+  eyebrow:
+    content.personalized_cta_eyebrow ||
+    sourcePersonalizedCtaCopy.eyebrow,
+  titleLead:
+    content.personalized_cta_title_lead ||
+    sourcePersonalizedCtaCopy.titleLead,
+  titleAccent:
+    content.personalized_cta_title_accent ||
+    sourcePersonalizedCtaCopy.titleAccent,
+  titleRest:
+    content.personalized_cta_title_rest ||
+    sourcePersonalizedCtaCopy.titleRest,
+  description:
+    content.personalized_cta_description ||
+    sourcePersonalizedCtaCopy.description,
+  primaryLabel:
+    content.personalized_cta_primary_label ||
+    sourcePersonalizedCtaCopy.primaryLabel,
+  secondaryLabel:
+    content.personalized_cta_secondary_label ||
+    sourcePersonalizedCtaCopy.secondaryLabel,
+};
+const personalizedCtaFields = {
+  eyebrow: "personalized_cta_eyebrow",
+  titleLead: "personalized_cta_title_lead",
+  titleAccent: "personalized_cta_title_accent",
+  titleRest: "personalized_cta_title_rest",
+  description: "personalized_cta_description",
+  primaryLabel: "personalized_cta_primary_label",
+  secondaryLabel: "personalized_cta_secondary_label",
+} as const;
+const requestedPeriod = new URL(Astro.request.url).searchParams.get("period");
+const validPeriods = new Set<DailyHoroscopePeriodId>(
+  copy.periods.map((period) => period.id),
+);
+const activePeriod: DailyHoroscopePeriodId =
+  requestedPeriod && validPeriods.has(requestedPeriod as DailyHoroscopePeriodId)
+    ? (requestedPeriod as DailyHoroscopePeriodId)
+    : "today";
+const providerPeriod: HoroscopePeriod | null = activePeriod === "today"
+  ? "daily"
+  : activePeriod === "week"
+    ? "weekly"
+    : activePeriod === "month"
+      ? "monthly"
+      : null;
+let providerReading: Awaited<ReturnType<typeof getHoroscopePrediction>> | null = null;
+
+if (providerPeriod) {
+  try {
+    providerReading = await getHoroscopePrediction({
+      env: await getRuntimeEnv(Astro),
+      sign: slug as Parameters<typeof getHoroscopePrediction>[0]["sign"],
+      period: providerPeriod,
+      locale,
+    });
+  } catch (error) {
+    console.error("Daily horoscope provider request failed", error);
+  }
+}
+const preparedFixture = providerReading
+  ? {
+      ...fixture,
+      headlines: { ...fixture.headlines, [activePeriod]: providerReading.headline },
+    }
+  : fixture;
+
+const localeHref = (targetLocale: SupportedLocale) => {
+  const url = new URL(Astro.request.url);
+  if (targetLocale === defaultLocale) {
+    if (locale === defaultLocale) {
+      url.searchParams.delete("locale");
+    } else {
+      url.searchParams.set("locale", defaultLocale);
+    }
+  } else {
+    url.searchParams.set("locale", targetLocale);
+  }
+  return `${url.pathname}${url.search}${url.hash}`;
+};
+
+const navigation = [
+  {
+    label: content.nav_todays_sky,
+    href: localizePath("/todays-sky", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_todays_sky")),
+  },
+  {
+    label: content.nav_charts,
+    href: localizePath("/birth-chart", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_charts")),
+  },
+  {
+    label: content.nav_compatibility,
+    href: localizePath("/synastry", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_compatibility")),
+  },
+  {
+    label: content.nav_moon,
+    href: localizePath("/moon-calendar", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_moon")),
+  },
+  {
+    label: content.nav_horoscope,
+    href: localizePath("/daily-horoscope", locale),
+    current: true,
+    editAttributes: componentEditAttributes(chromeEdit("nav_horoscope")),
+  },
+  {
+    label: content.nav_astrologers,
+    href: localizePath("/astrologers", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_astrologers")),
+  },
+  {
+    label: content.nav_blog,
+    href: localizePath("/blog", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_blog")),
+  },
+];
+
+const actions = [
+  {
+    id: "sign-in",
+    label: content.action_sign_in,
+    href: localizePath("/login", locale),
+    variant: "ghost" as const,
+    editAttributes: componentEditAttributes(chromeEdit("action_sign_in")),
+  },
+  {
+    id: "get-chart",
+    label: content.action_get_chart,
+    href: localizePath("/birth-chart", locale),
+    variant: "primary" as const,
+    editAttributes: componentEditAttributes(chromeEdit("action_get_chart")),
+  },
+];
+
+const languageOptions = activeLocales.map((item) => {
+  const field = `language_option_${item.code}_label`;
+  return {
+    code: item.code,
+    label: content[field] || item.nativeName,
+    href: localeHref(item.code),
+    lang: item.code,
+    hreflang: item.hreflang,
+    editAttributes: componentEditAttributes(chromeEdit(field)),
+  };
+});
+
+const footerProps = createSharedFooterProps({
+  content,
+  locale,
+  editAttributes: (field) => componentEditAttributes(chromeEdit(field)),
+});
+const periodHrefs = Object.fromEntries(
+  copy.periods.map((period) => [
+    period.id,
+    localizePath(`/daily-horoscope/${slug}?period=${period.id}`, locale),
+  ]),
+) as Record<DailyHoroscopePeriodId, string>;
+const seoContent = {
+  seo_title: `${sign.name} Daily Horoscope | Sidera`,
+  seo_description: content.seo_description,
+  seo_canonical_path: `/daily-horoscope/${slug}`,
+  seo_robots: "noindex,nofollow",
+  og_title: `${sign.name} Daily Horoscope | Sidera`,
+  og_description: content.og_description,
+  og_image: content.og_image,
+  og_image_alt: content.og_image_alt,
+  twitter_card: content.twitter_card,
+  twitter_title: `${sign.name} Daily Horoscope | Sidera`,
+  twitter_description: content.twitter_description,
+  twitter_image: content.twitter_image,
+};
+---
+
+<BaseLayout
+  seo={seoContent}
+  bodyClass="daily-horoscope-body"
+  builderToolbar={{
+    launcherEnabled: builder.launcherEnabled,
+    studioModeEnabled: builder.studioModeEnabled,
+    collection: builder.collection,
+    entry: builder.entry,
+    locale: builder.locale,
+    csrfToken: builder.csrfToken,
+    canPublish: builder.canPublish,
+    seo: seoContent,
+    hasSavedDraft: builderPage.hasSavedDraft || chromePage.hasSavedDraft,
+    reviewTargets,
+  }}
+>
+  <Header
+    id="daily-horoscope-reading-header"
+    brandLabel={content.brand_name}
+    brandHref={localizePath("/", locale)}
+    brandAriaLabel={content.brand_aria_label}
+    navigationLabel={content.primary_navigation_label}
+    chromeNavigation={{ content, edit: chromeEdit }}
+    navigation={navigation}
+    actions={actions}
+    language={{
+      activeLocale: locale,
+      options: languageOptions,
+      triggerLabel: content.language_trigger_label,
+      menuLabel: content.language_menu_label,
+    }}
+    mobileUtilityActionId="sign-in"
+    menuLabel={content.menu_open_label}
+    closeMenuLabel={content.menu_close_label}
+    brandEditAttributes={componentEditAttributes(chromeEdit("brand_name"))}
+  />
+
+  <main class="daily-horoscope-page">
+    <DailyHoroscopeReading
+      locale={locale}
+      sign={sign}
+      fixture={preparedFixture}
+      providerSections={providerReading?.sections}
+      providerSource={providerReading?.source}
+      copy={copy}
+      activePeriod={activePeriod}
+      pickerHref={localizePath("/daily-horoscope", locale)}
+      todaySkyHref={localizePath("/todays-sky", locale)}
+      periodHrefs={periodHrefs}
+      previousSign={{
+        ...previousSign,
+        href: localizePath(`/daily-horoscope/${previousSign.slug}`, locale),
+      }}
+      nextSign={{
+        ...nextSign,
+        href: localizePath(`/daily-horoscope/${nextSign.slug}`, locale),
+      }}
+      editAttributes={(field) =>
+        componentEditAttributes(builderEdit(field))}
+    />
+    <DailyHoroscopePersonalizedCta
+      copy={personalizedCtaCopy}
+      locale={locale}
+      editAttributes={(field) =>
+        componentEditAttributes(builderEdit(personalizedCtaFields[field]))}
+    />
+  </main>
+  <Footer {...footerProps} />
+</BaseLayout>

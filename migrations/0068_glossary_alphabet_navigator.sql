@@ -1,0 +1,1 @@
+ALTER TABLE ec_site_glossary ADD COLUMN glossary_alphabet_navigation_label TEXT;

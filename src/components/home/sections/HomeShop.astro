@@ -1,0 +1,80 @@
+---
+import CardGrid from "../../shared/CardGrid.astro";
+import ProductCard from "../../shared/ProductCard.astro";
+import SectionHeading from "../../shared/SectionHeading.astro";
+import type { HomeShopCopy } from "../../../data/locale/home/sections/shop.ts";
+import type { SupportedLocale } from "../../../data/localization-contract.ts";
+import "../../../styles/home/sections/home-shop.css";
+
+type EditAttributes = Record<string, string>;
+
+type Props = {
+  copy: HomeShopCopy;
+  actionHref: string;
+  locale: SupportedLocale;
+  editAttributes?: (field: string) => EditAttributes;
+};
+
+const {
+  copy,
+  actionHref,
+  locale,
+  editAttributes = () => ({}),
+} = Astro.props as Props;
+---
+
+<section class="home-shop" id="shop" aria-labelledby="home-shop-title">
+  <div class="home-shop__inner">
+    <SectionHeading
+      title={`${copy.titleLead} ${copy.titleAccent} ${copy.titleRest}`}
+      eyebrow={copy.eyebrow}
+      headingId="home-shop-title"
+      actionLabel={copy.browseLabel}
+      actionHref={actionHref}
+      actionAriaLabel={copy.browseLabel}
+      class="home-shop__heading"
+      eyebrowEditAttributes={editAttributes("eyebrow")}
+      actionEditAttributes={editAttributes("browse_label")}
+    >
+      <Fragment slot="title">
+        <span {...editAttributes("title_lead")}>{copy.titleLead}</span>{" "}<em
+          {...editAttributes("title_accent")}>{copy.titleAccent}</em
+        >{" "}<span {...editAttributes("title_rest")}>{copy.titleRest}</span>
+      </Fragment>
+    </SectionHeading>
+
+    <CardGrid
+      columns={4}
+      tabletColumns={2}
+      mobileColumns={1}
+      ariaLabelledby="home-shop-title"
+      class="home-shop__grid"
+    >
+      {
+        copy.items.map((item, index) => {
+          const itemNumber = index + 1;
+          const edit = (field: string) =>
+            editAttributes(`item_${itemNumber}_${field}`);
+          return (
+            <ProductCard
+              variant="compact"
+              title={item.title}
+              category={item.category}
+              currentPrice={item.price}
+              imageAlt={item.imageAlt}
+              imageSrc={item.imageSrc}
+              imageWidth={1122}
+              imageHeight={1402}
+              href={item.href ?? actionHref}
+              locale={locale}
+              class="home-shop__card"
+              titleEditAttributes={edit("title")}
+              metaEditAttributes={edit("category")}
+              imageAltEditAttributes={edit("image_alt")}
+            />
+          );
+        })
+      }
+    </CardGrid>
+  </div>
+</section>

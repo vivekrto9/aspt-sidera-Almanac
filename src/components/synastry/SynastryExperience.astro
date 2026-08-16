@@ -1,0 +1,176 @@
+---
+import type { SupportedLocale } from "../../data/localization-contract.ts";
+import type { SynastryOverlayingStateCopy } from "../../data/locale/synastry/sections/overlaying-state.ts";
+import type { SynastryResultsCopy } from "../../data/locale/synastry/sections/results.ts";
+import type { SynastrySetupCopy } from "../../data/locale/synastry/sections/two-profile-setup.ts";
+import type { PreparedSynastryResult } from "../../data/synastry/results.ts";
+import SynastryOverlayingState from "./sections/SynastryOverlayingState.astro";
+import SynastryResults from "./sections/SynastryResults.astro";
+import SynastryTwoProfileSetup from "./sections/SynastryTwoProfileSetup.astro";
+import type { SynastryInitialProfile } from "./sections/SynastryTwoProfileSetup.astro";
+import type { SynastrySavedProfile } from "./sections/SynastryTwoProfileSetup.astro";
+
+type SynastryExperienceCopy =
+  & SynastrySetupCopy
+  & SynastryOverlayingStateCopy
+  & SynastryResultsCopy;
+
+type Props = {
+  copy: SynastryExperienceCopy;
+  locale: SupportedLocale;
+  result?: PreparedSynastryResult;
+  resultHref?: string;
+  apiEndpoint?: string;
+  csrfToken?: string;
+  initialProfile?: SynastryInitialProfile | null;
+  savedProfiles?: readonly SynastrySavedProfile[];
+  editAttributes?: (
+    field: keyof SynastryExperienceCopy,
+  ) => Record<string, string>;
+};
+
+const {
+  copy,
+  locale,
+  result,
+  resultHref,
+  apiEndpoint = "/api/astropages/generated-site/synastry",
+  csrfToken = "",
+  initialProfile,
+  savedProfiles = [],
+  editAttributes = () => ({}),
+} = Astro.props as Props;
+---
+
+<div
+  data-synastry-experience
+  data-result-href={resultHref}
+  data-api-endpoint={apiEndpoint}
+  data-locale={locale}
+  data-csrf-token={csrfToken}
+>
+  {
+    result ? (
+      <SynastryResults
+        copy={copy}
+        result={result}
+        editAttributes={editAttributes}
+      />
+    ) : (
+      <>
+        <SynastryTwoProfileSetup
+          copy={copy}
+          locale={locale}
+          initialProfile={initialProfile}
+          savedProfiles={savedProfiles}
+          csrfToken={csrfToken}
+          editAttributes={editAttributes}
+        />
+        <SynastryOverlayingState copy={copy} editAttributes={editAttributes} />
+      </>
+    )
+  }
+</div>
+
+<script>
+  const resetSynastrySubmissionState = () => {
+    document
+      .querySelectorAll<HTMLElement>("[data-synastry-experience]")
+      .forEach((experience) => {
+        const setup = experience.querySelector<HTMLElement>(".synastry-setup");
+        const overlaying = experience.querySelector<HTMLElement>(
+          "[data-synastry-overlaying]",
+        );
+        if (!setup || !overlaying) return;
+
+        experience.dataset.submitting = "false";
+        overlaying.hidden = true;
+        setup.hidden = false;
+      });
+  };
+
+  const initializeSynastryExperience = () => {
+    document
+      .querySelectorAll<HTMLElement>("[data-synastry-experience]")
+      .forEach((experience) => {
+        if (experience.dataset.ready === "true") return;
+
+        const setup = experience.querySelector<HTMLElement>(".synastry-setup");
+        const form = experience.querySelector<HTMLFormElement>(
+          "#synastry-profile-form",
+        );
+        const overlaying = experience.querySelector<HTMLElement>(
+          "[data-synastry-overlaying]",
+        );
+        const summary = overlaying?.querySelector<HTMLElement>(
+          "[data-synastry-overlaying-summary]",
+        );
+        if (!setup || !form || !overlaying) return;
+
+        form.addEventListener("submit", async (event) => {
+          event.preventDefault();
+          if (experience.dataset.submitting === "true") return;
+          experience.dataset.submitting = "true";
+
+          const formData = new FormData(form);
+          const firstName = String(formData.get("person-a[name]") ?? "").trim();
+          const secondName = String(formData.get("person-b[name]") ?? "").trim();
+          const status = experience.querySelector<HTMLElement>("[data-synastry-status]");
+
+          if (summary && firstName && secondName) {
+            summary.textContent = `${firstName} × ${secondName}`;
+          }
+          setup.hidden = true;
+          overlaying.hidden = false;
+          window.scrollTo({ top: 0, behavior: "auto" });
+          overlaying.focus();
+
+          const value = (name: string) => String(formData.get(name) || "");
+          const person = (prefix: string) => ({
+            name: value(`${prefix}[name]`),
+            year: value(`${prefix}[year]`),
+            month: value(`${prefix}[month]`),
+            day: value(`${prefix}[day]`),
+            hour: value(`${prefix}[hour]`),
+            minute: value(`${prefix}[minute]`),
+            period: value(`${prefix}[period]`),
+            timeUnknown: formData.has(`${prefix}[timeUnknown]`),
+            location: value(`${prefix}[location]`),
+            locationId: value(`${prefix}[location]Id`),
+            latitude: Number(value(`${prefix}[location]Latitude`)),
+            longitude: Number(value(`${prefix}[location]Longitude`)),
+            timezone: value(`${prefix}[location]Timezone`),
+            timezoneOffset: value(`${prefix}[location]TimezoneOffset`),
+          });
+          try {
+            const response = await fetch(experience.dataset.apiEndpoint || "", {
+              method: "POST",
+              headers: { "content-type": "application/json", accept: "application/json", "x-astropages-customer-csrf": experience.dataset.csrfToken || "" },
+              body: JSON.stringify({
+                locale: experience.dataset.locale || "en",
+                personA: person("person-a"),
+                personB: person("person-b"),
+              }),
+            });
+            const body = await response.json().catch(() => ({})) as { readingId?: string; message?: string };
+            if (!response.ok || !body.readingId) throw new Error(body.message || "Synastry could not be generated.");
+            const destination = new URL(experience.dataset.resultHref || "/synastry", window.location.href);
+            destination.pathname = `${destination.pathname.replace(/\/$/, "")}/${encodeURIComponent(body.readingId)}`;
+            window.location.assign(`${destination.pathname}${destination.search}`);
+          } catch (error) {
+            experience.dataset.submitting = "false";
+            overlaying.hidden = true;
+            setup.hidden = false;
+            if (status) status.textContent = error instanceof Error ? error.message : "Synastry could not be generated.";
+            setup.focus();
+          }
+        });
+
+        experience.dataset.ready = "true";
+      });
+  };
+
+  initializeSynastryExperience();
+  document.addEventListener("astro:page-load", initializeSynastryExperience);
+  window.addEventListener("pageshow", resetSynastrySubmissionState);
+</script>

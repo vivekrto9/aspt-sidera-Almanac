@@ -1,0 +1,57 @@
+{
+  "contractVersion": "transactional-email.v1",
+  "runtimeTable": "ap_email_templates",
+  "previewMode": "active-row",
+  "eventsTable": "ap_email_events",
+  "variableMappingsTable": "ap_email_variable_mappings",
+  "mcpPath": "/_emdash/api/mcp",
+  "templates": [
+    {
+      "key": "customer_welcome_en",
+      "displayName": "Customer welcome",
+      "eventType": "customer.welcome",
+      "audience": "customer",
+      "locale": "en",
+      "variables": [
+        "customerName",
+        "siteUrl",
+        "supportFooter"
+      ]
+    },
+    {
+      "key": "commerce_order_paid_customer_en",
+      "displayName": "Commerce order paid",
+      "eventType": "commerce.order_paid",
+      "audience": "customer",
+      "locale": "en",
+      "variables": [
+        "customerName",
+        "orderNumber",
+        "orderTotal",
+        "orderItems",
+        "accountUrl",
+        "supportFooter"
+      ]
+    },
+    {
+      "key": "session_payment_paid_customer_en",
+      "displayName": "Session payment paid",
+      "eventType": "session.payment_paid",
+      "audience": "customer",
+      "locale": "en",
+      "variables": [
+        "customerName",
+        "sessionDescription",
+        "astrologerName",
+        "sessionTotal",
+        "sessionsUrl",
+        "supportFooter"
+      ]
+    }
+  ],
+  "safeVariableSources": [
+    "event.payload",
+    "business.notificationSettings",
+    "generatedSite.urls"
+  ]
+}

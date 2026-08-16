@@ -1,0 +1,290 @@
+---
+import Button from "../../shared/Button.astro";
+import SectionHeading from "../../shared/SectionHeading.astro";
+import ZodiacSignItem from "../../shared/ZodiacSignItem.astro";
+import type { HomeDailyHoroscopeCopy } from "../../../data/locale/home/sections/daily-horoscope.ts";
+import "../../../styles/home/sections/home-daily-horoscope.css";
+
+type EditAttributes = Record<string, string>;
+
+type Props = {
+  copy: HomeDailyHoroscopeCopy;
+  dateLabel: string;
+  dateIso: string;
+  actionHref: string;
+  apiHref: string;
+  locale: string;
+  loadingLabel: string;
+  unavailableDescription: string;
+  editAttributes?: (field: string) => EditAttributes;
+};
+
+const {
+  copy,
+  dateLabel,
+  dateIso,
+  actionHref,
+  apiHref,
+  locale,
+  loadingLabel,
+  unavailableDescription,
+  editAttributes = () => ({}),
+} = Astro.props as Props;
+
+const activeSign = copy.signs[0];
+const signEditIdentities = copy.signs.map((_, index) => {
+  const signNumber = index + 1;
+  return {
+    name: editAttributes(`sign_${signNumber}_name`),
+    dates: editAttributes(`sign_${signNumber}_dates`),
+    element: editAttributes(`sign_${signNumber}_element`),
+    cta: editAttributes(`sign_${signNumber}_cta`),
+  };
+});
+---
+
+<section
+  class="home-daily-horoscope"
+  id="horoscope"
+  aria-labelledby="home-daily-horoscope-title"
+  data-home-daily-horoscope
+>
+  <div class="home-daily-horoscope__inner">
+    <SectionHeading
+      title={`${copy.titleAccent} ${copy.titleRest}`}
+      eyebrow={copy.eyebrow}
+      description={copy.prompt}
+      headingId="home-daily-horoscope-title"
+      alignment="center"
+      class="home-daily-horoscope__heading"
+      eyebrowEditAttributes={editAttributes("eyebrow")}
+      descriptionEditAttributes={editAttributes("prompt")}
+    >
+      <Fragment slot="title">
+        <em {...editAttributes("title_accent")}>{copy.titleAccent}</em>{" "}<span
+          {...editAttributes("title_rest")}>{copy.titleRest}</span
+        >
+      </Fragment>
+    </SectionHeading>
+
+    <div class="home-daily-horoscope__content">
+      <div class="home-daily-horoscope__signs" role="group" aria-label={copy.prompt}>
+        {
+          copy.signs.map((sign, index) => (
+            <div data-horoscope-sign={index}>
+              <ZodiacSignItem
+                sign={sign.name}
+                glyph={sign.glyph}
+                elementTone={sign.elementTone}
+                size="compact"
+                selected={index === 0}
+                class="home-daily-horoscope__sign"
+                ariaLabel={sign.name}
+                signEditAttributes={editAttributes(`sign_${index + 1}_name`)}
+              />
+            </div>
+          ))
+        }
+      </div>
+
+      <article class="home-daily-horoscope__reading" aria-live="polite">
+        <div class="home-daily-horoscope__reading-content" data-reading-content>
+          <div class="home-daily-horoscope__identity">
+          <span class="home-daily-horoscope__glyph" aria-hidden="true" data-reading-glyph>
+            {activeSign.glyph}
+          </span>
+          <div>
+            <h3
+              data-reading-name
+              {...editAttributes("sign_1_name")}
+            >
+              {activeSign.name}
+            </h3>
+            <p
+              data-reading-dates
+              {...editAttributes("sign_1_dates")}
+            >
+              {activeSign.dates}
+            </p>
+          </div>
+          </div>
+
+          <p class="home-daily-horoscope__metadata">
+            <span
+              data-reading-element
+              {...editAttributes("sign_1_element")}
+            >
+              {activeSign.element}
+            </span>
+            <span aria-hidden="true"> · </span>
+            <time datetime={dateIso}>{dateLabel}</time>
+          </p>
+
+          <p
+            class="home-daily-horoscope__forecast"
+            data-reading-forecast
+          >
+            {activeSign.reading || unavailableDescription}
+          </p>
+
+          <Button
+            href={activeSign.href ?? actionHref}
+            variant="link"
+            size="compact"
+            class="home-daily-horoscope__cta"
+          >
+            <span
+              data-reading-cta
+              {...editAttributes("sign_1_cta")}
+            >
+              {activeSign.cta}
+            </span>
+            <span slot="trailing-icon">→</span>
+          </Button>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<script
+  is:inline
+  define:vars={{
+    horoscopeSigns: copy.signs,
+    horoscopeEditIdentities: signEditIdentities,
+    horoscopeApiHref: apiHref,
+    horoscopeActionHref: actionHref,
+    horoscopeLocale: locale,
+    horoscopeLoadingLabel: loadingLabel,
+    horoscopeUnavailableDescription: unavailableDescription,
+  }}
+>
+  const root = document.querySelector("[data-home-daily-horoscope]");
+
+  if (root instanceof HTMLElement && root.dataset.horoscopeReady !== "true") {
+    root.dataset.horoscopeReady = "true";
+    const choices = Array.from(root.querySelectorAll("[data-horoscope-sign]"));
+    const glyph = root.querySelector("[data-reading-glyph]");
+    const name = root.querySelector("[data-reading-name]");
+    const dates = root.querySelector("[data-reading-dates]");
+    const element = root.querySelector("[data-reading-element]");
+    const forecast = root.querySelector("[data-reading-forecast]");
+    const cta = root.querySelector("[data-reading-cta]");
+    const ctaLink = root.querySelector(".home-daily-horoscope__cta");
+    const readingContent = root.querySelector("[data-reading-content]");
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let selectedIndex = 0;
+    let requestSequence = 0;
+    let transitionTimer;
+
+    const editableNodes = { name, dates, element, cta };
+    const builderAttributeNames = [
+      "data-builder-edit",
+      "data-builder-collection",
+      "data-builder-entry",
+      "data-builder-locale",
+      "data-builder-field",
+    ];
+
+    const applyEditIdentity = (node, identity) => {
+      if (!(node instanceof HTMLElement)) return;
+      for (const attribute of builderAttributeNames) node.removeAttribute(attribute);
+      for (const [attribute, value] of Object.entries(identity ?? {})) {
+        node.setAttribute(attribute, value);
+      }
+    };
+
+    const transitionReading = (update) => {
+      window.clearTimeout(transitionTimer);
+      if (!(readingContent instanceof HTMLElement) || reduceMotion) {
+        update();
+        return;
+      }
+
+      readingContent.classList.add("home-daily-horoscope__reading-content--changing");
+      transitionTimer = window.setTimeout(() => {
+        update();
+        requestAnimationFrame(() => {
+          readingContent.classList.remove("home-daily-horoscope__reading-content--changing");
+        });
+      }, 120);
+    };
+
+    const loadReading = async (sign, index) => {
+      const sequence = ++requestSequence;
+      if (forecast) {
+        forecast.textContent = horoscopeLoadingLabel;
+        forecast.setAttribute("aria-busy", "true");
+      }
+
+      try {
+        const response = await fetch(horoscopeApiHref, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            sign: sign.id,
+            period: "daily",
+            locale: horoscopeLocale,
+          }),
+        });
+        const payload = await response.json().catch(() => null);
+        const reading = payload?.reading?.headline;
+        if (!response.ok || payload?.ok !== true || typeof reading !== "string" || !reading.trim()) {
+          throw new Error("Daily horoscope is unavailable.");
+        }
+        sign.reading = reading.trim();
+      } catch {
+        sign.reading = "";
+      }
+
+      if (selectedIndex === index && requestSequence === sequence && forecast) {
+        transitionReading(() => {
+          forecast.textContent = sign.reading || horoscopeUnavailableDescription;
+          forecast.setAttribute("aria-busy", "false");
+        });
+      }
+    };
+
+    const selectSign = (index) => {
+      const sign = horoscopeSigns[index];
+      const identities = horoscopeEditIdentities[index];
+      if (!sign || !identities) return;
+      selectedIndex = index;
+      requestSequence += 1;
+
+      choices.forEach((choice, choiceIndex) => {
+        const button = choice.querySelector("button");
+        if (!(button instanceof HTMLButtonElement)) return;
+        const selected = choiceIndex === index;
+        button.setAttribute("aria-pressed", String(selected));
+        button.classList.toggle("sidera-zodiac-sign--selected", selected);
+      });
+
+      transitionReading(() => {
+        if (glyph) glyph.textContent = sign.glyph;
+        if (name) name.textContent = sign.name;
+        if (dates) dates.textContent = sign.dates;
+        if (element) element.textContent = sign.element;
+        if (forecast) {
+          forecast.textContent = sign.reading || horoscopeLoadingLabel;
+          forecast.setAttribute("aria-busy", String(!sign.reading));
+        }
+        if (cta) cta.textContent = sign.cta;
+        if (ctaLink instanceof HTMLAnchorElement) {
+          ctaLink.setAttribute("href", sign.href || horoscopeActionHref);
+        }
+
+        Object.entries(editableNodes).forEach(([key, node]) => {
+          applyEditIdentity(node, identities[key]);
+        });
+
+        if (!sign.reading) void loadReading(sign, index);
+      });
+    };
+
+    choices.forEach((choice, index) => {
+      const button = choice.querySelector("button");
+      button?.addEventListener("click", () => selectSign(index));
+    });
+  }
+</script>

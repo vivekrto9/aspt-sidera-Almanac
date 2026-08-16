@@ -1,0 +1,211 @@
+---
+import type { AccountShellProfile } from "../../../data/account/shell.ts";
+import Button from "../../shared/Button.astro";
+import "../../../styles/account/sections/account-shell-navigation.css";
+
+type EditAttributes = Record<string, string>;
+
+type NavigationItem = {
+  id: string;
+  label: string;
+  href: string;
+  active?: boolean;
+  editAttributes?: EditAttributes;
+};
+
+type Props = {
+  profile: AccountShellProfile;
+  navigationLabel: string;
+  navigation: NavigationItem[];
+  signOutLabel: string;
+  signOutHref: string;
+  signOutEditAttributes?: EditAttributes;
+};
+
+const {
+  profile,
+  navigationLabel,
+  navigation,
+  signOutLabel,
+  signOutHref,
+  signOutEditAttributes = {},
+} = Astro.props as Props;
+---
+
+<script is:inline>
+  (() => {
+    const requestedSection = window.location.hash.slice(1);
+    const accountSections = ["overview", "wallet", "charts", "people", "orders", "settings"];
+    document.documentElement.dataset.accountInitialSection = accountSections.includes(requestedSection)
+      ? requestedSection
+      : "overview";
+  })();
+</script>
+
+<div class="account-shell">
+  <aside class="account-shell__rail">
+    <div class="account-shell__profile">
+      <div class="account-shell__avatar" aria-hidden="true">{profile.initials}</div>
+      <div class="account-shell__identity">
+        <div class="account-shell__name">{profile.displayName}</div>
+        <div class="account-shell__signs">
+          {profile.sunSign} <span aria-hidden="true">·</span> {profile.risingSign}
+        </div>
+      </div>
+    </div>
+
+    <div class="account-shell__membership">
+      <span aria-hidden="true">✦</span>
+      <span>{profile.membership}</span>
+    </div>
+
+    <nav class="account-shell__navigation" aria-label={navigationLabel}>
+      {
+        navigation.map((item) => (
+          <a
+            class="account-shell__navigation-link"
+            href={item.href}
+            data-account-section-link={item.id}
+          >
+            <span {...item.editAttributes}>{item.label}</span>
+          </a>
+        ))
+      }
+    </nav>
+
+    <Button
+      class="account-shell__sign-out"
+      type="button"
+      variant="link"
+      size="compact"
+      loading={false}
+      loadingLabel={signOutLabel}
+      data-account-sign-out
+      data-account-sign-out-href={signOutHref}
+      editAttributes={signOutEditAttributes}
+    >
+      {signOutLabel}
+    </Button>
+  </aside>
+
+  <div class="account-shell__content" aria-live="polite">
+    <slot />
+  </div>
+</div>
+
+<script>
+  import { setActionLoading } from "../../../scripts/action-loading.ts";
+
+  const accountShell = document.querySelector(".account-shell");
+  const sectionLinks = accountShell?.querySelectorAll<HTMLAnchorElement>(
+    "[data-account-section-link]",
+  );
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+  const activateSectionLink = (activeLink: HTMLAnchorElement) => {
+    sectionLinks?.forEach((link) => {
+      const isActive = link === activeLink;
+      link.classList.toggle("account-shell__navigation-link--active", isActive);
+      if (isActive) {
+        link.setAttribute("aria-current", "page");
+      } else {
+        link.removeAttribute("aria-current");
+      }
+    });
+  };
+
+  const syncActiveLinkToHash = () => {
+    const sectionId = window.location.hash.slice(1) || "overview";
+    const activeLink = accountShell?.querySelector<HTMLAnchorElement>(
+      `[data-account-section-link="${CSS.escape(sectionId)}"]`,
+    );
+    if (activeLink && document.getElementById(sectionId)) {
+      activateSectionLink(activeLink);
+    }
+  };
+
+  const observedSections = Array.from(sectionLinks || []).flatMap((link) => {
+    const destination = new URL(link.href, window.location.href);
+    const section = document.getElementById(destination.hash.slice(1));
+    return section && destination.pathname === window.location.pathname
+      ? [{ link, section }]
+      : [];
+  });
+
+  const syncActiveLinkToScroll = () => {
+    const firstEntry = observedSections[0];
+    if (!firstEntry) return;
+    const pageCanScroll =
+      document.documentElement.scrollHeight > window.innerHeight + 2;
+    const atPageBottom =
+      pageCanScroll &&
+      window.scrollY + window.innerHeight >=
+      document.documentElement.scrollHeight - 2;
+    const probeLine = Math.min(window.innerHeight * 0.35, 15 * 16);
+    let activeEntry = firstEntry;
+
+    if (atPageBottom) {
+      activeEntry = observedSections[observedSections.length - 1] || firstEntry;
+    } else {
+      observedSections.forEach((entry) => {
+        if (entry.section.getBoundingClientRect().top <= probeLine) {
+          activeEntry = entry;
+        }
+      });
+    }
+
+    activateSectionLink(activeEntry.link);
+  };
+
+  let scrollFrame = 0;
+  const queueScrollSync = () => {
+    if (scrollFrame) return;
+    scrollFrame = window.requestAnimationFrame(() => {
+      scrollFrame = 0;
+      syncActiveLinkToScroll();
+    });
+  };
+
+  sectionLinks?.forEach((link) => {
+    link.addEventListener("click", (event) => {
+      const destination = new URL(link.href, window.location.href);
+      const sectionId = destination.hash.slice(1);
+      const section = document.getElementById(sectionId);
+
+      if (!section || destination.pathname !== window.location.pathname) return;
+
+      event.preventDefault();
+      activateSectionLink(link);
+      window.history.pushState(null, "", destination);
+      section.scrollIntoView({
+        behavior: reduceMotion.matches ? "auto" : "smooth",
+        block: "start",
+      });
+    });
+  });
+
+  syncActiveLinkToHash();
+  syncActiveLinkToScroll();
+  document.documentElement.removeAttribute("data-account-initial-section");
+  window.addEventListener("hashchange", syncActiveLinkToHash);
+  window.addEventListener("scroll", queueScrollSync, { passive: true });
+  window.addEventListener("resize", queueScrollSync);
+  window.addEventListener("pageshow", queueScrollSync);
+
+  const signOutButton = document.querySelector("[data-account-sign-out]");
+
+  if (signOutButton instanceof HTMLButtonElement) {
+    signOutButton.addEventListener("click", async () => {
+      setActionLoading(signOutButton, true, signOutButton.textContent?.trim());
+      try {
+        await fetch("/api/astropages/generated-site/customer-auth/logout", {
+          method: "POST",
+          headers: { accept: "application/json" },
+        });
+      } finally {
+        const href = signOutButton.dataset.accountSignOutHref || "/login";
+        window.location.assign(href);
+      }
+    });
+  }
+</script>

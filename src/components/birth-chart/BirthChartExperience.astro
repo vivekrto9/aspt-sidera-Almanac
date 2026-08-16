@@ -1,0 +1,148 @@
+---
+import type { SupportedLocale } from "../../data/localization-contract.ts";
+import type { PreparedBirthChartResult } from "../../data/birth-chart/results.ts";
+import type { BirthChartCastingStateCopy } from "../../data/locale/birth-chart/sections/casting-state.ts";
+import type { BirthChartFormWizardCopy } from "../../data/locale/birth-chart/sections/form-wizard.ts";
+import type { BirthChartResultsCopy } from "../../data/locale/birth-chart/sections/results.ts";
+import type { BirthChartProfilePrefill } from "../../data/birth-chart/profile-prefill.ts";
+import BirthChartCastingState from "./sections/BirthChartCastingState.astro";
+import BirthChartFormWizard from "./sections/BirthChartFormWizard.astro";
+import BirthChartResults from "./sections/BirthChartResults.astro";
+import "../../styles/birth-chart/birth-chart.css";
+
+type BirthChartExperienceCopy =
+  & BirthChartFormWizardCopy
+  & BirthChartCastingStateCopy
+  & BirthChartResultsCopy;
+
+type Props = {
+  copy: BirthChartExperienceCopy;
+  locale: SupportedLocale;
+  result?: PreparedBirthChartResult;
+  resultHref?: string;
+  apiEndpoint?: string;
+  initialProfile?: BirthChartProfilePrefill;
+  editAttributes?: (
+    field: keyof BirthChartExperienceCopy,
+  ) => Record<string, string>;
+};
+
+const {
+  copy,
+  locale,
+  result,
+  resultHref,
+  apiEndpoint = "/api/astropages/generated-site/birth-chart",
+  initialProfile,
+  editAttributes = () => ({}),
+} = Astro.props as Props;
+---
+
+<main
+  data-birth-chart-experience
+  data-result-href={resultHref}
+  data-api-endpoint={apiEndpoint}
+  data-locale={locale}
+>
+  {
+    result ? (
+      <BirthChartResults
+        copy={copy}
+        locale={locale}
+        result={result}
+        editAttributes={editAttributes}
+      />
+    ) : (
+      <>
+        <BirthChartFormWizard
+          copy={copy}
+          locale={locale}
+          initialProfile={initialProfile}
+          editAttributes={editAttributes}
+        />
+        <BirthChartCastingState copy={copy} editAttributes={editAttributes} />
+      </>
+    )
+  }
+</main>
+
+<script>
+  const initializeBirthChartExperience = () => {
+    document
+      .querySelectorAll<HTMLElement>("[data-birth-chart-experience]")
+      .forEach((experience) => {
+        if (experience.dataset.ready === "true") return;
+
+        const wizard = experience.querySelector<HTMLElement>(
+          "[data-birth-chart-wizard]",
+        );
+        const casting = experience.querySelector<HTMLElement>(
+          "[data-birth-chart-casting]",
+        );
+
+        experience.addEventListener("birthchartsubmit", async (event) => {
+          if (
+            !wizard ||
+            !casting ||
+            experience.dataset.submitting === "true"
+          ) return;
+
+          experience.dataset.submitting = "true";
+          wizard.hidden = true;
+          casting.hidden = false;
+          casting.focus();
+
+          const formData = (
+            event as CustomEvent<{ formData?: FormData }>
+          ).detail?.formData;
+          if (!formData) return;
+          const status = wizard.querySelector<HTMLElement>("[data-wizard-status]");
+          const value = (name: string) => String(formData.get(name) || "");
+          const month = value("month").padStart(2, "0");
+          const day = value("day").padStart(2, "0");
+          const period = value("period");
+          const sourceHour = Number(value("hour"));
+          const hour = period === "PM"
+            ? sourceHour === 12 ? 12 : sourceHour + 12
+            : sourceHour === 12 ? 0 : sourceHour;
+          const payload = {
+            name: value("name"),
+            birthDate: `${value("year")}-${month}-${day}`,
+            birthTime: `${String(hour).padStart(2, "0")}:${value("minute").padStart(2, "0")}`,
+            timeUnknown: formData.has("timeUnknown"),
+            place: value("location"),
+            placeId: value("locationId"),
+            lat: Number(value("locationLatitude")),
+            lon: Number(value("locationLongitude")),
+            timezone: value("locationTimezone"),
+            timezoneOffset: value("locationTimezoneOffset"),
+            houseType: value("houseSystem"),
+            locale: experience.dataset.locale || "en",
+          };
+          try {
+            const response = await fetch(experience.dataset.apiEndpoint || "", {
+              method: "POST",
+              headers: { "content-type": "application/json", accept: "application/json" },
+              body: JSON.stringify(payload),
+            });
+            const body = await response.json().catch(() => ({})) as { readingId?: string; message?: string };
+            if (!response.ok || !body.readingId) throw new Error(body.message || "Birth chart could not be generated.");
+            const destination = new URL(experience.dataset.resultHref || "/birth-chart", window.location.href);
+            destination.pathname = `${destination.pathname.replace(/\/$/, "")}/${encodeURIComponent(body.readingId)}`;
+            window.location.assign(`${destination.pathname}${destination.search}`);
+          } catch (error) {
+            experience.dataset.submitting = "false";
+            casting.hidden = true;
+            wizard.hidden = false;
+            if (status) status.textContent = error instanceof Error ? error.message : "Birth chart could not be generated.";
+            wizard.focus();
+          }
+        });
+
+        experience.dataset.ready = "true";
+      });
+  };
+
+  initializeBirthChartExperience();
+  document.addEventListener("astro:page-load", initializeBirthChartExperience);
+</script>

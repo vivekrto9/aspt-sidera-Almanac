@@ -1,0 +1,11 @@
+.sidera-terms-body {
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+.sidera-terms {
+  inline-size: 100%;
+  min-inline-size: 0;
+  margin: 0;
+}

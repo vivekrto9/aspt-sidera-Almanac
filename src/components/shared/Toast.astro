@@ -1,0 +1,182 @@
+---
+import "../../styles/shared/toast.css";
+
+type ToastTone = "neutral" | "success" | "error";
+
+type Props = {
+  id: string;
+  message: string;
+  dismissLabel: string;
+  title?: string;
+  tone?: ToastTone;
+  duration?: number;
+  open?: boolean;
+  class?: string;
+  style?: string;
+  titleEditAttributes?: Record<string, string>;
+  messageEditAttributes?: Record<string, string>;
+  [attribute: string]: unknown;
+};
+
+const {
+  id,
+  message,
+  dismissLabel,
+  title,
+  tone = "neutral",
+  duration = 5000,
+  open = true,
+  class: className,
+  style,
+  titleEditAttributes = {},
+  messageEditAttributes = {},
+  ...toastAttributes
+} = Astro.props as Props;
+
+const titleId = title ? `${id}-title` : undefined;
+const messageId = `${id}-message`;
+const durationMs = Math.max(0, duration);
+const toastStyle = [
+  style,
+  durationMs > 0 ? `--toast-duration: ${durationMs}ms;` : undefined,
+]
+  .filter(Boolean)
+  .join(" ");
+const hasIconSlot = Astro.slots.has("icon");
+const statusRole = tone === "error" ? "alert" : "status";
+const ariaLive = tone === "error" ? "assertive" : "polite";
+const defaultIcon = tone === "success" ? "✓" : tone === "error" ? "!" : "✦";
+const classes = [
+  "sidera-toast",
+  `sidera-toast--${tone}`,
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+---
+
+<aside
+  {...toastAttributes}
+  id={id}
+  class={classes}
+  style={toastStyle || undefined}
+  role={statusRole}
+  aria-live={ariaLive}
+  aria-atomic="true"
+  aria-labelledby={titleId}
+  aria-describedby={messageId}
+  data-sidera-toast
+  data-state={open ? "open" : "closed"}
+  data-duration={durationMs}
+  hidden={!open}
+>
+  <span class="sidera-toast__icon" aria-hidden="true">
+    {hasIconSlot ? <slot name="icon" /> : defaultIcon}
+  </span>
+
+  <div class="sidera-toast__content">
+    {
+      title ? (
+        <p id={titleId} class="sidera-toast__title" {...titleEditAttributes}>
+          {title}
+        </p>
+      ) : null
+    }
+    <p id={messageId} class="sidera-toast__message" {...messageEditAttributes}>
+      {message}
+    </p>
+  </div>
+
+  <button
+    class="sidera-toast__dismiss"
+    type="button"
+    aria-label={dismissLabel}
+    data-toast-dismiss
+  >
+    <span aria-hidden="true">×</span>
+  </button>
+
+  {
+    durationMs > 0 ? (
+      <span class="sidera-toast__progress" aria-hidden="true" />
+    ) : null
+  }
+</aside>
+
+<script>
+  document.querySelectorAll<HTMLElement>("[data-sidera-toast]").forEach((toast) => {
+    if (toast.dataset.toastReady === "true") return;
+    toast.dataset.toastReady = "true";
+
+    const dismissButton = toast.querySelector<HTMLButtonElement>("[data-toast-dismiss]");
+    const progress = toast.querySelector<HTMLElement>(".sidera-toast__progress");
+    const duration = Number(toast.dataset.duration ?? 0);
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let remaining = duration;
+    let startedAt = 0;
+    let timer: number | undefined;
+
+    const clearTimer = () => {
+      if (timer === undefined) return;
+      window.clearTimeout(timer);
+      timer = undefined;
+    };
+
+    const hide = (reason: "dismiss" | "timeout") => {
+      if (toast.hidden || toast.dataset.state === "closing") return;
+      clearTimer();
+      toast.dataset.state = "closing";
+
+      const complete = () => {
+        toast.hidden = true;
+        toast.dataset.state = "closed";
+        toast.dispatchEvent(
+          new CustomEvent("sidera:toast-dismiss", {
+            bubbles: true,
+            detail: { reason },
+          }),
+        );
+      };
+
+      if (reduceMotion.matches) {
+        complete();
+      } else {
+        window.setTimeout(complete, 180);
+      }
+    };
+
+    const schedule = () => {
+      clearTimer();
+      if (remaining <= 0 || toast.hidden) return;
+      startedAt = window.performance.now();
+      timer = window.setTimeout(() => hide("timeout"), remaining);
+    };
+
+    const pause = () => {
+      if (timer === undefined) return;
+      remaining = Math.max(0, remaining - (window.performance.now() - startedAt));
+      clearTimer();
+    };
+
+    const resume = () => {
+      if (toast.matches(":hover") || toast.matches(":focus-within")) return;
+      schedule();
+    };
+
+    dismissButton?.addEventListener("click", () => hide("dismiss"));
+    progress?.addEventListener("animationend", (event) => {
+      if (event.animationName === "sidera-toast-progress") hide("timeout");
+    });
+
+    toast.addEventListener("pointerenter", pause);
+    toast.addEventListener("pointerleave", resume);
+    toast.addEventListener("focusin", pause);
+    toast.addEventListener("focusout", (event) => {
+      const nextTarget = event.relatedTarget;
+      if (nextTarget instanceof Node && toast.contains(nextTarget)) return;
+      resume();
+    });
+
+    if (!toast.hidden && toast.dataset.state === "open") schedule();
+  });
+</script>

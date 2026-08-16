@@ -1,0 +1,10 @@
+ALTER TABLE ec_site_moon_calendar ADD COLUMN cycle_title TEXT;
+ALTER TABLE ec_site_moon_calendar ADD COLUMN cycle_description TEXT;
+ALTER TABLE ec_site_moon_calendar ADD COLUMN cycle_phase_new TEXT;
+ALTER TABLE ec_site_moon_calendar ADD COLUMN cycle_phase_waxing_crescent TEXT;
+ALTER TABLE ec_site_moon_calendar ADD COLUMN cycle_phase_first_quarter TEXT;
+ALTER TABLE ec_site_moon_calendar ADD COLUMN cycle_phase_waxing_gibbous TEXT;
+ALTER TABLE ec_site_moon_calendar ADD COLUMN cycle_phase_full TEXT;
+ALTER TABLE ec_site_moon_calendar ADD COLUMN cycle_phase_waning_gibbous TEXT;
+ALTER TABLE ec_site_moon_calendar ADD COLUMN cycle_phase_last_quarter TEXT;
+ALTER TABLE ec_site_moon_calendar ADD COLUMN cycle_phase_waning_crescent TEXT;

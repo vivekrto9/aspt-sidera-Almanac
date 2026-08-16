@@ -1,0 +1,166 @@
+---
+import Badge from "./Badge.astro";
+import Button from "./Button.astro";
+import MediaThumbnail from "./MediaThumbnail.astro";
+import PriceDisplay from "./PriceDisplay.astro";
+import "../../styles/shared/report-card.css";
+
+type ReportCardVariant = "compact" | "featured";
+type ReportCoverTone = "terracotta" | "ochre" | "rose" | "olive" | "slate";
+type HeadingLevel = 2 | 3;
+
+type Props = {
+  title: string;
+  description: string;
+  pagesLabel: string;
+  price: string;
+  href: string;
+  actionLabel: string;
+  variant?: ReportCardVariant;
+  coverTone?: ReportCoverTone;
+  glyph?: string;
+  coverSrc?: string;
+  coverAlt?: string;
+  coverWidth?: number;
+  coverHeight?: number;
+  headingLevel?: HeadingLevel;
+  ariaLabel?: string;
+  target?: "_self" | "_blank" | "_parent" | "_top";
+  rel?: string;
+  class?: string;
+  titleEditAttributes?: Record<string, string>;
+  descriptionEditAttributes?: Record<string, string>;
+  pagesEditAttributes?: Record<string, string>;
+  priceEditAttributes?: Record<string, string>;
+  actionEditAttributes?: Record<string, string>;
+};
+
+const {
+  title,
+  description,
+  pagesLabel,
+  price,
+  href,
+  actionLabel,
+  variant = "featured",
+  coverTone = "terracotta",
+  glyph = "☉",
+  coverSrc,
+  coverAlt = title,
+  coverWidth,
+  coverHeight,
+  headingLevel = 3,
+  ariaLabel,
+  target,
+  rel,
+  class: className,
+  titleEditAttributes = {},
+  descriptionEditAttributes = {},
+  pagesEditAttributes = {},
+  priceEditAttributes = {},
+  actionEditAttributes = {},
+} = Astro.props as Props;
+
+const HeadingTag = `h${headingLevel}` as const;
+const WrapperTag = variant === "featured" ? "a" : "div";
+const hasCoverSlot = Astro.slots.has("cover");
+const renderedActionLabel =
+  variant === "featured"
+    ? actionLabel.replace(/(?:\s*→)+\s*$/, "").trimEnd()
+    : actionLabel;
+const resolvedAriaLabel = ariaLabel ?? `${renderedActionLabel}: ${title}`;
+const classes = [
+  "sidera-report-card",
+  `sidera-report-card--${variant}`,
+  `sidera-report-card--${coverTone}`,
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+---
+
+<article class={classes}>
+  <WrapperTag
+    class:list={["sidera-report-card__content", variant === "featured" && "sidera-report-card__link"]}
+    href={variant === "featured" ? href : undefined}
+    aria-label={variant === "featured" ? resolvedAriaLabel : undefined}
+    target={variant === "featured" ? target : undefined}
+    rel={variant === "featured" ? rel : undefined}
+  >
+    {
+      variant === "featured" ? (
+        <div class="sidera-report-card__cover" aria-hidden="true">
+          {hasCoverSlot ? (
+            <MediaThumbnail class="sidera-report-card__thumbnail" alt={coverAlt} decorative>
+              <slot name="cover" />
+            </MediaThumbnail>
+          ) : coverSrc ? (
+            <MediaThumbnail
+              class="sidera-report-card__thumbnail"
+              src={coverSrc}
+              alt={coverAlt}
+              width={coverWidth}
+              height={coverHeight}
+              decorative
+            />
+          ) : (
+            <MediaThumbnail class="sidera-report-card__thumbnail" alt={coverAlt} decorative>
+              <span class="sidera-report-card__cover-glyph">{glyph}</span>
+            </MediaThumbnail>
+          )}
+        </div>
+      ) : null
+    }
+
+    <div class="sidera-report-card__body">
+      <Badge
+        tone="accent"
+        size="compact"
+        uppercase
+        class="sidera-report-card__metadata"
+        {...pagesEditAttributes}
+      >
+        {pagesLabel}
+      </Badge>
+
+      <HeadingTag class="sidera-report-card__title" {...titleEditAttributes}>
+        {title}
+      </HeadingTag>
+      <p class="sidera-report-card__description" {...descriptionEditAttributes}>
+        {description}
+      </p>
+
+      <div class="sidera-report-card__footer">
+        <PriceDisplay
+          current={price}
+          size="standard"
+          class="sidera-report-card__price"
+          {...priceEditAttributes}
+        />
+
+        {
+          variant === "featured" ? (
+            <span class="sidera-report-card__text-action">
+              <span class="sidera-report-card__action-label" {...actionEditAttributes}>
+                {renderedActionLabel}
+              </span>
+              <span aria-hidden="true">→</span>
+            </span>
+          ) : (
+            <Button
+              href={href}
+              variant="outline"
+              size="compact"
+              ariaLabel={resolvedAriaLabel}
+              target={target}
+              rel={rel}
+              editAttributes={actionEditAttributes}
+            >
+              {renderedActionLabel}
+            </Button>
+          )
+        }
+      </div>
+    </div>
+  </WrapperTag>
+</article>

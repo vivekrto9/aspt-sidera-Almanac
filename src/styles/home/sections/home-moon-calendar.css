@@ -1,0 +1,266 @@
+.home-moon-calendar {
+  position: relative;
+  scroll-margin-top: 5rem;
+  overflow: hidden;
+  padding: 6.25rem 2.125rem;
+  background: var(--color-dark);
+  color: var(--color-on-dark);
+  font-family: var(--font-sans);
+}
+
+.home-moon-calendar__stars {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.home-moon-calendar__stars span {
+  position: absolute;
+  inline-size: 0.1875rem;
+  block-size: 0.1875rem;
+  border-radius: 50%;
+  background: var(--color-primary-soft);
+  opacity: 0.34;
+  animation: home-moon-calendar-twinkle 4.8s ease-in-out infinite;
+}
+
+.home-moon-calendar__stars span:nth-child(1) { inset: 13% auto auto 7%; }
+.home-moon-calendar__stars span:nth-child(2) { inset: 24% 12% auto auto; animation-delay: -1.1s; }
+.home-moon-calendar__stars span:nth-child(3) { inset: auto auto 18% 18%; animation-delay: -2.7s; }
+.home-moon-calendar__stars span:nth-child(4) { inset: 9% auto auto 53%; animation-delay: -3.4s; }
+.home-moon-calendar__stars span:nth-child(5) { inset: auto 6% 12% auto; animation-delay: -0.5s; }
+.home-moon-calendar__stars span:nth-child(6) { inset: 67% auto auto 47%; animation-delay: -2s; }
+
+.home-moon-calendar__inner {
+  position: relative;
+  inline-size: min(100%, 75rem);
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  align-items: center;
+  gap: 3.5rem;
+}
+
+.home-moon-calendar__current,
+.home-moon-calendar__timeline,
+.home-moon-calendar__current-copy {
+  min-inline-size: 0;
+}
+
+.home-moon-calendar__heading {
+  align-items: flex-start;
+}
+
+.home-moon-calendar__current-phase {
+  display: flex;
+  align-items: center;
+  gap: 1.625rem;
+  margin-block-start: 2.125rem;
+}
+
+.home-moon-calendar__moon {
+  inline-size: 8.25rem;
+  block-size: 8.25rem;
+  flex: none;
+  overflow: visible;
+  box-shadow:
+    0 0 3.375rem rgba(176, 140, 240, 0.34),
+    inset -0.625rem -0.625rem 1.625rem rgba(95, 194, 214, 0.22);
+  border-radius: 50%;
+  animation: home-moon-calendar-glow 4.8s ease-in-out infinite;
+}
+
+.home-moon-calendar__moon-disc {
+  fill: var(--color-dark);
+  stroke: rgba(198, 171, 250, 0.26);
+}
+
+.home-moon-calendar__moon-light {
+  fill: url(#home-moon-light);
+}
+
+.home-moon-calendar__current-copy h3,
+.home-moon-calendar__events h3 {
+  margin: 0;
+  color: var(--color-on-dark-strong);
+  font-family: var(--font-serif), Georgia, serif;
+  font-weight: 400;
+}
+
+.home-moon-calendar__current-copy h3 {
+  font-size: 1.75rem;
+  line-height: 1.1;
+}
+
+.home-moon-calendar__meta {
+  margin: 0.25rem 0 0;
+  color: var(--color-on-dark-muted);
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.home-moon-calendar__description {
+  max-inline-size: 17.5rem;
+  margin: 0.75rem 0 0;
+  color: var(--color-on-dark-muted);
+  font-size: 0.84375rem;
+  line-height: 1.55;
+}
+
+.home-moon-calendar__cta {
+  --sidera-button-focus: rgba(176, 140, 240, 0.58);
+  margin-block-start: 1rem;
+}
+
+.home-moon-calendar__unavailable {
+  max-inline-size: 30rem;
+  margin-block-start: 2.125rem;
+  border: 1px solid rgba(198, 171, 250, 0.16);
+  border-radius: 0.875rem;
+  padding: 1.5rem;
+  background: rgba(198, 171, 250, 0.06);
+}
+
+.home-moon-calendar__unavailable h3,
+.home-moon-calendar__unavailable p {
+  margin: 0;
+}
+
+.home-moon-calendar__unavailable h3 {
+  color: var(--color-on-dark-strong);
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 1.375rem;
+  font-weight: 400;
+}
+
+.home-moon-calendar__unavailable p {
+  margin-block-start: 0.5rem;
+  color: var(--color-on-dark-muted);
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+.home-moon-calendar__phases {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.home-moon-calendar__phase {
+  border-color: transparent;
+  padding-inline: 0.25rem;
+  background: transparent;
+}
+
+.home-moon-calendar__events {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.875rem;
+  margin-block-start: 2.125rem;
+}
+
+.home-moon-calendar__events article {
+  min-inline-size: 0;
+  border: 1px solid rgba(198, 171, 250, 0.16);
+  border-radius: 0.875rem;
+  padding: 1.125rem;
+  background: rgba(198, 171, 250, 0.06);
+}
+
+.home-moon-calendar__events p {
+  margin: 0;
+  color: var(--color-primary-soft);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+
+.home-moon-calendar__events h3 {
+  margin-block-start: 0.375rem;
+  font-size: 1.375rem;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+@keyframes home-moon-calendar-twinkle {
+  0%,
+  100% { opacity: 0.2; transform: scale(0.8); }
+  50% { opacity: 0.65; transform: scale(1.15); }
+}
+
+@keyframes home-moon-calendar-glow {
+  0%,
+  100% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(1.018); filter: brightness(1.04); }
+}
+
+@media (max-width: 58rem) {
+  .home-moon-calendar__inner {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .home-moon-calendar__current {
+    max-inline-size: 40rem;
+  }
+}
+
+@media (max-width: 40rem) {
+  .home-moon-calendar {
+    padding: 4rem 1.25rem;
+  }
+
+  .home-moon-calendar__inner {
+    gap: 2.75rem;
+  }
+
+  .home-moon-calendar__current-phase {
+    align-items: flex-start;
+    gap: 1.25rem;
+  }
+
+  .home-moon-calendar__moon {
+    inline-size: 6.75rem;
+    block-size: 6.75rem;
+  }
+
+  .home-moon-calendar__phases {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(7rem, 1fr);
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: thin;
+  }
+}
+
+@media (max-width: 29rem) {
+  .home-moon-calendar__current-phase {
+    display: grid;
+  }
+
+  .home-moon-calendar__events {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-moon-calendar__stars span,
+  .home-moon-calendar__moon {
+    animation: none;
+  }
+
+}
+
+@media (forced-colors: active) {
+  .home-moon-calendar {
+    border-block: 1px solid CanvasText;
+  }
+
+  .home-moon-calendar__moon,
+  .home-moon-calendar__phase,
+  .home-moon-calendar__events article {
+    border: 1px solid CanvasText;
+  }
+}

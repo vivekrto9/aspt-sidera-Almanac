@@ -1,0 +1,243 @@
+---
+import Badge from "./Badge.astro";
+import Button from "./Button.astro";
+import IconButton from "./IconButton.astro";
+import MediaThumbnail from "./MediaThumbnail.astro";
+import PriceDisplay from "./PriceDisplay.astro";
+import {
+  defaultLocale,
+  localizePath,
+  type SupportedLocale,
+} from "../../data/localization-contract.ts";
+import "../../styles/shared/product-card.css";
+
+type ProductCardVariant = "compact" | "catalog";
+type ProductAddType = "button" | "submit" | "reset";
+
+type Props = {
+  title: string;
+  href: string;
+  currentPrice: string;
+  variant?: ProductCardVariant;
+  category?: string;
+  unit?: string;
+  originalPrice?: string;
+  priceAriaLabel?: string;
+  originalPriceAriaLabel?: string;
+  imageSrc?: string;
+  imageAlt?: string;
+  imageWidth?: number;
+  imageHeight?: number;
+  personalizationLabel?: string;
+  viewLabel?: string;
+  addLabel?: string;
+  productId?: string;
+  addName?: string;
+  addType?: ProductAddType;
+  addDisabled?: boolean;
+  form?: string;
+  locale?: SupportedLocale;
+  id?: string;
+  class?: string;
+  titleEditAttributes?: Record<string, string>;
+  metaEditAttributes?: Record<string, string>;
+  imageAltEditAttributes?: Record<string, string>;
+  priceEditAttributes?: Record<string, string>;
+};
+
+const {
+  title,
+  href,
+  currentPrice,
+  variant = "catalog",
+  category,
+  unit,
+  originalPrice,
+  priceAriaLabel,
+  originalPriceAriaLabel,
+  imageSrc,
+  imageAlt = title,
+  imageWidth,
+  imageHeight,
+  personalizationLabel,
+  viewLabel = "View",
+  addLabel = "Add to cart",
+  productId,
+  addName = "product",
+  addType = "button",
+  addDisabled = false,
+  form,
+  locale = defaultLocale,
+  id,
+  class: className,
+  titleEditAttributes = {},
+  metaEditAttributes = {},
+  imageAltEditAttributes = {},
+  priceEditAttributes = {},
+} = Astro.props as Props;
+
+const localizedHref = localizePath(href, locale);
+const classes = [
+  "product-card",
+  `product-card--${variant}`,
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+---
+
+<article class={classes} id={id} data-product-card data-product-id={productId}>
+  {
+    variant === "compact" ? (
+      <a class="product-card__compact-link" href={localizedHref}>
+        <span class="product-card__media">
+          <MediaThumbnail
+            class="product-card__thumbnail"
+            src={imageSrc}
+            alt={imageAlt}
+            width={imageWidth}
+            height={imageHeight}
+            fallbackLabelEditAttributes={imageAltEditAttributes}
+          />
+        </span>
+
+        <span
+          class="product-card__title product-card__title--compact"
+          {...titleEditAttributes}
+        >
+          {title}
+        </span>
+        <span class="product-card__compact-meta">
+          {category && (
+            <span class="product-card__meta" {...metaEditAttributes}>
+              {category}
+            </span>
+          )}
+          <PriceDisplay
+            class="product-card__price"
+            current={currentPrice}
+            original={originalPrice}
+            size="compact"
+            ariaLabel={priceAriaLabel}
+            originalAriaLabel={originalPriceAriaLabel}
+            {...priceEditAttributes}
+          />
+        </span>
+      </a>
+    ) : (
+      <>
+        <a
+          class="product-card__media"
+          href={localizedHref}
+          aria-label={`${viewLabel}: ${title}`}
+        >
+          <MediaThumbnail
+            class="product-card__thumbnail"
+            src={imageSrc}
+            alt={imageAlt}
+            width={imageWidth}
+            height={imageHeight}
+            fallbackLabelEditAttributes={imageAltEditAttributes}
+          />
+          {personalizationLabel && (
+            <Badge
+              class="product-card__badge"
+              tone="inverse"
+              appearance="solid"
+              size="compact"
+            >
+              <span slot="icon">✦</span>
+              {personalizationLabel}
+            </Badge>
+          )}
+        </a>
+
+        <div class="product-card__details">
+          <div class="product-card__heading">
+            <div class="product-card__identity">
+              <a
+                class="product-card__title"
+                href={localizedHref}
+                {...titleEditAttributes}
+              >
+                {title}
+              </a>
+              {unit && (
+                <span class="product-card__meta" {...metaEditAttributes}>
+                  {unit}
+                </span>
+              )}
+            </div>
+            <PriceDisplay
+              class="product-card__price"
+              current={currentPrice}
+              original={originalPrice}
+              size="standard"
+              ariaLabel={priceAriaLabel}
+              originalAriaLabel={originalPriceAriaLabel}
+              {...priceEditAttributes}
+            />
+          </div>
+
+          <div class="product-card__actions">
+            <Button
+              class="product-card__view"
+              href={localizedHref}
+              variant="outline"
+              size="compact"
+              shape="pill"
+              fullWidth
+            >
+              {viewLabel}
+            </Button>
+            {productId && (
+              <IconButton
+                class="product-card__add"
+                ariaLabel={addLabel}
+                variant="solid"
+                size="standard"
+                shape="circle"
+                type={addType}
+                name={addName}
+                value={productId}
+                form={form}
+                disabled={addDisabled}
+              >
+                <span aria-hidden="true">+</span>
+              </IconButton>
+            )}
+          </div>
+        </div>
+      </>
+    )
+  }
+</article>
+
+<script>
+  const enhanceProductCard = (card: HTMLElement) => {
+    if (card.dataset.productCardBound === "true") return;
+    card.dataset.productCardBound = "true";
+
+    const addButton = card.querySelector<HTMLButtonElement>(".product-card__add");
+    const productId = card.dataset.productId;
+    if (!addButton || !productId) return;
+
+    addButton.addEventListener("click", () => {
+      card.dispatchEvent(
+        new CustomEvent("productadd", {
+          bubbles: true,
+          detail: { productId },
+        }),
+      );
+    });
+  };
+
+  const enhanceProductCards = () => {
+    document
+      .querySelectorAll<HTMLElement>("[data-product-card]")
+      .forEach(enhanceProductCard);
+  };
+
+  enhanceProductCards();
+  document.addEventListener("astro:page-load", enhanceProductCards);
+</script>

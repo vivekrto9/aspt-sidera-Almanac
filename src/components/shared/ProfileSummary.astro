@@ -1,0 +1,154 @@
+---
+import Avatar from "./Avatar.astro";
+import Badge from "./Badge.astro";
+import RatingStars from "./RatingStars.astro";
+import StatusDot from "./StatusDot.astro";
+import "../../styles/shared/profile-summary.css";
+
+type ProfileSummaryLayout = "horizontal" | "stacked";
+type ProfileSummaryTone = "default" | "inverse";
+type ProfileSummarySize = "compact" | "standard" | "large";
+type AvatarSize = "compact" | "standard" | "large" | "profile";
+type AvatarFallback = "placeholder" | "initials";
+type StatusTone = "neutral" | "success" | "warning" | "accent" | "danger";
+type BadgeTone = "neutral" | "accent" | "success" | "warning" | "danger" | "inverse";
+type BadgeAppearance = "soft" | "solid";
+type NameTag = "h2" | "h3" | "p";
+type EditAttributes = Record<string, string>;
+
+type Props = {
+  name: string;
+  subtitle?: string;
+  layout?: ProfileSummaryLayout;
+  tone?: ProfileSummaryTone;
+  size?: ProfileSummarySize;
+  nameTag?: NameTag;
+  avatarSrc?: string;
+  avatarAlt?: string;
+  avatarInitials?: string;
+  avatarFallback?: AvatarFallback;
+  avatarSize?: AvatarSize;
+  statusLabel?: string;
+  statusTone?: StatusTone;
+  ratingValue?: number;
+  ratingLabel?: string;
+  ratingText?: string;
+  reviewsText?: string;
+  badgeLabel?: string;
+  badgeTone?: BadgeTone;
+  badgeAppearance?: BadgeAppearance;
+  nameEditAttributes?: EditAttributes;
+  subtitleEditAttributes?: EditAttributes;
+  statusLabelEditAttributes?: EditAttributes;
+  class?: string;
+  [attribute: string]: unknown;
+};
+
+const {
+  name,
+  subtitle,
+  layout = "horizontal",
+  tone = "default",
+  size = "standard",
+  nameTag = "h3",
+  avatarSrc,
+  avatarAlt,
+  avatarInitials,
+  avatarFallback = "placeholder",
+  avatarSize,
+  statusLabel,
+  statusTone = "neutral",
+  ratingValue,
+  ratingLabel,
+  ratingText,
+  reviewsText,
+  badgeLabel,
+  badgeTone = "accent",
+  badgeAppearance = "soft",
+  nameEditAttributes = {},
+  subtitleEditAttributes = {},
+  statusLabelEditAttributes = {},
+  class: className,
+  ...summaryAttributes
+} = Astro.props as Props;
+
+const resolvedAvatarSize: AvatarSize =
+  avatarSize ?? (size === "compact" ? "compact" : size === "large" ? "profile" : "standard");
+const resolvedRatingText = ratingText ?? ratingValue?.toFixed(1);
+const NameElement = nameTag;
+const hasMetaSlot = Astro.slots.has("meta");
+const classes = [
+  "sidera-profile-summary",
+  `sidera-profile-summary--${layout}`,
+  `sidera-profile-summary--${tone}`,
+  `sidera-profile-summary--${size}`,
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+---
+
+<div {...summaryAttributes} class={classes}>
+  <div class="sidera-profile-summary__avatar">
+    <Avatar
+      name={name}
+      src={avatarSrc}
+      alt={avatarAlt}
+      initials={avatarInitials}
+      fallback={avatarFallback}
+      size={resolvedAvatarSize}
+      tone="accent"
+    />
+  </div>
+
+  <div class="sidera-profile-summary__content">
+    <NameElement class="sidera-profile-summary__name" {...nameEditAttributes}>
+      {name}
+    </NameElement>
+    {
+      subtitle ? (
+        <p class="sidera-profile-summary__subtitle" {...subtitleEditAttributes}>
+          {subtitle}
+        </p>
+      ) : null
+    }
+
+    {
+      ratingValue !== undefined || statusLabel || badgeLabel || hasMetaSlot ? (
+        <div class="sidera-profile-summary__meta">
+          {ratingValue !== undefined ? (
+            <span class="sidera-profile-summary__rating">
+              <RatingStars
+                value={ratingValue}
+                size={size === "large" ? "standard" : "compact"}
+                tone={tone === "inverse" ? "inverse" : "gold"}
+                ariaLabel={ratingLabel}
+              />
+              {resolvedRatingText ? <strong>{resolvedRatingText}</strong> : null}
+              {reviewsText ? <span class="sidera-profile-summary__reviews">· {reviewsText}</span> : null}
+            </span>
+          ) : null}
+          {statusLabel ? (
+            <StatusDot
+              label={statusLabel}
+              tone={statusTone}
+              size={size === "compact" ? "compact" : "standard"}
+              contrast={tone === "inverse" ? "inverse" : "default"}
+              editAttributes={statusLabelEditAttributes}
+            />
+          ) : null}
+          {badgeLabel ? (
+            <Badge
+              tone={tone === "inverse" && badgeTone === "neutral" ? "inverse" : badgeTone}
+              appearance={badgeAppearance}
+              size="compact"
+            >
+              {badgeLabel}
+            </Badge>
+          ) : null}
+          {hasMetaSlot ? <slot name="meta" /> : null}
+        </div>
+      ) : null
+    }
+  </div>
+</div>

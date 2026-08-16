@@ -1,0 +1,1 @@
+ALTER TABLE ec_site_shop_checkout_flow DROP COLUMN shop_payment_failure_preview_label;

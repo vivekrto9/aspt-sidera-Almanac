@@ -1,0 +1,17 @@
+---
+import Button from "../../shared/Button.astro";
+import Pagination from "../../shared/Pagination.astro";
+import SectionHeading from "../../shared/SectionHeading.astro";
+import "../../../styles/account/account-collection-page.css";
+
+type Props = { title: string; titleField: string; eyebrow: string; eyebrowField: string; total: number; itemsLabel: string; backLabel: string; backHref: string; currentPage: number; totalPages: number; hrefForPage: (page: number) => string; paginationLabel: string; previousLabel: string; nextLabel: string; pageLabel: string; edit: (field: string) => Record<string, string>; };
+const props = Astro.props as Props;
+---
+
+<div class="account-collection-page">
+  <Button href={props.backHref} variant="link" size="compact" class="account-collection-page__back"><span aria-hidden="true">←</span><span {...props.edit("account_collection_back_label")}>{props.backLabel}</span></Button>
+  <SectionHeading eyebrow={props.eyebrow} title={props.title} size="page" eyebrowEditAttributes={props.edit(props.eyebrowField)} titleEditAttributes={props.edit(props.titleField)} />
+  <p class="account-collection-page__count"><strong>{props.total}</strong> <span {...props.edit("account_collection_items_label")}>{props.itemsLabel}</span></p>
+  <slot />
+  <Pagination currentPage={props.currentPage} totalPages={props.totalPages} hrefForPage={props.hrefForPage} navigationLabel={props.paginationLabel} previousLabel={props.previousLabel} nextLabel={props.nextLabel} pageLabel={props.pageLabel} />
+</div>

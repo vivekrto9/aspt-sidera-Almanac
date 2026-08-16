@@ -1,0 +1,195 @@
+.sidera-planet-position-row {
+  --planet-row-background: transparent;
+  --planet-row-hover: #f3ecdf;
+  --planet-row-selected: var(--color-surface-soft);
+  --planet-row-border: rgba(var(--color-text-rgb), 0.1);
+  --planet-row-text: var(--color-text);
+  --planet-row-muted: var(--color-muted);
+  --planet-row-glyph-background: rgba(var(--color-text-rgb), 0.06);
+  --planet-row-glyph: #7a5142;
+  --planet-row-focus: rgba(var(--color-primary-rgb), 0.36);
+
+  inline-size: 100%;
+  min-inline-size: 0;
+  display: grid;
+  grid-template-columns:
+    2rem minmax(5rem, 0.9fr) minmax(7rem, 1.2fr)
+    minmax(4rem, 0.55fr) auto auto;
+  align-items: center;
+  gap: 0.6875rem;
+  border: 0;
+  border-block-end: 1px solid var(--planet-row-border);
+  border-radius: 0.6875rem;
+  padding: 0.625rem 0.6875rem;
+  background: var(--planet-row-background);
+  color: var(--planet-row-text);
+  font: 400 0.875rem / 1.35 var(--font-sans), system-ui, sans-serif;
+  text-align: start;
+}
+
+.sidera-planet-position-row--compact {
+  grid-template-columns: 1.75rem minmax(4.5rem, 0.8fr) minmax(6rem, 1fr) auto auto;
+  gap: 0.5rem;
+  padding: 0.4375rem 0.5rem;
+  font-size: 0.8125rem;
+}
+
+.sidera-planet-position-row--inverse {
+  --planet-row-background: transparent;
+  --planet-row-hover: rgba(240, 230, 214, 0.08);
+  --planet-row-selected: rgba(240, 230, 214, 0.12);
+  --planet-row-border: rgba(240, 230, 214, 0.14);
+  --planet-row-text: var(--color-surface-soft);
+  --planet-row-muted: var(--color-line);
+  --planet-row-glyph-background: rgba(240, 230, 214, 0.1);
+  --planet-row-glyph: var(--color-primary-soft);
+  --planet-row-focus: rgba(240, 230, 214, 0.42);
+}
+
+.sidera-planet-position-row__glyph {
+  inline-size: 2rem;
+  block-size: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5625rem;
+  background: var(--planet-row-glyph-background);
+  color: var(--planet-row-glyph);
+  font: 400 1.0625rem / 1 Georgia, "Times New Roman", serif;
+}
+
+.sidera-planet-position-row--compact .sidera-planet-position-row__glyph {
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  font-size: 0.9375rem;
+}
+
+.sidera-planet-position-row__planet {
+  min-inline-size: 0;
+  color: var(--planet-row-text);
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
+.sidera-planet-position-row__sign {
+  min-inline-size: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4375rem;
+  color: var(--planet-row-text);
+  overflow-wrap: anywhere;
+}
+
+.sidera-planet-position-row__sign > span:first-child:not(:last-child) {
+  flex: none;
+  color: var(--planet-row-glyph);
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.sidera-planet-position-row__degree,
+.sidera-planet-position-row__house {
+  color: var(--planet-row-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.sidera-planet-position-row__motion {
+  justify-self: end;
+}
+
+.sidera-planet-position-row--compact .sidera-planet-position-row__house {
+  display: none;
+}
+
+.sidera-planet-position-row--selected {
+  --planet-row-background: var(--planet-row-selected);
+}
+
+.sidera-planet-position-row--selected .sidera-planet-position-row__glyph {
+  background: var(--color-dark);
+  color: var(--color-surface);
+}
+
+.sidera-planet-position-row--interactive {
+  cursor: pointer;
+  appearance: none;
+  transition:
+    background-color 150ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+
+.sidera-planet-position-row--interactive:hover:not(:disabled) {
+  background: var(--planet-row-hover);
+}
+
+.sidera-planet-position-row--interactive:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.sidera-planet-position-row--interactive:focus-visible {
+  outline: 0.1875rem solid var(--planet-row-focus);
+  outline-offset: 0.125rem;
+}
+
+.sidera-planet-position-row--disabled,
+.sidera-planet-position-row--interactive:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+@media (max-width: 40rem) {
+  .sidera-planet-position-row,
+  .sidera-planet-position-row--compact {
+    grid-template-columns: 2rem minmax(0, 1fr) auto;
+    grid-template-areas:
+      "glyph planet motion"
+      "glyph sign degree";
+    column-gap: 0.625rem;
+    row-gap: 0.1875rem;
+    min-block-size: 3.5rem;
+    padding: 0.625rem;
+    font-size: 0.875rem;
+  }
+
+  .sidera-planet-position-row__glyph {
+    grid-area: glyph;
+  }
+
+  .sidera-planet-position-row__planet {
+    grid-area: planet;
+  }
+
+  .sidera-planet-position-row__sign {
+    grid-area: sign;
+  }
+
+  .sidera-planet-position-row__degree {
+    grid-area: degree;
+    justify-self: end;
+  }
+
+  .sidera-planet-position-row__house {
+    display: none;
+  }
+
+  .sidera-planet-position-row__motion {
+    grid-area: motion;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidera-planet-position-row--interactive {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .sidera-planet-position-row {
+    border-color: CanvasText;
+  }
+
+  .sidera-planet-position-row--selected {
+    outline: 1px solid Highlight;
+  }
+}

@@ -1,0 +1,234 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { loadPublicPageContent } from "../builder/public-page.ts";
+import type { BuilderEditAttributes } from "../builder/builder.ts";
+import BlogCategoriesGrid from "../components/blog/sections/BlogCategoriesGrid.astro";
+import BlogIndexFeatured from "../components/blog/sections/BlogIndexFeatured.astro";
+import Footer from "../components/shared/Footer.astro";
+import Header from "../components/shared/Header.astro";
+import {
+  activeLocales,
+  defaultLocale,
+  localizePath,
+  type SupportedLocale,
+} from "../data/localization-contract.ts";
+import { createSharedFooterProps } from "../data/shared-footer-navigation.ts";
+import {
+  blogCategories,
+  blogArticles,
+  blogIndexArticles,
+  type BlogCategoryFilter,
+} from "../data/blog/articles.ts";
+import { listBlogPosts } from "../data/blog/posts.ts";
+import "../styles/blog/blog.css";
+
+export const prerender = false;
+
+const {
+  locale,
+  content,
+  builder,
+  builderPage,
+  chromePage,
+  reviewTargets,
+  builderEdit,
+  chromeEdit,
+} = await loadPublicPageContent(Astro, "blog");
+
+const seoContent = {
+  seo_title: content.seo_title,
+  seo_description: content.seo_description,
+  seo_canonical_path: content.seo_canonical_path,
+  seo_robots: content.seo_robots,
+  og_title: content.og_title,
+  og_description: content.og_description,
+  og_image: content.og_image,
+  og_image_alt: content.og_image_alt,
+  twitter_card: content.twitter_card,
+  twitter_title: content.twitter_title,
+  twitter_description: content.twitter_description,
+  twitter_image: content.twitter_image,
+};
+
+const componentEditAttributes = (
+  attributes: BuilderEditAttributes,
+): Record<string, string> =>
+  Object.fromEntries(
+    Object.entries(attributes)
+      .filter((entry): entry is [string, string | true] => entry[1] !== undefined)
+      .map(([key, value]) => [key, value === true ? "true" : value]),
+  );
+
+const localeHref = (targetLocale: SupportedLocale) => {
+  const url = new URL(Astro.request.url);
+  if (targetLocale === defaultLocale) {
+    if (locale === defaultLocale) url.searchParams.delete("locale");
+    else url.searchParams.set("locale", defaultLocale);
+  } else {
+    url.searchParams.set("locale", targetLocale);
+  }
+  return `${url.pathname}${url.search}${url.hash}`;
+};
+
+const navigationDefinitions = [
+  ["nav_todays_sky", "/todays-sky"],
+  ["nav_charts", "/birth-chart"],
+  ["nav_compatibility", "/synastry"],
+  ["nav_moon", "/moon-calendar"],
+  ["nav_horoscope", "/daily-horoscope"],
+  ["nav_astrologers", "/astrologers"],
+  ["nav_blog", "/blog"],
+] as const;
+const navigation = navigationDefinitions.map(([field, path]) => ({
+  label: content[field],
+  href: localizePath(path, locale),
+  current: path === "/blog",
+  editAttributes: componentEditAttributes(chromeEdit(field)),
+}));
+const actions = [
+  {
+    id: "sign-in",
+    label: content.action_sign_in,
+    href: localizePath("/login", locale),
+    variant: "ghost" as const,
+    editAttributes: componentEditAttributes(chromeEdit("action_sign_in")),
+  },
+  {
+    id: "get-chart",
+    label: content.action_get_chart,
+    href: localizePath("/birth-chart", locale),
+    variant: "primary" as const,
+    editAttributes: componentEditAttributes(chromeEdit("action_get_chart")),
+  },
+];
+const languageOptions = activeLocales.map((item) => {
+  const field = `language_option_${item.code}_label`;
+  return {
+    code: item.code,
+    label: content[field] || item.nativeName,
+    href: localeHref(item.code),
+    lang: item.code,
+    hreflang: item.hreflang,
+    editAttributes: componentEditAttributes(chromeEdit(field)),
+  };
+});
+const footerProps = createSharedFooterProps({
+  content,
+  locale,
+  editAttributes: (field) => componentEditAttributes(chromeEdit(field)),
+});
+const requestedCategory = Astro.url.searchParams.get("category");
+const dynamicPosts = await listBlogPosts(locale);
+const dynamicPostBySlug = new Map(dynamicPosts.map((post) => [post.slug, post]));
+const featuredDefinition = blogArticles[0];
+const featuredPost = dynamicPostBySlug.get(featuredDefinition.slug);
+const selectedCategory = (
+  blogCategories.includes(requestedCategory as BlogCategoryFilter)
+    ? requestedCategory
+    : "all"
+) as BlogCategoryFilter;
+const categoryOptions = blogCategories.map((category) => {
+  const field = `blog_category_${category.replaceAll("-", "_")}`;
+  return {
+    value: category,
+    label: content[field],
+    editAttributes: componentEditAttributes(builderEdit(field)),
+  };
+});
+const visibleArticles = blogIndexArticles.map((article) => {
+    const prefix = `blog_article_${article.key.replaceAll("-", "_")}`;
+    const dynamicPost = dynamicPostBySlug.get(article.slug);
+    return {
+      ...article,
+      image: dynamicPost?.image ?? article.image,
+      categoryLabel: dynamicPost?.category ?? content[`${prefix}_category`],
+      title: dynamicPost?.title ?? content[`${prefix}_title`],
+      excerpt: dynamicPost?.excerpt ?? content[`${prefix}_excerpt`],
+      readTime: dynamicPost?.readTime ?? content[`${prefix}_read_time`],
+      href: localizePath(`/blog/${article.slug}`, locale),
+    };
+});
+const articleEditAttributes = (field: string) =>
+  dynamicPosts.length > 0 && (
+    [
+      "blog_featured_title",
+      "blog_featured_excerpt",
+      "blog_featured_author",
+      "blog_featured_read_time",
+    ].includes(field) || (
+      field.startsWith("blog_article_") &&
+      !field.endsWith("_date")
+    )
+  )
+    ? {}
+    : componentEditAttributes(builderEdit(field));
+---
+
+<BaseLayout
+  seo={seoContent}
+  bodyClass="sidera-blog-body"
+  builderToolbar={{
+    launcherEnabled: builder.launcherEnabled,
+    studioModeEnabled: builder.studioModeEnabled,
+    collection: builder.collection,
+    entry: builder.entry,
+    locale: builder.locale,
+    csrfToken: builder.csrfToken,
+    canPublish: builder.canPublish,
+    seo: seoContent,
+    hasSavedDraft: builderPage.hasSavedDraft || chromePage.hasSavedDraft,
+    reviewTargets,
+  }}
+>
+  <Header
+    id="blog-header"
+    brandLabel={content.brand_name}
+    brandHref={localizePath("/", locale)}
+    brandAriaLabel={content.brand_aria_label}
+    navigationLabel={content.primary_navigation_label}
+    chromeNavigation={{ content, edit: chromeEdit }}
+    navigation={navigation}
+    actions={actions}
+    language={{
+      activeLocale: locale,
+      options: languageOptions,
+      triggerLabel: content.language_trigger_label,
+      menuLabel: content.language_menu_label,
+    }}
+    mobileUtilityActionId="sign-in"
+    menuLabel={content.menu_open_label}
+    closeMenuLabel={content.menu_close_label}
+    brandEditAttributes={componentEditAttributes(chromeEdit("brand_name"))}
+  />
+
+  <main class="sidera-blog">
+    <BlogIndexFeatured
+      eyebrow={content.blog_intro_eyebrow}
+      titleAccent={content.blog_intro_title_accent}
+      titleRest={content.blog_intro_title_rest}
+      featuredEyebrow={content.blog_featured_eyebrow}
+      featuredTitle={featuredPost?.title ?? content.blog_featured_title}
+      featuredExcerpt={featuredPost?.excerpt ?? content.blog_featured_excerpt}
+      featuredAuthor={featuredPost?.author ?? content.blog_featured_author}
+      featuredReadTime={featuredPost?.readTime ?? content.blog_featured_read_time}
+      featuredHref={localizePath(
+        "/blog/the-lot-of-fortune-explained",
+        locale,
+      )}
+      coverSrc={(featuredPost?.image ?? featuredDefinition.image).src}
+      coverAlt={(featuredPost?.image ?? featuredDefinition.image).alt}
+      coverWidth={(featuredPost?.image ?? featuredDefinition.image).width}
+      coverHeight={(featuredPost?.image ?? featuredDefinition.image).height}
+      editAttributes={articleEditAttributes}
+    />
+    <BlogCategoriesGrid
+      categoryLabel={content.blog_categories_label}
+      categories={categoryOptions}
+      {selectedCategory}
+      articles={visibleArticles}
+      editAttributes={articleEditAttributes}
+    />
+  </main>
+
+  <Footer {...footerProps} />
+</BaseLayout>

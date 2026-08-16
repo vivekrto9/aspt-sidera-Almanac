@@ -1,0 +1,116 @@
+---
+import Badge from "./Badge.astro";
+import "../../styles/shared/planet-position-row.css";
+
+type PlanetPositionRowSize = "compact" | "standard";
+type PlanetPositionRowTone = "default" | "inverse";
+type PlanetMotionTone = "neutral" | "accent" | "success" | "warning" | "danger";
+
+type Props = {
+  planetName: string;
+  planetGlyph: string;
+  signName: string;
+  degreeText: string;
+  signGlyph?: string;
+  houseText?: string;
+  motionText?: string;
+  motionTone?: PlanetMotionTone;
+  size?: PlanetPositionRowSize;
+  tone?: PlanetPositionRowTone;
+  interactive?: boolean;
+  selected?: boolean;
+  disabled?: boolean;
+  ariaLabel?: string;
+  class?: string;
+  planetEditAttributes?: Record<string, string>;
+  signEditAttributes?: Record<string, string>;
+  degreeEditAttributes?: Record<string, string>;
+  houseEditAttributes?: Record<string, string>;
+  motionEditAttributes?: Record<string, string>;
+  [attribute: string]: unknown;
+};
+
+const {
+  planetName,
+  planetGlyph,
+  signName,
+  degreeText,
+  signGlyph,
+  houseText,
+  motionText,
+  motionTone = "neutral",
+  size = "standard",
+  tone = "default",
+  interactive = false,
+  selected = false,
+  disabled = false,
+  ariaLabel,
+  class: className,
+  planetEditAttributes,
+  signEditAttributes,
+  degreeEditAttributes,
+  houseEditAttributes,
+  motionEditAttributes,
+  ...rowAttributes
+} = Astro.props as Props;
+
+const Root = interactive ? "button" : "div";
+const classes = [
+  "sidera-planet-position-row",
+  `sidera-planet-position-row--${size}`,
+  `sidera-planet-position-row--${tone}`,
+  interactive && "sidera-planet-position-row--interactive",
+  selected && "sidera-planet-position-row--selected",
+  disabled && "sidera-planet-position-row--disabled",
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+---
+
+<Root
+  {...rowAttributes}
+  class={classes}
+  type={interactive ? "button" : undefined}
+  disabled={interactive ? disabled : undefined}
+  aria-pressed={interactive ? selected : undefined}
+  aria-disabled={!interactive && disabled ? "true" : undefined}
+  aria-label={ariaLabel}
+>
+  <span class="sidera-planet-position-row__glyph" aria-hidden="true">{planetGlyph}</span>
+
+  <span class="sidera-planet-position-row__planet" {...planetEditAttributes}>
+    {planetName}
+  </span>
+
+  <span class="sidera-planet-position-row__sign" {...signEditAttributes}>
+    {signGlyph && <span aria-hidden="true">{signGlyph}</span>}
+    <span>{signName}</span>
+  </span>
+
+  <span class="sidera-planet-position-row__degree" {...degreeEditAttributes}>
+    {degreeText}
+  </span>
+
+  {
+    houseText && (
+      <span class="sidera-planet-position-row__house" {...houseEditAttributes}>
+        {houseText}
+      </span>
+    )
+  }
+
+  {
+    motionText && (
+      <span class="sidera-planet-position-row__motion" {...motionEditAttributes}>
+        <Badge
+          tone={tone === "inverse" ? "inverse" : motionTone}
+          size="compact"
+          ariaLabel={motionText}
+        >
+          {motionText}
+        </Badge>
+      </span>
+    )
+  }
+</Root>

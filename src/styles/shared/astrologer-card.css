@@ -1,0 +1,198 @@
+.sidera-astrologer-card {
+  inline-size: 100%;
+  max-inline-size: 24rem;
+  min-inline-size: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(var(--color-text-rgb), 0.1);
+  border-radius: 1.25rem;
+  padding: 1.5rem;
+  background: var(--color-panel);
+  color: var(--color-text);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  transition:
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.sidera-astrologer-card:hover {
+  box-shadow: 0 1.375rem 3rem -1.75rem rgba(var(--color-text-rgb), 0.5);
+  transform: translateY(-0.25rem);
+}
+
+.sidera-astrologer-card .sidera-profile-summary__avatar {
+  position: relative;
+}
+
+.sidera-astrologer-card .sidera-profile-summary__avatar::after {
+  position: absolute;
+  inset-inline-end: -0.0625rem;
+  inset-block-end: -0.0625rem;
+  inline-size: 1rem;
+  block-size: 1rem;
+  border: 0.15625rem solid var(--color-panel);
+  border-radius: 50%;
+  background: var(--color-muted-soft);
+  content: "";
+}
+
+.sidera-astrologer-card--online .sidera-profile-summary__avatar::after {
+  background: var(--color-success);
+}
+
+.sidera-astrologer-card--busy .sidera-profile-summary__avatar::after {
+  background: #c8973f;
+}
+
+.sidera-astrologer-card__rating {
+  margin-block-start: 0.5rem;
+}
+
+.sidera-astrologer-card__specialties {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4375rem;
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sidera-astrologer-card__specialties li {
+  max-inline-size: 100%;
+  border: 1px solid rgba(var(--color-text-rgb), 0.1);
+  border-radius: 999px;
+  padding: 0.25rem 0.6875rem;
+  background: var(--color-surface);
+  color: var(--color-muted);
+  font-size: 0.71875rem;
+  font-weight: 500;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.sidera-astrologer-card__description {
+  flex: 1;
+  margin: 1rem 0 0;
+  color: var(--color-muted);
+  font-size: 0.84375rem;
+  line-height: 1.55;
+  text-wrap: pretty;
+  overflow-wrap: anywhere;
+}
+
+.sidera-astrologer-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-block-start: 1.25rem;
+  border-block-start: 1px solid rgba(var(--color-text-rgb), 0.1);
+  padding-block-start: 1.125rem;
+}
+
+.sidera-astrologer-card__rate {
+  flex: none;
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.78125rem;
+  line-height: 1.2;
+}
+
+.sidera-astrologer-card__rate strong {
+  color: var(--color-text);
+  font: 400 1.375rem / 1 var(--font-serif), Georgia, serif;
+}
+
+.sidera-astrologer-card__rate span {
+  overflow-wrap: anywhere;
+}
+
+.sidera-astrologer-card__actions {
+  flex: 1 0 14rem;
+  min-inline-size: 0;
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.sidera-astrologer-card--compact {
+  max-inline-size: 18rem;
+  align-items: stretch;
+  border-radius: 1.125rem;
+  background: var(--color-panel);
+  text-align: center;
+}
+
+.sidera-astrologer-card--compact
+  :is(.sidera-astrologer-card__rating, .sidera-rating-summary) {
+  justify-content: center;
+}
+
+.sidera-astrologer-card--compact .sidera-astrologer-card__specialties,
+.sidera-astrologer-card--compact .sidera-astrologer-card__description {
+  display: none;
+}
+
+.sidera-astrologer-card--compact .sidera-astrologer-card__footer {
+  align-items: stretch;
+  flex-direction: column;
+  gap: 0.875rem;
+  border-block-start: 0;
+  padding-block-start: 0;
+}
+
+.sidera-astrologer-card--compact .sidera-astrologer-card__actions {
+  flex-basis: auto;
+  inline-size: 100%;
+}
+
+.sidera-astrologer-card--compact .sidera-astrologer-card__rate {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.125rem;
+}
+
+@media (max-width: 40rem) {
+  .sidera-astrologer-card {
+    max-inline-size: 100%;
+  }
+
+  .sidera-astrologer-card__footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .sidera-astrologer-card__actions {
+    flex: none;
+    inline-size: 100%;
+    justify-content: flex-start;
+  }
+
+  .sidera-astrologer-card__actions .sidera-button {
+    flex: 1 1 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidera-astrologer-card {
+    transition: none;
+  }
+
+  .sidera-astrologer-card:hover {
+    transform: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .sidera-astrologer-card .sidera-profile-summary__avatar::after {
+    border-color: Canvas;
+    background: CanvasText;
+  }
+
+  .sidera-astrologer-card--online .sidera-profile-summary__avatar::after {
+    background: Highlight;
+  }
+}

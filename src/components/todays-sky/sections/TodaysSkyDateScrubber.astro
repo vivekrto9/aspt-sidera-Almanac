@@ -1,0 +1,385 @@
+---
+import DateNavigator from "../../shared/DateNavigator.astro";
+import type { SkyBodyPosition } from "../../../data/astronomy/sky-strip-positions.ts";
+import "../../../styles/todays-sky/sections/todays-sky-date-scrubber.css";
+
+type Props = {
+  localeTag: string;
+  todayIso: string;
+  selectedOffset: number;
+  eyebrow: string;
+  todayAction: string;
+  todayMarker: string;
+  movingNowLabel: string;
+  navigationLabel: string;
+  previousLabel: string;
+  nextLabel: string;
+  rangeLabel: string;
+  previousHref: string;
+  nextHref: string;
+  todayHref: string;
+  positions: SkyBodyPosition[];
+  eyebrowEditAttributes?: Record<string, string>;
+  todayActionEditAttributes?: Record<string, string>;
+  todayMarkerEditAttributes?: Record<string, string>;
+  movingNowLabelEditAttributes?: Record<string, string>;
+};
+
+const {
+  localeTag,
+  todayIso,
+  selectedOffset,
+  eyebrow,
+  todayAction,
+  todayMarker,
+  movingNowLabel,
+  navigationLabel,
+  previousLabel,
+  nextLabel,
+  rangeLabel,
+  previousHref,
+  nextHref,
+  todayHref,
+  positions,
+  eyebrowEditAttributes = {},
+  todayActionEditAttributes = {},
+  todayMarkerEditAttributes = {},
+  movingNowLabelEditAttributes = {},
+} = Astro.props as Props;
+
+const rangeMin = -30;
+const rangeMax = 120;
+const clampedOffset = Math.min(rangeMax, Math.max(rangeMin, selectedOffset));
+const today = new Date(`${todayIso}T12:00:00`);
+const selectedDate = new Date(today);
+selectedDate.setDate(today.getDate() + clampedOffset);
+const rangeStart = new Date(today);
+rangeStart.setDate(today.getDate() + rangeMin);
+const rangeEnd = new Date(today);
+rangeEnd.setDate(today.getDate() + rangeMax);
+
+const dateFormatter = new Intl.DateTimeFormat(localeTag, {
+  weekday: "long",
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+});
+const monthFormatter = new Intl.DateTimeFormat(localeTag, {
+  month: "short",
+  year: "numeric",
+});
+const relativeFormatter = new Intl.RelativeTimeFormat(localeTag, {
+  numeric: "auto",
+});
+const capitalize = (value: string) =>
+  value.length > 0 ? `${value[0].toLocaleUpperCase(localeTag)}${value.slice(1)}` : value;
+---
+
+<section
+  class="todays-sky-date-scrubber"
+  aria-label={navigationLabel}
+  data-todays-sky-date-scrubber
+  data-locale-tag={localeTag}
+  data-today-iso={todayIso}
+  data-range-min={rangeMin}
+  data-range-max={rangeMax}
+>
+  <div class="todays-sky-date-scrubber__card">
+    <DateNavigator
+      id="todays-sky-date-navigation"
+      class="todays-sky-date-scrubber__navigator"
+      label={dateFormatter.format(selectedDate)}
+      groupLabel={navigationLabel}
+      previousLabel={previousLabel}
+      nextLabel={nextLabel}
+      resetLabel={todayAction}
+      eyebrow={eyebrow}
+      description={capitalize(relativeFormatter.format(clampedOffset, "day"))}
+      previousHref={previousHref}
+      nextHref={nextHref}
+      resetHref={todayHref}
+      eyebrowEditAttributes={eyebrowEditAttributes}
+      resetLabelEditAttributes={todayActionEditAttributes}
+    />
+
+    <div class="todays-sky-date-scrubber__range">
+      <div class="todays-sky-date-scrubber__today-marker" aria-hidden="true">
+        <span {...todayMarkerEditAttributes}>{todayMarker}</span>
+      </div>
+      <input
+        class="todays-sky-date-scrubber__input"
+        type="range"
+        min={rangeMin}
+        max={rangeMax}
+        step="1"
+        value={clampedOffset}
+        aria-label={rangeLabel}
+        data-date-range
+      />
+      <div class="todays-sky-date-scrubber__range-labels" aria-hidden="true">
+        <span>{monthFormatter.format(rangeStart)}</span>
+        <span>{monthFormatter.format(rangeEnd)}</span>
+      </div>
+    </div>
+
+    <div class="todays-sky-date-scrubber__positions">
+      <span
+        class="todays-sky-date-scrubber__positions-label"
+        {...movingNowLabelEditAttributes}
+      >
+        {movingNowLabel}
+      </span>
+      <div class="todays-sky-date-scrubber__position-list" role="list">
+        {
+          positions.slice(0, 6).map((position) => (
+            <div
+              class="todays-sky-date-scrubber__position"
+              role="listitem"
+              data-sky-position={position.id}
+              aria-label={`${position.planetName}, ${position.degreeText} ${position.signName}${
+                position.motionText ? `, ${position.motionText}` : ""
+              }`}
+            >
+              <span
+                class="todays-sky-date-scrubber__position-glyph"
+                aria-hidden="true"
+              >
+                {position.planetGlyph}
+              </span>
+              <span
+                class="todays-sky-date-scrubber__position-value"
+                data-sky-position-value
+              >
+                {position.degreeText} {position.signName}
+              </span>
+              <span
+                class="todays-sky-date-scrubber__position-motion"
+                data-sky-position-motion
+                hidden={!position.motionText}
+              >
+                {position.motionText}
+              </span>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  const scrollStorageKey = "sidera:todays-sky:date-navigation-scroll";
+  const dynamicContentSelector = "[data-todays-sky-dynamic-content]";
+  const navigationDocument = document.documentElement;
+  let dateNavigationPending = false;
+
+  const rememberDateNavigationScroll = (href: string) => {
+    try {
+      const target = new URL(href, window.location.href);
+      sessionStorage.setItem(scrollStorageKey, JSON.stringify({
+        target: `${target.pathname}${target.search}`,
+        x: window.scrollX,
+        y: window.scrollY,
+        expiresAt: Date.now() + 120_000,
+      }));
+    } catch {}
+  };
+
+  const restoreDateNavigationScroll = () => {
+    try {
+      const stored = sessionStorage.getItem(scrollStorageKey);
+      if (!stored) return;
+      sessionStorage.removeItem(scrollStorageKey);
+      const state = JSON.parse(stored) as {
+        target?: string;
+        x?: number;
+        y?: number;
+        expiresAt?: number;
+      };
+      const currentTarget = `${window.location.pathname}${window.location.search}`;
+      if (
+        state.target !== currentTarget ||
+        Number(state.expiresAt) < Date.now() ||
+        !Number.isFinite(Number(state.x)) ||
+        !Number.isFinite(Number(state.y))
+      ) return;
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => window.scrollTo(Number(state.x), Number(state.y)));
+      });
+    } catch {}
+  };
+
+  const replaceTodaysSkyContent = async (
+    href: string,
+    updateHistory = true,
+  ) => {
+    if (dateNavigationPending) return;
+    dateNavigationPending = true;
+
+    const currentContent = document.querySelector<HTMLElement>(
+      dynamicContentSelector,
+    );
+    const scrollX = window.scrollX;
+    const scrollY = window.scrollY;
+    currentContent?.setAttribute("aria-busy", "true");
+
+    try {
+      const response = await fetch(href, {
+        headers: { "X-Sidera-Partial-Navigation": "todays-sky" },
+      });
+      if (!response.ok) throw new Error("Today's Sky navigation failed");
+
+      const nextDocument = new DOMParser().parseFromString(
+        await response.text(),
+        "text/html",
+      );
+      const nextContent = nextDocument.querySelector<HTMLElement>(
+        dynamicContentSelector,
+      );
+      if (!currentContent || !nextContent) {
+        throw new Error("Today's Sky content was not found");
+      }
+
+      currentContent.replaceChildren(...nextContent.childNodes);
+      if (updateHistory) {
+        window.history.pushState({ todaysSky: true }, "", href);
+      }
+      document.dispatchEvent(new Event("todays-sky:content-replaced"));
+      window.scrollTo(scrollX, scrollY);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => window.scrollTo(scrollX, scrollY));
+      });
+    } catch {
+      rememberDateNavigationScroll(href);
+      window.location.assign(href);
+    } finally {
+      dateNavigationPending = false;
+      currentContent?.removeAttribute("aria-busy");
+    }
+  };
+
+  const enhanceDateScrubber = (root: HTMLElement) => {
+    if (root.dataset.dateScrubberBound === "true") return;
+    root.dataset.dateScrubberBound = "true";
+
+    const range = root.querySelector<HTMLInputElement>("[data-date-range]");
+    const label = root.querySelector<HTMLElement>(".date-navigator__label");
+    const description = root.querySelector<HTMLElement>(".date-navigator__description");
+    const previousAction = root.querySelector<HTMLAnchorElement>(
+      ".date-navigator__action--previous",
+    );
+    const nextAction = root.querySelector<HTMLAnchorElement>(
+      ".date-navigator__action--next",
+    );
+    const todayAction = root.querySelector<HTMLAnchorElement>(
+      ".date-navigator__action--reset",
+    );
+    const localeTag = root.dataset.localeTag || "en";
+    const todayIso = root.dataset.todayIso;
+    const rangeMin = Number(root.dataset.rangeMin);
+    const rangeMax = Number(root.dataset.rangeMax);
+    if (!range || !label || !description || !todayIso) return;
+
+    const today = new Date(`${todayIso}T12:00:00`);
+    const dateFormatter = new Intl.DateTimeFormat(localeTag, {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+    const relativeFormatter = new Intl.RelativeTimeFormat(localeTag, {
+      numeric: "auto",
+    });
+    const capitalize = (value: string) =>
+      value.length > 0
+        ? `${value[0].toLocaleUpperCase(localeTag)}${value.slice(1)}`
+        : value;
+    const toIsoDate = (date: Date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    };
+    const hrefForOffset = (offset: number) => {
+      const date = new Date(today);
+      date.setDate(today.getDate() + offset);
+      const url = new URL(window.location.href);
+      if (offset === 0) url.searchParams.delete("date");
+      else url.searchParams.set("date", toIsoDate(date));
+      return `${url.pathname}${url.search}${url.hash}`;
+    };
+    const syncView = (rawOffset: number, navigate = false) => {
+      const offset = Math.min(rangeMax, Math.max(rangeMin, rawOffset));
+      const selectedDate = new Date(today);
+      selectedDate.setDate(today.getDate() + offset);
+      label.textContent = dateFormatter.format(selectedDate);
+      description.textContent = capitalize(relativeFormatter.format(offset, "day"));
+      previousAction?.setAttribute(
+        "href",
+        hrefForOffset(Math.max(rangeMin, offset - 1)),
+      );
+      nextAction?.setAttribute(
+        "href",
+        hrefForOffset(Math.min(rangeMax, offset + 1)),
+      );
+      todayAction?.setAttribute("href", hrefForOffset(0));
+      if (navigate) {
+        const href = hrefForOffset(offset);
+        void replaceTodaysSkyContent(href);
+      }
+    };
+
+    range.addEventListener("change", () => {
+      const offset = Math.min(
+        rangeMax,
+        Math.max(rangeMin, Number(range.value)),
+      );
+      void replaceTodaysSkyContent(hrefForOffset(offset));
+    });
+  };
+
+  const enhanceDateScrubbers = () => {
+    document
+      .querySelectorAll<HTMLElement>("[data-todays-sky-date-scrubber]")
+      .forEach(enhanceDateScrubber);
+  };
+
+  restoreDateNavigationScroll();
+  enhanceDateScrubbers();
+  document.addEventListener("astro:page-load", enhanceDateScrubbers);
+  document.addEventListener(
+    "todays-sky:content-replaced",
+    enhanceDateScrubbers,
+  );
+
+  if (navigationDocument.dataset.todaysSkyNavigationReady !== "true") {
+    navigationDocument.dataset.todaysSkyNavigationReady = "true";
+
+    document.addEventListener("click", (event) => {
+      if (
+        event.defaultPrevented ||
+        event.button !== 0 ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey ||
+        document.body.hasAttribute("data-builder-edit-mode")
+      ) return;
+
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const link = target.closest<HTMLAnchorElement>(
+        "[data-todays-sky-date-scrubber] a.date-navigator__action",
+      );
+      if (!link || link.target === "_blank" || link.origin !== window.location.origin) return;
+
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      void replaceTodaysSkyContent(link.href);
+    }, true);
+
+    window.addEventListener("popstate", () => {
+      void replaceTodaysSkyContent(window.location.href, false);
+    });
+  }
+</script>

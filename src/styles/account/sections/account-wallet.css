@@ -1,0 +1,186 @@
+.account-wallet {
+  min-inline-size: 0;
+  margin-block-start: 4rem;
+  scroll-margin-block-start: 6rem;
+}
+
+.account-wallet__heading-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+.account-wallet__heading {
+  --sidera-section-heading-title-size: 2.125rem;
+}
+
+.account-wallet__count {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid rgba(var(--color-text-rgb), 0.1);
+  border-radius: 999px;
+  padding: 0.5rem 0.8rem;
+  background: var(--color-panel);
+  color: var(--color-muted);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.account-wallet__count strong {
+  color: var(--color-text);
+  font-size: 0.875rem;
+  letter-spacing: 0;
+}
+
+.account-wallet__description {
+  max-inline-size: 39rem;
+  margin: 0.625rem 0 1.125rem;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+.account-wallet__summary,
+.account-wallet__activity {
+  border: 1px solid rgba(var(--color-text-rgb), 0.1);
+  border-radius: 1.125rem;
+  background: var(--color-panel);
+}
+
+.account-wallet__summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: 1.5rem;
+}
+
+.account-wallet__summary p {
+  margin: 0;
+  color: var(--color-primary);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+
+.account-wallet__summary strong {
+  display: block;
+  margin-block-start: 0.25rem;
+  color: var(--color-text);
+  font: 500 2.75rem / 1 var(--font-serif), Georgia, serif;
+}
+
+.account-wallet__summary > div:first-child > span {
+  display: block;
+  margin-block-start: 0.35rem;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}
+
+.account-wallet__actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.account-wallet__activity {
+  overflow: hidden;
+  margin-block-start: 1rem;
+}
+
+.account-wallet__activity-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.125rem 1.25rem;
+}
+
+.account-wallet__activity-heading h3 {
+  margin: 0;
+  color: var(--color-text);
+  font: 500 1.375rem / 1.1 var(--font-serif), Georgia, serif;
+}
+
+.account-wallet__activity-heading .sidera-button {
+  min-block-size: auto;
+}
+
+.account-wallet__list {
+  border-block-start: 1px solid rgba(var(--color-text-rgb), 0.08);
+  padding-inline: 1.25rem;
+  background: rgba(var(--color-surface-rgb), 0.28);
+}
+
+.account-wallet__transaction {
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding-block: 0.875rem;
+  border-block-end: 1px solid rgba(var(--color-text-rgb), 0.08);
+}
+
+.account-wallet__transaction:last-child { border-block-end: 0; }
+
+.account-wallet__transaction > span {
+  inline-size: 2.25rem;
+  block-size: 2.25rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(63, 143, 95, 0.11);
+  color: var(--color-success);
+  font-weight: 700;
+}
+
+.account-wallet__transaction.is-debit > span {
+  background: rgba(var(--color-primary-rgb), 0.1);
+  color: var(--color-primary);
+}
+
+.account-wallet__transaction strong,
+.account-wallet__transaction small { display: block; }
+.account-wallet__transaction strong { color: var(--color-text); font-size: 0.84375rem; }
+.account-wallet__transaction small { margin-block-start: 0.2rem; color: #89776e; font-size: 0.71875rem; line-height: 1.4; }
+.account-wallet__transaction > b { color: var(--color-success); font-size: 0.84375rem; }
+.account-wallet__transaction.is-debit > b { color: var(--color-primary); }
+
+.account-wallet__empty {
+  border-block-start: 1px solid rgba(var(--color-text-rgb), 0.08);
+  padding: 1.75rem 1.25rem 1.5rem;
+  background: rgba(var(--color-surface-rgb), 0.28);
+  text-align: center;
+}
+
+.account-wallet__empty h3 {
+  margin: 0;
+  color: var(--color-text);
+  font: 500 1.5rem / 1.1 var(--font-serif), Georgia, serif;
+}
+
+.account-wallet__empty p {
+  max-inline-size: 32rem;
+  margin: 0.5rem auto 1rem;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 40rem) {
+  .account-wallet { margin-block-start: 3rem; }
+  .account-wallet__heading-row { align-items: flex-start; }
+  .account-wallet__summary { align-items: stretch; flex-direction: column; gap: 1.25rem; padding: 1.25rem; }
+  .account-wallet__actions { justify-content: flex-start; }
+  .account-wallet__transaction { grid-template-columns: 2.25rem minmax(0, 1fr); }
+  .account-wallet__transaction > b { grid-column: 2; }
+}

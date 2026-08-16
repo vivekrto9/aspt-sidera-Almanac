@@ -1,0 +1,100 @@
+---
+import type { ShopProductId } from "../../../data/shop/catalog.ts";
+
+type Props = {
+  cartHref: string;
+  defaultVariants: Partial<Record<ShopProductId, string>>;
+};
+
+const { cartHref, defaultVariants } = Astro.props as Props;
+---
+
+<span
+  hidden
+  data-shop-flow-client
+  data-cart-href={cartHref}
+  data-default-variants={JSON.stringify(defaultVariants)}
+></span>
+
+<script>
+  import {
+    normalizeShopCart,
+    shopCartStorageKey,
+  } from "../../../data/shop/commerce.ts";
+
+  const initializeShopFlow = (config: HTMLElement) => {
+    const documentRoot = document.documentElement;
+    const cartHref = config.dataset.cartHref || "/shop?view=cart";
+    const defaultVariants = JSON.parse(config.dataset.defaultVariants ?? "{}") as Record<string, string>;
+
+    const readCart = () => {
+      try {
+        return normalizeShopCart(JSON.parse(sessionStorage.getItem(shopCartStorageKey) ?? "[]"));
+      } catch {
+        return [];
+      }
+    };
+    const writeCart = (cart: ReturnType<typeof normalizeShopCart>) => {
+      try { sessionStorage.setItem(shopCartStorageKey, JSON.stringify(cart)); } catch {}
+      document.dispatchEvent(new CustomEvent("shopcartchange", { detail: { cart } }));
+    };
+    const updateBadges = (cart = readCart()) => {
+      const count = cart.reduce((sum, item) => sum + item.quantity, 0);
+      document.querySelectorAll<HTMLElement>('[data-header-action="cart"] .sidera-button').forEach((button) => {
+        let badge = button.querySelector<HTMLElement>(".sidera-header__action-badge");
+        if (count === 0) {
+          badge?.remove();
+          return;
+        }
+        if (!badge) {
+          badge = document.createElement("span");
+          badge.className = "sidera-header__action-badge";
+          badge.setAttribute("aria-hidden", "true");
+          button.append(badge);
+        }
+        badge.textContent = String(count);
+      });
+    };
+    const addProduct = (id: string, quantity = 1, variant?: string) => {
+      const cart = readCart();
+      const existing = cart.find((item) => item.id === id);
+      if (existing) {
+        existing.quantity = Math.min(99, existing.quantity + Math.max(1, quantity));
+        existing.variant = variant || existing.variant || defaultVariants[id];
+      } else {
+        cart.push({ id: id as typeof cart[number]["id"], quantity: Math.max(1, quantity), variant: variant || defaultVariants[id] });
+      }
+      writeCart(normalizeShopCart(cart));
+      window.location.assign(cartHref);
+    };
+
+    updateBadges();
+    document.addEventListener("shopcartchange", (event) => {
+      const cart = normalizeShopCart((event as CustomEvent<{ cart?: unknown }>).detail?.cart);
+      updateBadges(cart);
+    });
+
+    if (documentRoot.dataset.shopFlowEventsBound === "true") return;
+    documentRoot.dataset.shopFlowEventsBound = "true";
+    document.addEventListener("productadd", (event) => {
+      const id = (event as CustomEvent<{ productId?: string }>).detail?.productId;
+      if (id) addProduct(id);
+    });
+    document.addEventListener("click", (event) => {
+      const button = (event.target as Element).closest<HTMLButtonElement>("[data-product-add]");
+      if (!button) return;
+      const detail = button.closest<HTMLElement>("[data-product-detail]");
+      const id = detail?.dataset.productId;
+      if (!id) return;
+      const quantity = Number(detail.querySelector<HTMLOutputElement>("[data-quantity-value]")?.value ?? 1);
+      const variant = detail.querySelector<HTMLElement>("[data-selected-variant]")?.textContent?.trim();
+      addProduct(id, quantity, variant);
+    });
+  };
+
+  const initializeShopFlows = () => document
+    .querySelectorAll<HTMLElement>("[data-shop-flow-client]")
+    .forEach(initializeShopFlow);
+  initializeShopFlows();
+  document.addEventListener("astro:page-load", initializeShopFlows);
+</script>

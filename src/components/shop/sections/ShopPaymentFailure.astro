@@ -1,0 +1,55 @@
+---
+import type { ShopCheckoutFlowCopy } from "../../../data/locale/shop/sections/checkout-flow.ts";
+import Button from "../../shared/Button.astro";
+import "../../../styles/shop/sections/order-confirmation.css";
+import "../../../styles/shop/sections/payment-failure.css";
+
+type EditAttributes = Record<string, string>;
+type Props = {
+  copy: ShopCheckoutFlowCopy;
+  checkoutHref: string;
+  cartHref: string;
+  editAttributes?: (field: string) => EditAttributes;
+};
+
+const {
+  copy,
+  checkoutHref,
+  cartHref,
+  editAttributes = () => ({}),
+} = Astro.props as Props;
+---
+
+<main class="shop-confirmation shop-payment-failure" data-screen-label="Payment Unsuccessful">
+  <div class="shop-confirmation__stars" aria-hidden="true"></div>
+  <div class="shop-confirmation__inner shop-payment-failure__inner">
+    <header class="shop-confirmation__header">
+      <span class="shop-confirmation__check shop-payment-failure__mark" aria-hidden="true">!</span>
+      <p class="shop-confirmation__eyebrow shop-payment-failure__eyebrow" {...editAttributes("shop_payment_failure_eyebrow")}>
+        {copy.paymentFailureEyebrow}
+      </p>
+      <h1 {...editAttributes("shop_payment_failure_title")}>{copy.paymentFailureTitle}</h1>
+      <p class="shop-confirmation__message" {...editAttributes("shop_payment_failure_description")}>
+        {copy.paymentFailureDescription}
+      </p>
+    </header>
+
+    <section class="shop-payment-failure__context" aria-labelledby="shop-payment-failure-context-title">
+      <h2 id="shop-payment-failure-context-title" {...editAttributes("shop_payment_failure_context_title")}>
+        {copy.paymentFailureContextTitle}
+      </h2>
+      <p {...editAttributes("shop_payment_failure_context_description")}>
+        {copy.paymentFailureContextDescription}
+      </p>
+    </section>
+
+    <div class="shop-payment-failure__actions">
+      <Button href={checkoutHref} variant="secondary" size="large" shape="rounded" fullWidth>
+        <span {...editAttributes("shop_payment_failure_retry_label")}>{copy.paymentFailureRetryLabel}</span>
+      </Button>
+      <Button href={cartHref} variant="outline" size="large" shape="rounded" fullWidth class="shop-confirmation__home">
+        <span {...editAttributes("shop_payment_failure_cart_label")}>{copy.paymentFailureCartLabel}</span>
+      </Button>
+    </div>
+  </div>
+</main>

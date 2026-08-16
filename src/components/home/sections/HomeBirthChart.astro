@@ -1,0 +1,389 @@
+---
+import type { SupportedLocale } from "../../../data/localization-contract.ts";
+import type { HomeBirthChartCopy } from "../../../data/locale/home/sections/birth-chart.ts";
+import { birthMinuteOptions } from "../../../data/time-options.ts";
+import "../../../styles/home/sections/home-birth-chart.css";
+import AstrologyProfileForm, {
+  type AstrologyProfile,
+} from "../../shared/AstrologyProfileForm.astro";
+import ChartWheel from "../../shared/ChartWheel.astro";
+import Checkbox from "../../shared/Checkbox.astro";
+import FormField from "../../shared/FormField.astro";
+import SectionHeading from "../../shared/SectionHeading.astro";
+import SelectField from "../../shared/SelectField.astro";
+
+type EditAttributes = Record<string, string>;
+
+type Props = {
+  locale: SupportedLocale;
+  copy: HomeBirthChartCopy;
+  actionHref: string;
+  apiEndpoint?: string;
+  editAttributes?: (field: string) => EditAttributes;
+};
+
+const {
+  locale,
+  copy,
+  actionHref,
+  apiEndpoint = "/api/astropages/generated-site/birth-chart",
+  editAttributes = () => ({}),
+} = Astro.props as Props;
+
+const edit = (field: string) => editAttributes(field);
+const now = new Date();
+const datePartOrder = new Intl.DateTimeFormat(locale)
+  .formatToParts(new Date(2001, 10, 22))
+  .map((part) => part.type)
+  .filter(
+    (part): part is "month" | "day" | "year" =>
+      part === "month" || part === "day" || part === "year",
+  );
+const months = Array.from({ length: 12 }, (_, index) => ({
+  value: String(index + 1),
+  label: new Intl.DateTimeFormat(locale, { month: "short" }).format(
+    new Date(2024, index, 1),
+  ),
+}));
+const days = Array.from({ length: 31 }, (_, index) => ({
+  value: String(index + 1),
+  label: String(index + 1),
+}));
+const years = Array.from({ length: 110 }, (_, index) => {
+  const year = now.getFullYear() - index;
+  return { value: String(year), label: String(year) };
+});
+const hours = Array.from({ length: 12 }, (_, index) => ({
+  value: String(index + 1),
+  label: String(index + 1),
+}));
+const minutes = birthMinuteOptions;
+const periods = [
+  { value: "AM", label: "AM" },
+  { value: "PM", label: "PM" },
+];
+const profile: AstrologyProfile = {
+  id: "profile",
+  title: copy.formTitle,
+  titleEditAttributes: edit("form_title"),
+  visibleFields: ["date", "time", "location"],
+  required: true,
+  date: {
+    label: copy.dateLabel,
+    labelEditAttributes: edit("date_label"),
+    monthLabel: copy.monthLabel,
+    dayLabel: copy.dayLabel,
+    yearLabel: copy.yearLabel,
+    months,
+    days,
+    years,
+    monthValue: "1",
+    dayValue: "1",
+    yearValue: "1990",
+    order: datePartOrder,
+  },
+  time: {
+    label: copy.timeLabel,
+    labelEditAttributes: edit("time_label"),
+    hourLabel: copy.hourLabel,
+    minuteLabel: copy.minuteLabel,
+    periodLabel: copy.periodLabel,
+    unknownLabel: copy.unknownTimeLabel,
+    unknownLabelEditAttributes: edit("unknown_time_label"),
+    hours,
+    minutes,
+    periods,
+    hourValue: "12",
+    minuteValue: "00",
+    periodValue: "PM",
+  },
+  location: {
+    label: copy.locationLabel,
+    labelEditAttributes: edit("location_label"),
+    placeholder: copy.locationPlaceholder,
+    inputEditAttributes: edit("location_placeholder"),
+    startText: copy.locationStart,
+    searchingText: copy.locationSearching,
+    noResultsText: copy.locationEmpty,
+    unavailableText: copy.locationUnavailable,
+    selectedText: copy.locationSelected,
+    required: true,
+  },
+};
+const houseSystems = [
+  {
+    value: "placidus",
+    label: copy.housePlacidus,
+    editAttributes: edit("house_placidus"),
+  },
+  {
+    value: "whole-sign",
+    label: copy.houseWholeSign,
+    editAttributes: edit("house_whole_sign"),
+  },
+  {
+    value: "koch",
+    label: copy.houseKoch,
+    editAttributes: edit("house_koch"),
+  },
+  {
+    value: "equal",
+    label: copy.houseEqual,
+    editAttributes: edit("house_equal"),
+  },
+];
+const planets = [
+  { glyph: "☉", longitude: 104, label: "Sun", color: "#b08cf0" },
+  { glyph: "☽", longitude: 202, label: "Moon", color: "#5fc2d6" },
+  { glyph: "☿", longitude: 52, label: "Mercury", color: "#7c5ebc" },
+  { glyph: "♀", longitude: 281, label: "Venus", color: "#b08cf0" },
+  { glyph: "♂", longitude: 329, label: "Mars", color: "#5fc2d6" },
+  { glyph: "♃", longitude: 72, label: "Jupiter", color: "#7c5ebc" },
+  { glyph: "♄", longitude: 168, label: "Saturn", color: "#b08cf0" },
+];
+const aspects = [
+  { from: 0, to: 1, color: "#b08cf0" },
+  { from: 0, to: 3, color: "#5fc2d6", dashed: true },
+  { from: 1, to: 4, color: "#b08cf0" },
+  { from: 2, to: 5, color: "#5fc2d6", dashed: true },
+  { from: 3, to: 6, color: "#b08cf0" },
+  { from: 4, to: 6, color: "#5fc2d6", dashed: true },
+];
+---
+
+<section
+  class="home-birth-chart"
+  id="birth-chart"
+  aria-labelledby="home-birth-chart-title"
+  data-home-birth-chart
+  data-api-endpoint={apiEndpoint}
+  data-result-href={actionHref}
+  data-locale={locale}
+>
+  <div class="home-birth-chart__inner">
+    <SectionHeading
+      class="home-birth-chart__heading"
+      title=""
+      eyebrow={copy.eyebrow}
+      description={copy.description}
+      headingId="home-birth-chart-title"
+      alignment="center"
+      eyebrowEditAttributes={edit("eyebrow")}
+      descriptionEditAttributes={edit("description")}
+    >
+      <Fragment slot="title">
+        <em {...edit("title_accent")}>{copy.titleAccent}</em>{" "}
+        <span {...edit("title_rest")}>{copy.titleRest}</span>
+      </Fragment>
+    </SectionHeading>
+
+    <div class="home-birth-chart__workbench">
+      <div class="home-birth-chart__form-column">
+        <AstrologyProfileForm
+          class="home-birth-chart__form"
+          id="home-birth-chart-form"
+          profiles={[profile]}
+          action={actionHref}
+          method="get"
+          surface="plain"
+          density="compact"
+          submitLabel={copy.ctaLabel}
+          submitEditAttributes={edit("cta")}
+        >
+          <Fragment slot="profile-one-extra">
+            <details class="home-birth-chart__extended">
+              <summary>
+                <span aria-hidden="true">+</span>
+                <span {...edit("extended_settings_label")}>
+                  {copy.extendedSettingsLabel}
+                </span>
+              </summary>
+
+              <div class="home-birth-chart__extended-fields">
+                <FormField
+                  label={copy.houseSystemLabel}
+                  controlId="home-birth-chart-house-system"
+                  labelEditAttributes={edit("house_system_label")}
+                >
+                  <SelectField
+                    id="home-birth-chart-house-system"
+                    name="profile[houseSystem]"
+                    value="placidus"
+                    options={houseSystems}
+                    presentation="popover"
+                    density="compact"
+                    ariaLabel={copy.houseSystemLabel}
+                    form="home-birth-chart-form"
+                  />
+                </FormField>
+
+                <Checkbox
+                  class="home-birth-chart__aspects-toggle"
+                  id="home-birth-chart-show-aspects"
+                  name="profile[showAspects]"
+                  value="true"
+                  checked
+                  label={copy.showAspectsLabel}
+                  labelEditAttributes={edit("show_aspects_label")}
+                />
+              </div>
+            </details>
+          </Fragment>
+        </AstrologyProfileForm>
+        <p
+          class="home-birth-chart__status"
+          data-home-birth-chart-status
+          role="alert"
+          hidden
+        ></p>
+      </div>
+
+      <div class="home-birth-chart__wheel">
+        <ChartWheel
+          title={copy.wheelTitle}
+          description={copy.wheelDescription}
+          mode="natal"
+          size="standard"
+          planets={planets}
+          aspects={aspects}
+          interactive
+          showAspects
+          centerGlyph="☉"
+        />
+      </div>
+    </div>
+
+    <div class="home-birth-chart__features">
+      {
+        copy.features.map((feature, index) => {
+          const featureNumber = index + 1;
+          return (
+            <article class="home-birth-chart__feature">
+              <h3 {...edit(`feature_${featureNumber}_title`)}>{feature.title}</h3>
+              <p {...edit(`feature_${featureNumber}_body`)}>{feature.body}</p>
+            </article>
+          );
+        })
+      }
+    </div>
+  </div>
+</section>
+
+<script>
+  import {
+    isActionLoading,
+    setActionLoading,
+  } from "../../../scripts/action-loading.ts";
+
+  const initializeHomeBirthCharts = () => {
+    document.querySelectorAll<HTMLElement>("[data-home-birth-chart]").forEach((section) => {
+      if (section.dataset.ready === "true") return;
+
+      const form = section.querySelector<HTMLFormElement>("#home-birth-chart-form");
+      const submit = form?.querySelector<HTMLButtonElement>('button[type="submit"]');
+      const status = section.querySelector<HTMLElement>("[data-home-birth-chart-status]");
+      const toggle = section.querySelector<HTMLInputElement>(
+        "#home-birth-chart-show-aspects",
+      );
+      const aspectLayer = section.querySelector<SVGGElement>(".chart-wheel__aspects");
+      if (toggle && aspectLayer) {
+        const synchronizeAspects = () => {
+          aspectLayer.style.display = toggle.checked ? "" : "none";
+          aspectLayer.setAttribute("aria-hidden", toggle.checked ? "false" : "true");
+        };
+        toggle.addEventListener("change", synchronizeAspects);
+        synchronizeAspects();
+      }
+
+      form?.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (!form.reportValidity() || isActionLoading(submit)) return;
+
+        const formData = new FormData(form);
+        const value = (name: string) =>
+          String(formData.get(`profile[${name}]`) || "");
+        const locationValue = (suffix: string) =>
+          String(formData.get(`profile[location]${suffix}`) || "");
+        const locationInput = form.querySelector<HTMLInputElement>(
+          "#home-birth-chart-form-profile-location",
+        );
+        const locationRoot = locationInput?.closest<HTMLElement>(
+          "[data-sidera-location-autocomplete]",
+        );
+        if (!locationValue("Id")) {
+          locationInput?.setCustomValidity(
+            locationRoot?.dataset.chooseText ||
+              "Choose a birth place from the suggestions.",
+          );
+          locationInput?.reportValidity();
+          return;
+        }
+        locationInput?.setCustomValidity("");
+
+        const month = value("month").padStart(2, "0");
+        const day = value("day").padStart(2, "0");
+        const sourceHour = Number(value("hour"));
+        const period = value("period");
+        const hour = period === "PM"
+          ? sourceHour === 12 ? 12 : sourceHour + 12
+          : sourceHour === 12 ? 0 : sourceHour;
+        const payload = {
+          birthDate: `${value("year")}-${month}-${day}`,
+          birthTime: `${String(hour).padStart(2, "0")}:${value("minute").padStart(2, "0")}`,
+          timeUnknown: formData.has("profile[timeUnknown]"),
+          place: value("location"),
+          placeId: locationValue("Id"),
+          lat: Number(locationValue("Latitude")),
+          lon: Number(locationValue("Longitude")),
+          timezone: locationValue("Timezone"),
+          timezoneOffset: locationValue("TimezoneOffset"),
+          houseType: value("houseSystem") || "placidus",
+          locale: section.dataset.locale || "en",
+        };
+
+        if (status) status.hidden = true;
+        setActionLoading(submit, true, submit?.textContent?.trim());
+        try {
+          const response = await fetch(section.dataset.apiEndpoint || "", {
+            method: "POST",
+            headers: {
+              "content-type": "application/json",
+              accept: "application/json",
+            },
+            body: JSON.stringify(payload),
+          });
+          const body = await response.json().catch(() => ({})) as {
+            readingId?: string;
+            message?: string;
+          };
+          if (!response.ok || !body.readingId) {
+            throw new Error(
+              body.message || "Birth chart could not be generated.",
+            );
+          }
+          const destination = new URL(
+            section.dataset.resultHref || "/birth-chart",
+            window.location.href,
+          );
+          destination.pathname = `${destination.pathname.replace(/\/$/, "")}/${encodeURIComponent(body.readingId)}`;
+          window.location.assign(
+            `${destination.pathname}${destination.search}${destination.hash}`,
+          );
+        } catch (error) {
+          setActionLoading(submit, false);
+          if (status) {
+            status.textContent = error instanceof Error
+              ? error.message
+              : "Birth chart could not be generated.";
+            status.hidden = false;
+          }
+        }
+      });
+
+      section.dataset.ready = "true";
+    });
+  };
+
+  initializeHomeBirthCharts();
+  document.addEventListener("astro:page-load", initializeHomeBirthCharts);
+</script>

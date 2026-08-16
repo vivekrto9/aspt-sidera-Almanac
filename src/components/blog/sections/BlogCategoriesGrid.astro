@@ -1,0 +1,130 @@
+---
+import ArticleCard from "../../shared/ArticleCard.astro";
+import CardGrid from "../../shared/CardGrid.astro";
+import ChoiceChips from "../../shared/ChoiceChips.astro";
+import type {
+  BlogArticleIndexItem,
+  BlogCategoryFilter,
+} from "../../../data/blog/articles.ts";
+import "../../../styles/blog/sections/blog-categories-grid.css";
+
+type EditAttributes = Record<string, string>;
+type PreparedArticle = BlogArticleIndexItem & {
+  categoryLabel: string;
+  title: string;
+  excerpt: string;
+  readTime: string;
+  href: string;
+};
+
+type Props = {
+  categoryLabel: string;
+  categories: Array<{
+    value: BlogCategoryFilter;
+    label: string;
+    editAttributes?: EditAttributes;
+  }>;
+  selectedCategory: BlogCategoryFilter;
+  articles: PreparedArticle[];
+  editAttributes?: (field: string) => EditAttributes;
+};
+
+const {
+  categoryLabel,
+  categories,
+  selectedCategory,
+  articles,
+  editAttributes = () => ({}),
+} = Astro.props as Props;
+---
+
+<section class="blog-categories-grid" aria-label={categoryLabel}>
+  <div class="blog-categories-grid__inner">
+    <form
+      id="blog-category-form"
+      class="blog-categories-grid__filters"
+    >
+      <ChoiceChips
+        id="blog-category"
+        name="category"
+        label={categoryLabel}
+        options={categories}
+        value={selectedCategory}
+        mode="single"
+        shape="pill"
+        size="compact"
+        hideLabel
+      />
+    </form>
+
+    <CardGrid
+      as="div"
+      columns={3}
+      tabletColumns={2}
+      mobileColumns={1}
+      gap="loose"
+      align="start"
+      class="blog-categories-grid__grid"
+      ariaLabel={categoryLabel}
+    >
+      {
+        articles.map((article) => {
+          const prefix = `blog_article_${article.key.replaceAll("-", "_")}`;
+          return (
+            <div
+              class="blog-categories-grid__item"
+              data-blog-category={article.category}
+              hidden={selectedCategory !== "all" && article.category !== selectedCategory}
+            >
+              <ArticleCard
+                variant="standard"
+                headingLevel={2}
+                eyebrow={article.categoryLabel}
+                title={article.title}
+                excerpt={article.excerpt}
+                readTime={article.readTime}
+                href={article.href}
+                coverSrc={article.image.src}
+                coverAlt={article.image.alt}
+                coverWidth={article.image.width}
+                coverHeight={article.image.height}
+                glyph={article.glyph}
+                coverTone={article.coverTone}
+                eyebrowEditAttributes={editAttributes(`${prefix}_category`)}
+                titleEditAttributes={editAttributes(`${prefix}_title`)}
+                excerptEditAttributes={editAttributes(`${prefix}_excerpt`)}
+                readTimeEditAttributes={editAttributes(`${prefix}_read_time`)}
+              />
+            </div>
+          );
+        })
+      }
+    </CardGrid>
+  </div>
+</section>
+
+<script>
+  const form = document.querySelector<HTMLFormElement>("#blog-category-form");
+  form?.addEventListener("change", (event) => {
+    if (event.target instanceof HTMLInputElement && event.target.name === "category") {
+      const scrollPosition = {
+        x: window.scrollX,
+        y: window.scrollY,
+      };
+      const selectedCategory = event.target.value;
+      document
+        .querySelectorAll<HTMLElement>("[data-blog-category]")
+        .forEach((article) => {
+          article.hidden =
+            selectedCategory !== "all" &&
+            article.dataset.blogCategory !== selectedCategory;
+        });
+
+      const url = new URL(window.location.href);
+      if (selectedCategory === "all") url.searchParams.delete("category");
+      else url.searchParams.set("category", selectedCategory);
+      window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+      window.scrollTo(scrollPosition.x, scrollPosition.y);
+    }
+  });
+</script>

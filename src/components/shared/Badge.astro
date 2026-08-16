@@ -1,0 +1,44 @@
+---
+import "../../styles/shared/badge.css";
+
+type BadgeTone = "neutral" | "accent" | "success" | "warning" | "danger" | "inverse";
+type BadgeAppearance = "soft" | "solid";
+type BadgeSize = "compact" | "standard";
+
+type Props = {
+  tone?: BadgeTone;
+  appearance?: BadgeAppearance;
+  size?: BadgeSize;
+  uppercase?: boolean;
+  ariaLabel?: string;
+  class?: string;
+  [attribute: string]: unknown;
+};
+
+const {
+  tone = "neutral",
+  appearance = "soft",
+  size = "standard",
+  uppercase = false,
+  ariaLabel,
+  class: className,
+  ...badgeAttributes
+} = Astro.props as Props;
+
+const hasIcon = Astro.slots.has("icon");
+const classes = [
+  "sidera-badge",
+  `sidera-badge--${tone}`,
+  `sidera-badge--${appearance}`,
+  `sidera-badge--${size}`,
+  uppercase && "sidera-badge--uppercase",
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+---
+
+<span {...badgeAttributes} class={classes} aria-label={ariaLabel}>
+  {hasIcon ? <span class="sidera-badge__icon" aria-hidden="true"><slot name="icon" /></span> : null}
+  <span class="sidera-badge__label"><slot /></span>
+</span>

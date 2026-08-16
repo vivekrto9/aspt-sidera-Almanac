@@ -1,0 +1,8 @@
+.birth-chart-body {
+  overflow-x: hidden;
+}
+
+.birth-chart-body > [data-birth-chart-experience] {
+  width: 100%;
+  margin: 0;
+}

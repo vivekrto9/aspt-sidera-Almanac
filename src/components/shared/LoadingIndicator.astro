@@ -1,0 +1,46 @@
+---
+import "../../styles/shared/loading-indicator.css";
+
+type LoadingIndicatorSize = "compact" | "standard" | "large";
+type LoadingIndicatorTone = "default" | "accent" | "inverse";
+type LoadingIndicatorLayout = "inline" | "stacked";
+type AriaLive = "off" | "polite" | "assertive";
+
+type Props = {
+  label: string;
+  size?: LoadingIndicatorSize;
+  tone?: LoadingIndicatorTone;
+  layout?: LoadingIndicatorLayout;
+  ariaLive?: AriaLive;
+  class?: string;
+  editAttributes?: Record<string, string>;
+};
+
+const {
+  label,
+  size = "standard",
+  tone = "default",
+  layout = "inline",
+  ariaLive = "polite",
+  class: className,
+  editAttributes = {},
+} = Astro.props as Props;
+
+const classes = [
+  "sidera-loading-indicator",
+  `sidera-loading-indicator--${size}`,
+  `sidera-loading-indicator--${tone}`,
+  `sidera-loading-indicator--${layout}`,
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+---
+
+<span class={classes} role="status" aria-live={ariaLive} aria-atomic="true">
+  <span class="sidera-loading-indicator__mark" aria-hidden="true">
+    <span class="sidera-loading-indicator__orbit"></span>
+    <span class="sidera-loading-indicator__star">✦</span>
+  </span>
+  <span class="sidera-loading-indicator__label" {...editAttributes}>{label}</span>
+</span>

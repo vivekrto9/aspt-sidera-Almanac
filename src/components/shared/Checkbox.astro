@@ -1,0 +1,69 @@
+---
+import "../../styles/shared/checkbox.css";
+
+type Props = {
+  variant?: "checkbox" | "switch";
+  label: string;
+  description?: string;
+  id?: string;
+  name?: string;
+  value?: string;
+  checked?: boolean;
+  required?: boolean;
+  disabled?: boolean;
+  invalid?: boolean;
+  ariaDescribedby?: string;
+  class?: string;
+  labelEditAttributes?: Record<string, string>;
+  descriptionEditAttributes?: Record<string, string>;
+};
+
+const {
+  variant = "checkbox",
+  label,
+  description,
+  id,
+  name,
+  value,
+  checked = false,
+  required = false,
+  disabled = false,
+  invalid = false,
+  ariaDescribedby,
+  class: className,
+  labelEditAttributes = {},
+  descriptionEditAttributes = {},
+} = Astro.props as Props;
+
+const classes = [
+  "sidera-checkbox",
+  `sidera-checkbox--${variant}`,
+  description && "sidera-checkbox--described",
+  invalid && "sidera-checkbox--invalid",
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+---
+
+<label class={classes}>
+  <input
+    class="sidera-checkbox__control"
+    type="checkbox"
+    role={variant === "switch" ? "switch" : undefined}
+    id={id}
+    name={name}
+    value={value}
+    checked={checked}
+    required={required}
+    disabled={disabled}
+    aria-invalid={invalid ? "true" : undefined}
+    aria-describedby={ariaDescribedby}
+  />
+  <span class="sidera-checkbox__copy">
+    <span class="sidera-checkbox__label" {...labelEditAttributes}>{label}</span>
+    {description ? (
+      <span class="sidera-checkbox__description" {...descriptionEditAttributes}>{description}</span>
+    ) : null}
+  </span>
+</label>

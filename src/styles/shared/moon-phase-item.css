@@ -1,0 +1,139 @@
+.sidera-moon-phase-item {
+  --moon-phase-background: var(--color-surface);
+  --moon-phase-border: rgba(var(--color-text-rgb), 0.1);
+  --moon-phase-disc: var(--color-dark-strong);
+  --moon-phase-light: var(--color-surface);
+  --moon-phase-name: var(--color-muted);
+  --moon-phase-date: var(--color-muted-soft);
+  --moon-phase-detail: var(--color-muted);
+
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  border: 1px solid var(--moon-phase-border);
+  border-radius: 0.875rem;
+  background: var(--moon-phase-background);
+  color: var(--moon-phase-name);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+.sidera-moon-phase-item--current {
+  --moon-phase-background: var(--color-surface-soft);
+  --moon-phase-border: var(--color-primary);
+  --moon-phase-name: var(--color-primary);
+}
+
+.sidera-moon-phase-item--inverse {
+  --moon-phase-background: transparent;
+  --moon-phase-border: rgba(245, 234, 216, 0.14);
+  --moon-phase-name: var(--color-on-dark);
+  --moon-phase-date: #b99f86;
+  --moon-phase-detail: var(--color-on-dark-muted);
+}
+
+.sidera-moon-phase-item--inverse.sidera-moon-phase-item--current {
+  --moon-phase-background: rgba(245, 234, 216, 0.06);
+  --moon-phase-border: var(--color-primary-soft);
+  --moon-phase-name: var(--color-on-dark-strong);
+}
+
+.sidera-moon-phase-item--compact {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  padding: 0.875rem 0.5rem 0.75rem;
+  text-align: center;
+}
+
+.sidera-moon-phase-item--list {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.875rem 1rem;
+}
+
+.sidera-moon-phase-item__visual {
+  inline-size: 2.875rem;
+  block-size: 2.875rem;
+  flex: none;
+  display: block;
+  filter: drop-shadow(0 0 0.875rem rgba(242, 233, 214, 0.16));
+}
+
+.sidera-moon-phase-item--list .sidera-moon-phase-item__visual {
+  inline-size: 3.625rem;
+  block-size: 3.625rem;
+}
+
+.sidera-moon-phase-item__disc {
+  fill: var(--moon-phase-disc);
+  stroke: var(--moon-phase-border);
+  stroke-width: 1;
+}
+
+.sidera-moon-phase-item__light {
+  fill: var(--moon-phase-light);
+}
+
+.sidera-moon-phase-item__copy {
+  min-inline-size: 0;
+  display: grid;
+  gap: 0.1875rem;
+}
+
+.sidera-moon-phase-item--compact .sidera-moon-phase-item__copy {
+  justify-items: center;
+  margin-block-start: 0.625rem;
+}
+
+.sidera-moon-phase-item__heading {
+  min-inline-size: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.sidera-moon-phase-item--compact .sidera-moon-phase-item__heading {
+  justify-content: center;
+}
+
+.sidera-moon-phase-item__name {
+  color: var(--moon-phase-name);
+  font-size: 0.71875rem;
+  font-weight: 600;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.sidera-moon-phase-item--list .sidera-moon-phase-item__name {
+  font-family: var(--font-serif), Georgia, "Times New Roman", serif;
+  font-size: 1.25rem;
+  font-weight: 400;
+  line-height: 1.1;
+}
+
+.sidera-moon-phase-item__date,
+.sidera-moon-phase-item__detail {
+  color: var(--moon-phase-date);
+  font-size: 0.71875rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.sidera-moon-phase-item__detail {
+  color: var(--moon-phase-detail);
+  font-size: 0.8125rem;
+}
+
+@media (max-width: 40rem) {
+  .sidera-moon-phase-item--list {
+    align-items: flex-start;
+  }
+}
+
+@media (forced-colors: active) {
+  .sidera-moon-phase-item__disc,
+  .sidera-moon-phase-item__light {
+    stroke: CanvasText;
+  }
+}

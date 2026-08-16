@@ -1,0 +1,46 @@
+---
+import PageIntro from "../../shared/PageIntro.astro";
+import "../../../styles/faq/sections/faq-page-intro.css";
+
+type Props = {
+  eyebrow: string;
+  titleLead: string;
+  titleEmphasis: string;
+  description: string;
+  eyebrowEditAttributes?: Record<string, string>;
+  titleLeadEditAttributes?: Record<string, string>;
+  titleEmphasisEditAttributes?: Record<string, string>;
+  descriptionEditAttributes?: Record<string, string>;
+};
+
+const {
+  eyebrow,
+  titleLead,
+  titleEmphasis,
+  description,
+  eyebrowEditAttributes = {},
+  titleLeadEditAttributes = {},
+  titleEmphasisEditAttributes = {},
+  descriptionEditAttributes = {},
+} = Astro.props as Props;
+---
+
+<PageIntro
+  id="faq-intro"
+  class="faq-page-intro"
+  title={`${titleLead} ${titleEmphasis}`}
+  {eyebrow}
+  {description}
+  alignment="center"
+  density="standard"
+  eyebrowEditAttributes={eyebrowEditAttributes}
+  descriptionEditAttributes={descriptionEditAttributes}
+>
+  <Fragment slot="title">
+    <span class="faq-page-intro__title-line">
+      <span {...titleLeadEditAttributes}>{titleLead}</span>
+      {" "}
+      <em {...titleEmphasisEditAttributes}>{titleEmphasis}</em>
+    </span>
+  </Fragment>
+</PageIntro>

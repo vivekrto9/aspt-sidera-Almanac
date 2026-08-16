@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "contract": "users-data.v1",
+  "schemaRevision": "sidera-almanac-users-2026-08-16-1",
+  "entity": {
+    "key": "customer",
+    "label": "Customer",
+    "pluralLabel": "Customers",
+    "idField": "id"
+  },
+  "defaultSort": {
+    "field": "created_at",
+    "direction": "desc"
+  },
+  "columns": [
+    { "key": "id", "label": "User ID", "type": "text" },
+    { "key": "display_name", "label": "Name", "type": "text", "searchable": true, "sortable": true },
+    { "key": "email", "label": "Email", "type": "email", "searchable": true, "sortable": true },
+    { "key": "created_at", "label": "Joined", "type": "date", "sortable": true },
+    { "key": "updated_at", "label": "Updated", "type": "date", "sortable": true }
+  ],
+  "detailFields": [
+    { "key": "id", "label": "User ID", "type": "text" },
+    { "key": "display_name", "label": "Name", "type": "text" },
+    { "key": "email", "label": "Email", "type": "email" },
+    { "key": "created_at", "label": "Joined", "type": "date" },
+    { "key": "updated_at", "label": "Updated", "type": "date" }
+  ],
+  "relatedSections": []
+}

@@ -1,0 +1,159 @@
+.account-saved-charts {
+  min-inline-size: 0;
+  margin-block-start: 4rem;
+  scroll-margin-block-start: 6rem;
+}
+
+.account-saved-charts__header {
+  --sidera-section-heading-title-size: 2.125rem;
+  margin-block-end: 1.125rem;
+}
+
+.account-saved-charts__header > p {
+  margin: 0;
+  color: var(--color-primary);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.account-saved-charts__header > h2 {
+  margin: 0.5rem 0 0;
+  color: var(--color-text);
+  font-family: var(--font-serif), Georgia, "Times New Roman", serif;
+  font-size: 2.125rem;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.account-saved-charts__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.account-saved-charts__card {
+  position: relative;
+  min-inline-size: 0;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  border: 1px solid rgba(var(--color-text-rgb), 0.1);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  background: var(--color-panel);
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.account-saved-charts__card:hover {
+  transform: scale(1.015);
+  box-shadow: 0 1.125rem 2.5rem -1.625rem rgba(var(--color-text-rgb), 0.45);
+}
+
+.account-saved-charts__card:has(.account-saved-charts__card-link:focus-visible) {
+  outline: 0.1875rem solid rgba(var(--color-primary-rgb), 0.5);
+  outline-offset: 0.1875rem;
+}
+
+.account-saved-charts__card-link {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: 1rem;
+}
+
+.account-saved-charts__card-link:focus-visible {
+  outline: none;
+}
+
+.account-saved-charts__wheel {
+  --chart-wheel-size: 5.375rem;
+
+  flex: 0 0 5.375rem;
+}
+
+.account-saved-charts__details {
+  min-inline-size: 0;
+  flex: 1;
+}
+
+.account-saved-charts__type {
+  margin: 0;
+  color: var(--chart-accent, var(--color-primary));
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+
+.account-saved-charts__details h3 {
+  margin: 0.1875rem 0 0;
+  color: var(--color-text);
+  font-family: var(--font-serif), Georgia, "Times New Roman", serif;
+  font-size: 1.375rem;
+  font-weight: 400;
+  line-height: 1.15;
+}
+
+.account-saved-charts__meta {
+  margin: 0.1875rem 0 0;
+  overflow-wrap: anywhere;
+  color: var(--color-muted);
+  font-size: 0.78125rem;
+  line-height: 1.4;
+}
+
+.account-saved-charts__actions {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  margin-block-start: 0.75rem;
+}
+
+.account-saved-charts__actions .sidera-button {
+  min-block-size: auto;
+  padding: 0;
+  color: var(--color-primary);
+  font-size: 0.78125rem;
+}
+
+
+@media (max-width: 68rem) {
+  .account-saved-charts__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 40rem) {
+  .account-saved-charts {
+    margin-block-start: 3rem;
+  }
+
+  .account-saved-charts__card {
+    align-items: flex-start;
+    padding: 1rem;
+  }
+
+  .account-saved-charts__wheel {
+    --chart-wheel-size: 4.75rem;
+
+    flex-basis: 4.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .account-saved-charts__card {
+    transition: none;
+  }
+
+  .account-saved-charts__card:hover {
+    transform: none;
+  }
+}

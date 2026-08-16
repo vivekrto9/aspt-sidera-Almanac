@@ -1,0 +1,9 @@
+ALTER TABLE ec_site_about ADD COLUMN about_metrics_aria_label TEXT;
+ALTER TABLE ec_site_about ADD COLUMN about_metric_1_value TEXT;
+ALTER TABLE ec_site_about ADD COLUMN about_metric_1_label TEXT;
+ALTER TABLE ec_site_about ADD COLUMN about_metric_2_value TEXT;
+ALTER TABLE ec_site_about ADD COLUMN about_metric_2_label TEXT;
+ALTER TABLE ec_site_about ADD COLUMN about_metric_3_value TEXT;
+ALTER TABLE ec_site_about ADD COLUMN about_metric_3_label TEXT;
+ALTER TABLE ec_site_about ADD COLUMN about_metric_4_value TEXT;
+ALTER TABLE ec_site_about ADD COLUMN about_metric_4_label TEXT;

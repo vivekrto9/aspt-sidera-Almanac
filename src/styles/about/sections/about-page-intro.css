@@ -1,0 +1,44 @@
+.about-page-intro-shell {
+  inline-size: 100%;
+  padding: 5rem 2.125rem 2.5rem;
+  background: var(--color-surface);
+  text-align: center;
+}
+
+.about-page-intro.sidera-page-intro {
+  max-inline-size: 45rem;
+  margin-inline: auto;
+  padding: 0;
+  background: transparent;
+}
+
+@media (max-width: 40rem) {
+  .about-page-intro-shell {
+    padding: 3.75rem 1.25rem 2.25rem;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .about-page-intro.sidera-page-intro {
+    animation: about-page-intro-settle 420ms
+      cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+
+@keyframes about-page-intro-settle {
+  from {
+    opacity: 0;
+    transform: translateY(0.625rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (forced-colors: active) {
+  .about-page-intro-shell {
+    border-block-end: 1px solid CanvasText;
+  }
+}

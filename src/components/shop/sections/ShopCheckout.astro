@@ -1,0 +1,297 @@
+---
+import type { SupportedLocale } from "../../../data/localization-contract.ts";
+import type { ShopCheckoutFlowCopy } from "../../../data/locale/shop/sections/checkout-flow.ts";
+import {
+  getShopCommerceTotals,
+  shopReviewCart,
+} from "../../../data/shop/commerce.ts";
+import type { ShopProductId } from "../../../data/shop/catalog.ts";
+import Button from "../../shared/Button.astro";
+import OrderLineItem from "../../shared/OrderLineItem.astro";
+import OrderSummary from "../../shared/OrderSummary.astro";
+import TextField from "../../shared/TextField.astro";
+import "../../../styles/shop/sections/checkout.css";
+
+type EditAttributes = Record<string, string>;
+type CheckoutProduct = {
+  id: ShopProductId;
+  title: string;
+  unit: string;
+  imageAlt: string;
+  imageSrc: string;
+  price: number;
+  defaultVariant?: string;
+};
+type Props = {
+  locale: SupportedLocale;
+  products: CheckoutProduct[];
+  copy: ShopCheckoutFlowCopy;
+  cartHref: string;
+  confirmationHref: string;
+  csrfToken: string;
+  accountEmail: string;
+  editAttributes?: (field: string) => EditAttributes;
+};
+
+const {
+  locale,
+  products,
+  copy,
+  cartHref,
+  confirmationHref,
+  csrfToken,
+  accountEmail,
+  editAttributes = () => ({}),
+} = Astro.props as Props;
+const money = new Intl.NumberFormat(locale, {
+  style: "currency",
+  currency: "USD",
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 2,
+});
+const initialTotals = getShopCommerceTotals(shopReviewCart);
+const initialQuantity = (id: ShopProductId) =>
+  shopReviewCart.find((item) => item.id === id)?.quantity ?? 1;
+const initialVariant = (product: CheckoutProduct) =>
+  shopReviewCart.find((item) => item.id === product.id)?.variant
+  ?? product.defaultVariant
+  ?? product.unit;
+---
+
+<section
+  class="shop-checkout"
+  data-screen-label="Checkout"
+  data-shop-checkout
+  data-products={JSON.stringify(products)}
+  data-default-cart={JSON.stringify(shopReviewCart)}
+  data-confirmation-href={confirmationHref}
+  data-csrf-token={csrfToken}
+  data-default-first-name={copy.defaultFirstName}
+  data-shipping-free-label={copy.shippingFreeLabel}
+  data-locale={locale}
+>
+  <div class="shop-checkout__inner">
+    <a class="shop-flow-back" href={cartHref}>
+      <span aria-hidden="true">‹</span>
+      <span {...editAttributes("shop_checkout_back_label")}>{copy.checkoutBackLabel}</span>
+    </a>
+    <h1 {...editAttributes("shop_checkout_title")}>{copy.checkoutTitle}</h1>
+
+    <div class="shop-checkout__layout">
+      <form id="shop-checkout-form" class="shop-checkout__form" novalidate>
+        <fieldset class="shop-checkout__group">
+          <legend class="shop-checkout__semantic-legend">{copy.contactTitle}</legend>
+          <div class="shop-checkout__step-header" aria-hidden="true">
+            <span class="shop-checkout__step-number">1</span>
+            <span class="shop-checkout__step-title" {...editAttributes("shop_checkout_contact_title")}>{copy.contactTitle}</span>
+          </div>
+          <TextField
+            id="shop-checkout-email"
+            name="email"
+            type="email"
+            autocomplete="email"
+            value={accountEmail}
+            placeholder={copy.emailPlaceholder}
+            ariaLabel={copy.emailPlaceholder}
+            required
+            readonly
+            data-builder-placeholder
+            {...editAttributes("shop_checkout_email_placeholder")}
+          />
+        </fieldset>
+
+        <fieldset class="shop-checkout__group">
+          <legend class="shop-checkout__semantic-legend">{copy.shippingAddressTitle}</legend>
+          <div class="shop-checkout__step-header" aria-hidden="true">
+            <span class="shop-checkout__step-number">2</span>
+            <span class="shop-checkout__step-title" {...editAttributes("shop_checkout_shipping_title")}>{copy.shippingAddressTitle}</span>
+          </div>
+          <div class="shop-checkout__fields">
+            <TextField id="shop-checkout-first-name" name="firstName" autocomplete="given-name" placeholder={copy.firstNamePlaceholder} ariaLabel={copy.firstNamePlaceholder} required data-builder-placeholder {...editAttributes("shop_checkout_first_name_placeholder")} />
+            <TextField id="shop-checkout-last-name" name="lastName" autocomplete="family-name" placeholder={copy.lastNamePlaceholder} ariaLabel={copy.lastNamePlaceholder} required data-builder-placeholder {...editAttributes("shop_checkout_last_name_placeholder")} />
+            <TextField class="shop-checkout__field--full" id="shop-checkout-street" name="street" autocomplete="street-address" placeholder={copy.streetPlaceholder} ariaLabel={copy.streetPlaceholder} required data-builder-placeholder {...editAttributes("shop_checkout_street_placeholder")} />
+            <TextField id="shop-checkout-city" name="city" autocomplete="address-level2" placeholder={copy.cityPlaceholder} ariaLabel={copy.cityPlaceholder} required data-builder-placeholder {...editAttributes("shop_checkout_city_placeholder")} />
+            <TextField id="shop-checkout-state" name="state" autocomplete="address-level1" placeholder={copy.statePlaceholder} ariaLabel={copy.statePlaceholder} required data-builder-placeholder {...editAttributes("shop_checkout_state_placeholder")} />
+            <TextField id="shop-checkout-postal" name="postalCode" autocomplete="postal-code" placeholder={copy.postalPlaceholder} ariaLabel={copy.postalPlaceholder} required data-builder-placeholder {...editAttributes("shop_checkout_postal_placeholder")} />
+            <TextField id="shop-checkout-country" name="country" autocomplete="country-name" placeholder={copy.countryPlaceholder} ariaLabel={copy.countryPlaceholder} required data-builder-placeholder {...editAttributes("shop_checkout_country_placeholder")} />
+          </div>
+        </fieldset>
+
+        <fieldset class="shop-checkout__group">
+          <legend class="shop-checkout__semantic-legend">{copy.paymentTitle}</legend>
+          <div class="shop-checkout__step-header shop-checkout__step-header--payment" aria-hidden="true">
+            <span class="shop-checkout__step-heading">
+              <span class="shop-checkout__step-number">3</span>
+              <span class="shop-checkout__step-title" {...editAttributes("shop_checkout_payment_title")}>{copy.paymentTitle}</span>
+            </span>
+            <small class="shop-checkout__encrypted"><span>⚿</span> <span {...editAttributes("shop_checkout_encrypted_label")}>{copy.encryptedLabel}</span></small>
+          </div>
+          <div class="shop-checkout__stripe-note">
+            <span aria-hidden="true">S</span>
+            <p>{copy.secureCheckoutNote}</p>
+          </div>
+        </fieldset>
+      </form>
+
+      <OrderSummary
+        id="shop-checkout-summary"
+        class="shop-checkout__summary"
+        landmarkLabel={copy.yourOrderTitle}
+        title={copy.yourOrderTitle}
+        variant="checkout"
+        rows={[
+          { label: copy.subtotalLabel, value: money.format(initialTotals.subtotal), labelEditAttributes: editAttributes("shop_order_subtotal_label") },
+          { label: copy.shippingLabel, value: money.format(initialTotals.shipping), labelEditAttributes: editAttributes("shop_order_shipping_label") },
+          { label: copy.taxLabel, value: money.format(initialTotals.tax), labelEditAttributes: editAttributes("shop_checkout_tax_label") },
+        ]}
+        totalLabel={copy.totalLabel}
+        totalValue={money.format(initialTotals.grandTotal)}
+        titleEditAttributes={editAttributes("shop_checkout_order_title")}
+        totalLabelEditAttributes={editAttributes("shop_order_total_label")}
+        sticky
+      >
+        {products.map((product) => {
+          const initialItem = shopReviewCart.find((item) => item.id === product.id);
+          const key = product.id.replaceAll("-", "_");
+          return (
+            <div slot="items" data-shop-checkout-item data-product-id={product.id} hidden={!initialItem}>
+              <OrderLineItem
+                id={`checkout-${product.id}`}
+                variant="summary"
+                title={product.title}
+                price={money.format(product.price * initialQuantity(product.id))}
+                meta={initialVariant(product)}
+                mediaAlt={product.imageAlt}
+                mediaSrc={product.imageSrc}
+                quantity={initialQuantity(product.id)}
+                quantityLabel={copy.quantityLabel}
+                titleEditAttributes={editAttributes(`shop_product_${key}_title`)}
+                quantityEditAttributes={editAttributes("shop_cart_quantity_label")}
+              />
+            </div>
+          );
+        })}
+        <div slot="after-total" class="shop-checkout__place-order">
+          <Button type="submit" form="shop-checkout-form" size="large" shape="rounded" fullWidth loading={false} loadingLabel={copy.placeOrderLabel} data-shop-place-order>
+            <span {...editAttributes("shop_checkout_place_order_label")}>{copy.placeOrderLabel}</span>
+            <span aria-hidden="true"> · </span>
+            <span data-shop-place-order-total>{money.format(initialTotals.grandTotal)}</span>
+          </Button>
+          <p class="shop-checkout__status" role="status" aria-live="polite" data-shop-checkout-status></p>
+        </div>
+      </OrderSummary>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { setActionLoading } from "../../../scripts/action-loading.ts";
+  import {
+    getShopCommerceTotals,
+    normalizeShopCart,
+    shopCartStorageKey,
+  } from "../../../data/shop/commerce.ts";
+
+  type ClientProduct = { id: string; title: string; unit: string; price: number; defaultVariant?: string };
+
+  const initializeShopCheckout = (root: HTMLElement) => {
+    if (root.dataset.shopCheckoutBound === "true") return;
+    root.dataset.shopCheckoutBound = "true";
+    const products = JSON.parse(root.dataset.products ?? "[]") as ClientProduct[];
+    const defaultCart = normalizeShopCart(JSON.parse(root.dataset.defaultCart ?? "[]"));
+    const productById = new Map(products.map((product) => [product.id, product]));
+    const locale = root.dataset.locale || document.documentElement.lang || "en";
+    const money = new Intl.NumberFormat(locale, { style: "currency", currency: "USD", minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    let cart = defaultCart;
+    try {
+      const stored = sessionStorage.getItem(shopCartStorageKey);
+      if (stored) cart = normalizeShopCart(JSON.parse(stored));
+    } catch {}
+    if (cart.length === 0) cart = defaultCart;
+
+    const totals = getShopCommerceTotals(cart);
+    root.querySelectorAll<HTMLElement>("[data-shop-checkout-item]").forEach((row) => {
+      const item = cart.find((entry) => entry.id === row.dataset.productId);
+      row.hidden = !item;
+      if (!item) return;
+      const product = productById.get(item.id);
+      if (!product) return;
+      const meta = row.querySelector<HTMLElement>(".sidera-order-line-item__meta");
+      const quantity = row.querySelector<HTMLElement>(".sidera-order-line-item__quantity-copy");
+      const price = row.querySelector<HTMLElement>(".sidera-price-display__current");
+      if (meta) meta.textContent = item.variant || product.defaultVariant || product.unit;
+      if (quantity) {
+        const valueNode = Array.from(quantity.childNodes).find((node) => node.nodeType === Node.TEXT_NODE);
+        if (valueNode) valueNode.textContent = ` ${item.quantity}`;
+      }
+      if (price) price.textContent = money.format(product.price * item.quantity);
+    });
+    const values = root.querySelectorAll<HTMLElement>(".sidera-order-summary__rows .summary-row__value");
+    if (values[0]) values[0].textContent = money.format(totals.subtotal);
+    if (values[1]) values[1].textContent = totals.shipping === 0
+      ? root.dataset.shippingFreeLabel || money.format(0)
+      : money.format(totals.shipping);
+    if (values[2]) values[2].textContent = money.format(totals.tax);
+    const totalNodes = root.querySelectorAll<HTMLElement>(".sidera-order-summary__total .sidera-price-display__current, [data-shop-place-order-total]");
+    totalNodes.forEach((node) => { node.textContent = money.format(totals.grandTotal); });
+
+    const form = root.querySelector<HTMLFormElement>("#shop-checkout-form");
+    form?.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+      }
+      const submit = root.querySelector<HTMLButtonElement>("[data-shop-place-order]");
+      if (submit?.disabled) return;
+      setActionLoading(submit, true, submit?.textContent?.trim());
+      try {
+        const formData = new FormData(form);
+        const requestStorageKey = "sidera-shop-checkout-request-v1";
+        let requestKey = "";
+        try { requestKey = sessionStorage.getItem(requestStorageKey) || ""; } catch {}
+        if (!requestKey) {
+          requestKey = crypto.randomUUID();
+          try { sessionStorage.setItem(requestStorageKey, requestKey); } catch {}
+        }
+        const orderResponse = await fetch("/api/astropages/generated-site/product-orders", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            "content-type": "application/json",
+            "x-astropages-customer-csrf": root.dataset.csrfToken || "",
+            "x-idempotency-key": requestKey,
+          },
+          body: JSON.stringify({
+            items: cart,
+            contact: Object.fromEntries(["firstName", "lastName", "street", "city", "state", "postalCode", "country"].map((key) => [key, formData.get(key)?.toString().trim() || ""])),
+          }),
+        });
+        const orderBody = await orderResponse.json() as { message?: string; data?: { order?: { id?: string }; attempt?: { id?: string } } };
+        if (!orderResponse.ok || !orderBody.data?.order?.id || !orderBody.data?.attempt?.id) throw new Error(orderBody.message || "Order creation failed.");
+        const checkoutResponse = await fetch("/api/astropages/generated-site/commerce-checkout-intents", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "content-type": "application/json", "x-astropages-customer-csrf": root.dataset.csrfToken || "" },
+          body: JSON.stringify({ orderId: orderBody.data.order.id, attemptId: orderBody.data.attempt.id, locale }),
+        });
+        const checkoutBody = await checkoutResponse.json() as { message?: string; data?: { checkoutUrl?: string } };
+        if (!checkoutResponse.ok || !checkoutBody.data?.checkoutUrl) throw new Error(checkoutBody.message || "Checkout could not be started.");
+        window.location.assign(checkoutBody.data.checkoutUrl);
+      } catch (error) {
+        const status = root.querySelector<HTMLElement>("[data-shop-checkout-status]");
+        if (status) status.textContent = error instanceof Error ? error.message : "Checkout could not be started.";
+        if (submit) {
+          setActionLoading(submit, false);
+          submit.focus();
+        }
+      }
+    });
+  };
+
+  const initializeShopCheckouts = () => document
+    .querySelectorAll<HTMLElement>("[data-shop-checkout]")
+    .forEach(initializeShopCheckout);
+  initializeShopCheckouts();
+  document.addEventListener("astro:page-load", initializeShopCheckouts);
+</script>

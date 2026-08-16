@@ -1,0 +1,17 @@
+ALTER TABLE ec_site_home_sections ADD COLUMN home_transit_eyebrow TEXT;
+ALTER TABLE ec_site_home_sections ADD COLUMN home_transit_title_accent TEXT;
+ALTER TABLE ec_site_home_sections ADD COLUMN home_transit_title_rest TEXT;
+ALTER TABLE ec_site_home_sections ADD COLUMN home_transit_description TEXT;
+ALTER TABLE ec_site_home_sections ADD COLUMN home_transit_cta TEXT;
+ALTER TABLE ec_site_home_sections ADD COLUMN home_transit_item_1_date TEXT;
+ALTER TABLE ec_site_home_sections ADD COLUMN home_transit_item_1_aspect TEXT;
+ALTER TABLE ec_site_home_sections ADD COLUMN home_transit_item_1_note TEXT;
+ALTER TABLE ec_site_home_sections ADD COLUMN home_transit_item_2_date TEXT;
+ALTER TABLE ec_site_home_sections ADD COLUMN home_transit_item_2_aspect TEXT;
+ALTER TABLE ec_site_home_sections ADD COLUMN home_transit_item_2_note TEXT;
+ALTER TABLE ec_site_home_sections ADD COLUMN home_transit_item_3_date TEXT;
+ALTER TABLE ec_site_home_sections ADD COLUMN home_transit_item_3_aspect TEXT;
+ALTER TABLE ec_site_home_sections ADD COLUMN home_transit_item_3_note TEXT;
+ALTER TABLE ec_site_home_sections ADD COLUMN home_transit_item_4_date TEXT;
+ALTER TABLE ec_site_home_sections ADD COLUMN home_transit_item_4_aspect TEXT;
+ALTER TABLE ec_site_home_sections ADD COLUMN home_transit_item_4_note TEXT;

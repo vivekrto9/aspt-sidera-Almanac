@@ -1,0 +1,244 @@
+.todays-sky-wheel {
+  inline-size: min(100%, 73.75rem);
+  margin-inline: auto;
+  padding: 1.375rem 2.125rem 0;
+}
+
+.todays-sky-wheel__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.02fr) minmax(0, 0.98fr);
+  align-items: start;
+  gap: 1.5rem;
+}
+
+.todays-sky-wheel__chart-panel,
+.todays-sky-wheel__positions {
+  border: 1px solid rgba(var(--color-text-rgb), 0.1);
+  background: var(--color-panel);
+}
+
+.todays-sky-wheel__chart-panel {
+  display: grid;
+  justify-items: center;
+  border-radius: 1.375rem;
+  padding: 1.375rem 1.375rem 1.125rem;
+  box-shadow: 0 1.5rem 3.75rem -2.75rem rgba(var(--color-text-rgb), 0.5);
+}
+
+.todays-sky-wheel__chart {
+  --chart-wheel-size: 32.5rem;
+}
+
+.todays-sky-wheel__caption {
+  max-inline-size: 34rem;
+  margin: 0.25rem 0 0;
+  color: var(--color-muted-soft);
+  font: 400 0.78125rem / 1.5 var(--font-sans), system-ui, sans-serif;
+  text-align: center;
+}
+
+.todays-sky-wheel__inspector {
+  min-inline-size: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.125rem;
+}
+
+.todays-sky-wheel__reading {
+  border-radius: 1.25rem;
+  padding: 1.625rem 1.75rem;
+  background: var(--color-dark);
+  color: var(--color-surface);
+  box-shadow: 0 1.5rem 3.75rem -2.5rem rgba(var(--color-text-rgb), 0.7);
+}
+
+.todays-sky-wheel__reading-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.todays-sky-wheel__reading-glyph {
+  flex: none;
+  inline-size: 3.5rem;
+  block-size: 3.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(240, 230, 214, 0.24);
+  border-radius: 50%;
+  background: rgba(240, 230, 214, 0.1);
+  color: var(--color-surface);
+  font: 400 1.875rem / 1 var(--font-serif), Georgia, serif;
+}
+
+.todays-sky-wheel__reading-glyph > span {
+  display: block;
+  transform: translateY(0.1em);
+}
+
+.todays-sky-wheel__reading-copy {
+  min-inline-size: 0;
+}
+
+.todays-sky-wheel__reading-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.625rem;
+}
+
+.todays-sky-wheel__reading h2,
+.todays-sky-wheel__positions h2 {
+  margin: 0;
+  color: inherit;
+  font-family: var(--font-serif), Georgia, serif;
+  font-weight: 400;
+}
+
+.todays-sky-wheel__reading h2 {
+  font-size: clamp(1.625rem, 3vw, 1.875rem);
+  line-height: 1;
+}
+
+.todays-sky-wheel__retrograde {
+  border: 1px solid rgba(214, 154, 106, 0.5);
+  border-radius: 999px;
+  padding: 0.125rem 0.5625rem;
+  color: var(--color-primary-soft);
+  font: 650 0.6875rem / 1.25 var(--font-sans), system-ui, sans-serif;
+  letter-spacing: 0.06em;
+}
+
+.todays-sky-wheel__reading-copy > p {
+  margin: 0.1875rem 0 0;
+  color: var(--color-line);
+  font: 400 0.875rem / 1.4 var(--font-sans), system-ui, sans-serif;
+}
+
+.todays-sky-wheel__reading-body {
+  margin: 1.25rem 0 0;
+  color: var(--color-surface-soft);
+  font: 400 1.3125rem / 1.42 var(--font-serif), Georgia, serif;
+}
+
+.todays-sky-wheel__positions {
+  border-radius: 1.125rem;
+  padding: 1.25rem 1.375rem;
+}
+
+.todays-sky-wheel__positions-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-block-end: 0.625rem;
+}
+
+.todays-sky-wheel__positions h2 {
+  color: var(--color-text);
+  font-size: 1.375rem;
+  line-height: 1.15;
+}
+
+.todays-sky-wheel__positions-header > span {
+  flex: none;
+  color: var(--color-muted-soft);
+  font: 400 0.75rem / 1.4 var(--font-sans), system-ui, sans-serif;
+}
+
+.todays-sky-wheel__position-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.todays-sky-wheel__position:last-child {
+  border-block-end-color: transparent;
+}
+
+@media (min-width: 40.0625rem) {
+  .todays-sky-wheel__position {
+    grid-template-columns:
+      1.75rem minmax(4.5rem, 0.8fr) minmax(6rem, 1fr)
+      3.25rem 6.25rem;
+  }
+
+  .todays-sky-wheel__position .sidera-planet-position-row__degree {
+    justify-self: end;
+  }
+
+  .todays-sky-wheel__position .sidera-planet-position-row__motion {
+    inline-size: 100%;
+    justify-self: stretch;
+    text-align: end;
+  }
+}
+
+@media (max-width: 52rem) {
+  .todays-sky-wheel__layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .todays-sky-wheel__chart {
+    --chart-wheel-size: 32.5rem;
+  }
+}
+
+@media (max-width: 40rem) {
+  .todays-sky-wheel {
+    padding: 1rem 1rem 0;
+  }
+
+  .todays-sky-wheel__layout {
+    gap: 1rem;
+  }
+
+  .todays-sky-wheel__chart-panel {
+    border-radius: 1.125rem;
+    padding: 1rem 0.75rem;
+  }
+
+  .todays-sky-wheel__chart {
+    --chart-wheel-size: 28rem;
+  }
+
+  .todays-sky-wheel__reading {
+    border-radius: 1rem;
+    padding: 1.25rem;
+  }
+
+  .todays-sky-wheel__reading-header {
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .todays-sky-wheel__reading-glyph {
+    inline-size: 3rem;
+    block-size: 3rem;
+    font-size: 1.625rem;
+  }
+
+  .todays-sky-wheel__reading-body {
+    margin-block-start: 1rem;
+    font-size: 1.1875rem;
+  }
+
+  .todays-sky-wheel__positions {
+    padding: 1rem 0.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .todays-sky-wheel * {
+    scroll-behavior: auto;
+  }
+}
+
+@media (forced-colors: active) {
+  .todays-sky-wheel__chart-panel,
+  .todays-sky-wheel__positions,
+  .todays-sky-wheel__reading {
+    border: 1px solid CanvasText;
+  }
+}

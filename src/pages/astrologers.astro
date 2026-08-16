@@ -1,0 +1,231 @@
+---
+import type { BuilderEditAttributes } from "../builder/builder.ts";
+import { loadPublicPageContent } from "../builder/public-page.ts";
+import AstrologersBrowse from "../components/astrologers/sections/AstrologersBrowse.astro";
+import Footer from "../components/shared/Footer.astro";
+import Header from "../components/shared/Header.astro";
+import type { AstrologersBrowseCopy } from "../data/locale/astrologers/sections/browse.ts";
+import { getSynastrySetupCopy } from "../data/locale/synastry/sections/two-profile-setup.ts";
+import {
+  activeLocales,
+  defaultLocale,
+  localizePath,
+  type SupportedLocale,
+} from "../data/localization-contract.ts";
+import { createSharedFooterProps } from "../data/shared-footer-navigation.ts";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { listAstrologers } from "../server/aggregator/astrologer-directory.ts";
+import { getCustomerSession } from "../server/aggregator/customer-auth.ts";
+import { listCustomerUserProfiles } from "../server/aggregator/customer-profiles.ts";
+import { getRuntimeEnv } from "../server/generated-site/request.ts";
+import "../styles/astrologers/astrologers.css";
+
+export const prerender = false;
+
+const {
+  content,
+  locale,
+  builder,
+  builderPage,
+  chromePage,
+  reviewTargets,
+  builderEdit,
+  chromeEdit,
+} = await loadPublicPageContent(Astro, "astrologers");
+const runtimeEnv = await getRuntimeEnv(Astro);
+const astrologers = await listAstrologers(runtimeEnv);
+const customerSession = await getCustomerSession(runtimeEnv, Astro.request).catch(
+  () => null,
+);
+const customerProfiles = customerSession
+  ? await listCustomerUserProfiles(runtimeEnv, customerSession.account.id)
+  : [];
+const profileFormCopy = getSynastrySetupCopy(locale);
+
+const seoContent = {
+  seo_title: content.seo_title,
+  seo_description: content.seo_description,
+  seo_canonical_path: content.seo_canonical_path,
+  seo_robots: content.seo_robots,
+  og_title: content.og_title,
+  og_description: content.og_description,
+  og_image: content.og_image,
+  og_image_alt: content.og_image_alt,
+  twitter_card: content.twitter_card,
+  twitter_title: content.twitter_title,
+  twitter_description: content.twitter_description,
+  twitter_image: content.twitter_image,
+};
+
+const componentEditAttributes = (
+  attributes: BuilderEditAttributes,
+): Record<string, string> =>
+  Object.fromEntries(
+    Object.entries(attributes)
+      .filter((entry): entry is [string, string | true] => entry[1] !== undefined)
+      .map(([key, value]) => [key, value === true ? "true" : value]),
+  );
+
+const localeHref = (targetLocale: SupportedLocale) => {
+  const url = new URL(Astro.request.url);
+  if (targetLocale === defaultLocale) {
+    if (locale === defaultLocale) {
+      url.searchParams.delete("locale");
+    } else {
+      url.searchParams.set("locale", defaultLocale);
+    }
+  } else {
+    url.searchParams.set("locale", targetLocale);
+  }
+  return `${url.pathname}${url.search}${url.hash}`;
+};
+
+const navigation = [
+  ["nav_todays_sky", "/todays-sky"],
+  ["nav_charts", "/birth-chart"],
+  ["nav_compatibility", "/synastry"],
+  ["nav_moon", "/moon-calendar"],
+  ["nav_horoscope", "/daily-horoscope"],
+  ["nav_astrologers", "/astrologers"],
+  ["nav_blog", "/blog"],
+].map(([field, path]) => ({
+  label: content[field],
+  href: localizePath(path, locale),
+  current: path === "/astrologers",
+  editAttributes: componentEditAttributes(chromeEdit(field)),
+}));
+
+const actions = [
+  {
+    id: "sign-in",
+    label: content.action_sign_in,
+    href: localizePath("/login", locale),
+    variant: "ghost" as const,
+    editAttributes: componentEditAttributes(chromeEdit("action_sign_in")),
+  },
+  {
+    id: "get-chart",
+    label: content.action_get_chart,
+    href: localizePath("/birth-chart", locale),
+    variant: "primary" as const,
+    editAttributes: componentEditAttributes(chromeEdit("action_get_chart")),
+  },
+];
+
+const languageOptions = activeLocales.map((item) => {
+  const field = `language_option_${item.code}_label`;
+  return {
+    code: item.code,
+    label: content[field] || item.nativeName,
+    href: localeHref(item.code),
+    lang: item.code,
+    hreflang: item.hreflang,
+    editAttributes: componentEditAttributes(chromeEdit(field)),
+  };
+});
+
+const browseCopy: AstrologersBrowseCopy = {
+  eyebrow: content.browse_eyebrow,
+  titleAccent: content.browse_title_accent,
+  titleSuffix: content.browse_title_suffix,
+  description: content.browse_description,
+  searchAria: content.search_aria,
+  searchPlaceholder: content.search_placeholder,
+  searchSubmit: content.search_submit,
+  searchClear: content.search_clear,
+  filterLabel: content.filter_label,
+  filterAll: content.filter_all,
+  filterLove: content.filter_love,
+  filterCareer: content.filter_career,
+  filterLifePath: content.filter_life_path,
+  filterTiming: content.filter_timing,
+  filterSpiritual: content.filter_spiritual,
+  onlineNow: content.online_now,
+  busyLabel: content.busy_label,
+  offlineLabel: content.offline_label,
+  resultsSuffix: content.results_suffix,
+  noResultsTitle: content.no_results_title,
+  noResultsBody: content.no_results_body,
+  profileAction: content.profile_action,
+  talkNow: content.talk_now,
+  bookNextSlot: content.book_next_slot,
+  schedule: content.schedule,
+  rateUnit: content.rate_unit,
+  reviewsSuffix: content.reviews_suffix,
+  profilePickerEyebrow: content.browse_profile_picker_eyebrow,
+  profilePickerTitle: content.browse_profile_picker_title,
+  profilePickerDescription: content.browse_profile_picker_description,
+  profilePickerCloseLabel: content.browse_profile_picker_close_label,
+  profilePickerEmptyTitle: content.browse_profile_picker_empty_title,
+  profilePickerEmptyDescription: content.browse_profile_picker_empty_description,
+  profilePickerCreateLabel: content.browse_profile_picker_create_label,
+  profilePickerSelectLabel: content.browse_profile_picker_select_label,
+  profilePickerDefaultLabel: content.browse_profile_picker_default_label,
+  profilePickerAddTitle: content.browse_profile_picker_add_title,
+  profilePickerBackLabel: content.browse_profile_picker_back_label,
+  profilePickerSaveLabel: content.browse_profile_picker_save_label,
+  profilePickerSavingLabel: content.browse_profile_picker_saving_label,
+  profilePickerError: content.browse_profile_picker_error,
+};
+
+const footerProps = createSharedFooterProps({
+  content,
+  locale,
+  editAttributes: (field) => componentEditAttributes(chromeEdit(field)),
+});
+---
+
+<BaseLayout
+  seo={seoContent}
+  bodyClass="astrologers-body"
+  builderToolbar={{
+    launcherEnabled: builder.launcherEnabled,
+    studioModeEnabled: builder.studioModeEnabled,
+    collection: builder.collection,
+    entry: builder.entry,
+    locale: builder.locale,
+    csrfToken: builder.csrfToken,
+    canPublish: builder.canPublish,
+    seo: seoContent,
+    hasSavedDraft: builderPage.hasSavedDraft || chromePage.hasSavedDraft,
+    reviewTargets,
+  }}
+>
+  <Header
+    id="astrologers-header"
+    brandLabel={content.brand_name}
+    brandHref={localizePath("/", locale)}
+    brandAriaLabel={content.brand_aria_label}
+    navigationLabel={content.primary_navigation_label}
+    chromeNavigation={{ content, edit: chromeEdit }}
+    navigation={navigation}
+    actions={actions}
+    language={{
+      activeLocale: locale,
+      options: languageOptions,
+      triggerLabel: content.language_trigger_label,
+      menuLabel: content.language_menu_label,
+    }}
+    mobileUtilityActionId="sign-in"
+    menuLabel={content.menu_open_label}
+    closeMenuLabel={content.menu_close_label}
+    brandEditAttributes={componentEditAttributes(chromeEdit("brand_name"))}
+  />
+
+  <main class="astrologers-page">
+    <AstrologersBrowse
+      copy={browseCopy}
+      astrologers={astrologers}
+      customerProfiles={customerProfiles}
+      authenticated={Boolean(customerSession)}
+      csrfToken={customerSession?.csrfToken || ""}
+      profileFormCopy={profileFormCopy}
+      locale={locale}
+      localizePath={(path) => localizePath(path, locale)}
+      editAttributes={(field) =>
+        componentEditAttributes(builderEdit(field))}
+    />
+  </main>
+
+  <Footer {...footerProps} />
+</BaseLayout>

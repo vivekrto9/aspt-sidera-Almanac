@@ -1,0 +1,169 @@
+---
+import BrandLogo from "./BrandLogo.astro";
+import "../../styles/shared/footer.css";
+
+export type FooterLink = {
+  label: string;
+  href: string;
+  ariaLabel?: string;
+  editAttributes?: Record<string, string>;
+};
+
+export type FooterLinkGroup = {
+  label: string;
+  links: readonly FooterLink[];
+  labelEditAttributes?: Record<string, string>;
+};
+
+type FooterVariant = "full" | "compact";
+
+type Props = {
+  brandLabel: string;
+  brandHref: string;
+  description?: string;
+  groups?: readonly FooterLinkGroup[];
+  links?: readonly FooterLink[];
+  legalLinks?: readonly FooterLink[];
+  copyrightText: string;
+  variant?: FooterVariant;
+  navigationLabel?: string;
+  legalNavigationLabel?: string;
+  class?: string;
+  brandEditAttributes?: Record<string, string>;
+  descriptionEditAttributes?: Record<string, string>;
+  copyrightEditAttributes?: Record<string, string>;
+};
+
+const {
+  brandLabel,
+  brandHref,
+  description,
+  groups = [],
+  links = [],
+  legalLinks = [],
+  copyrightText,
+  variant = "full",
+  navigationLabel = "Footer navigation",
+  legalNavigationLabel = "Legal",
+  class: className,
+  brandEditAttributes,
+  descriptionEditAttributes,
+  copyrightEditAttributes,
+} = Astro.props as Props;
+
+const classes = [
+  "sidera-footer",
+  `sidera-footer--${variant}`,
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+---
+
+<footer class={classes}>
+  {
+    variant === "compact" ? (
+      <div class="sidera-footer__compact-inner">
+        <BrandLogo
+          label={brandLabel}
+          href={brandHref}
+          tone="inverse"
+          size="compact"
+          editAttributes={brandEditAttributes}
+        />
+
+        {links.length > 0 ? (
+          <nav class="sidera-footer__compact-nav" aria-label={navigationLabel}>
+            <ul class="sidera-footer__compact-links">
+              {links.map((link) => (
+                <li>
+                  <a
+                    class="sidera-footer__link"
+                    href={link.href}
+                    aria-label={link.ariaLabel}
+                    {...link.editAttributes}
+                  >
+                    {link.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        ) : null}
+
+        <p class="sidera-footer__copyright" {...copyrightEditAttributes}>
+          {copyrightText}
+        </p>
+      </div>
+    ) : (
+      <div class="sidera-footer__full-inner">
+        <div class="sidera-footer__brand">
+          <BrandLogo
+            label={brandLabel}
+            href={brandHref}
+            tone="inverse"
+            size="compact"
+            editAttributes={brandEditAttributes}
+          />
+          {description ? (
+            <p
+              class="sidera-footer__description"
+              {...descriptionEditAttributes}
+            >
+              {description}
+            </p>
+          ) : null}
+        </div>
+
+        {groups.map((group) => (
+          <nav class="sidera-footer__group" aria-label={group.label}>
+            <p
+              class="sidera-footer__group-title"
+              {...group.labelEditAttributes}
+            >
+              {group.label}
+            </p>
+            <ul class="sidera-footer__links">
+              {group.links.map((link) => (
+                <li>
+                  <a
+                    class="sidera-footer__link"
+                    href={link.href}
+                    aria-label={link.ariaLabel}
+                    {...link.editAttributes}
+                  >
+                    {link.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        ))}
+      </div>
+
+      <div class="sidera-footer__bottom">
+        <p class="sidera-footer__copyright" {...copyrightEditAttributes}>
+          {copyrightText}
+        </p>
+        {legalLinks.length > 0 ? (
+          <nav class="sidera-footer__legal" aria-label={legalNavigationLabel}>
+            <ul class="sidera-footer__legal-links">
+              {legalLinks.map((link) => (
+                <li>
+                  <a
+                    class="sidera-footer__link"
+                    href={link.href}
+                    aria-label={link.ariaLabel}
+                    {...link.editAttributes}
+                  >
+                    {link.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        ) : null}
+      </div>
+    )
+  }
+</footer>

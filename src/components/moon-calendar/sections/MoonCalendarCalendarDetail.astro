@@ -1,0 +1,807 @@
+---
+import DateNavigator from "../../shared/DateNavigator.astro";
+import {
+  getMoonCalendarDay,
+  getMoonCalendarMonth,
+  moonCalendarPath,
+  toMoonCalendarIso,
+  type MoonCalendarRuntimeCopy,
+} from "../../../data/moon-calendar/calendar-model.ts";
+import type { MoonCalendarOperationalCopy } from "../../../data/locale/moon-calendar/sections/calendar-day-detail.ts";
+import "../../../styles/moon-calendar/sections/moon-calendar-calendar-detail.css";
+
+type EditAttributes = Record<string, string>;
+
+type EditableCopy = {
+  calendar_today_label: string;
+  calendar_weekday_sun: string;
+  calendar_weekday_mon: string;
+  calendar_weekday_tue: string;
+  calendar_weekday_wed: string;
+  calendar_weekday_thu: string;
+  calendar_weekday_fri: string;
+  calendar_weekday_sat: string;
+  calendar_legend_new: string;
+  calendar_legend_quarter: string;
+  calendar_legend_full: string;
+  calendar_instruction: string;
+  detail_today_badge: string;
+  detail_hold_off_label: string;
+  detail_cta_label: string;
+};
+
+type Props = {
+  editable: EditableCopy;
+  runtime: MoonCalendarRuntimeCopy;
+  navigationLabel: string;
+  previousMonthLabel: string;
+  nextMonthLabel: string;
+  skyHref: string;
+  apiHref: string;
+  operational: MoonCalendarOperationalCopy;
+  editAttributes?: Partial<Record<keyof EditableCopy, EditAttributes>>;
+};
+
+const {
+  editable,
+  runtime,
+  navigationLabel,
+  previousMonthLabel,
+  nextMonthLabel,
+  skyHref,
+  apiHref,
+  operational,
+  editAttributes = {},
+} = Astro.props as Props;
+
+const now = new Date();
+const initialMonth = getMoonCalendarMonth(now.getFullYear(), now.getMonth(), runtime);
+const initialDay = getMoonCalendarDay(now, runtime);
+const initialLargePath = moonCalendarPath(
+  initialDay.illumination / 100,
+  initialDay.direction === runtime.waxingLabel,
+  75,
+  70,
+);
+const initialZodiacGlyph = `${initialDay.zodiacGlyph}\uFE0E`;
+const weekdays = [
+  ["calendar_weekday_sun", editable.calendar_weekday_sun],
+  ["calendar_weekday_mon", editable.calendar_weekday_mon],
+  ["calendar_weekday_tue", editable.calendar_weekday_tue],
+  ["calendar_weekday_wed", editable.calendar_weekday_wed],
+  ["calendar_weekday_thu", editable.calendar_weekday_thu],
+  ["calendar_weekday_fri", editable.calendar_weekday_fri],
+  ["calendar_weekday_sat", editable.calendar_weekday_sat],
+] as const;
+const phaseLabel = (phase: string) => {
+  if (phase === "new") return editable.calendar_legend_new;
+  if (phase === "full") return editable.calendar_legend_full;
+  if (phase === "first-quarter" || phase === "last-quarter") {
+    return editable.calendar_legend_quarter;
+  }
+  return "";
+};
+---
+
+<section
+  class="moon-calendar-workspace"
+  aria-label={navigationLabel}
+  data-moon-calendar-workspace
+  data-visible-year={now.getFullYear()}
+  data-visible-month={now.getMonth()}
+  data-selected-date={toMoonCalendarIso(now)}
+  data-sky-href={skyHref}
+  data-api-href={apiHref}
+>
+  <script
+    is:inline
+    type="application/json"
+    data-moon-calendar-runtime
+    set:html={JSON.stringify(runtime)}
+  ></script>
+  <script is:inline type="application/json" data-moon-calendar-operational set:html={JSON.stringify(operational)}></script>
+  <script
+    is:inline
+    type="application/json"
+    data-moon-calendar-editable
+    set:html={JSON.stringify(editable)}
+  ></script>
+
+  <div class="moon-calendar-workspace__grid">
+    <div class="moon-calendar-grid">
+      <DateNavigator
+        class="moon-calendar-grid__navigator"
+        label={initialMonth.label}
+        description={initialMonth.summary}
+        groupLabel={navigationLabel}
+        previousLabel={previousMonthLabel}
+        nextLabel={nextMonthLabel}
+        resetLabel={editable.calendar_today_label}
+        density="compact"
+        resetLabelEditAttributes={editAttributes.calendar_today_label}
+      />
+
+      <div class="moon-calendar-grid__runtime" role="status" aria-live="polite">
+        <span data-calendar-timezone></span>
+        <span data-calendar-status>{operational.loading}</span>
+      </div>
+
+      <div class="moon-calendar-grid__weekdays" aria-hidden="true">
+        {
+          weekdays.map(([field, label]) => (
+            <span {...editAttributes[field]}>{label}</span>
+          ))
+        }
+      </div>
+
+      <div class="moon-calendar-grid__days">
+        {
+          initialMonth.cells.map((day, index) => (
+            <button
+              type="button"
+              class:list={[
+                "moon-calendar-grid__day",
+                day?.iso === initialDay.iso && "moon-calendar-grid__day--selected",
+              ]}
+              data-calendar-cell
+              data-cell-index={index}
+              data-date={day?.iso}
+              aria-label={day ? `${day.dateLong}, ${day.phaseName}` : undefined}
+              aria-pressed={day ? day.iso === initialDay.iso : undefined}
+              disabled={day?.iso === initialDay.iso}
+              hidden={!day}
+            >
+              <span class="moon-calendar-grid__day-number" data-cell-day>
+                {day?.day}
+              </span>
+              <svg viewBox="0 0 34 34" aria-hidden="true">
+                <circle cx="17" cy="17" r="15"></circle>
+                <path d={day?.moonPath ?? ""} data-cell-path></path>
+              </svg>
+              <span class="moon-calendar-grid__day-label" data-cell-label>
+                {day ? phaseLabel(day.phase) : ""}
+              </span>
+              <span class="moon-calendar-grid__day-markers" data-cell-markers aria-hidden="true"></span>
+            </button>
+          ))
+        }
+      </div>
+
+      <div class="moon-calendar-grid__legend">
+        <span>
+          <i class="moon-calendar-grid__legend-moon moon-calendar-grid__legend-moon--new"></i>
+          <span {...editAttributes.calendar_legend_new}>{editable.calendar_legend_new}</span>
+        </span>
+        <span>
+          <i class="moon-calendar-grid__legend-moon moon-calendar-grid__legend-moon--quarter"></i>
+          <span {...editAttributes.calendar_legend_quarter}>{editable.calendar_legend_quarter}</span>
+        </span>
+        <span>
+          <i class="moon-calendar-grid__legend-moon moon-calendar-grid__legend-moon--full"></i>
+          <span {...editAttributes.calendar_legend_full}>{editable.calendar_legend_full}</span>
+        </span>
+      </div>
+    </div>
+
+    <article class="moon-calendar-detail" aria-live="polite" tabindex="-1" data-moon-calendar-detail>
+      <div class="moon-calendar-detail__stars" aria-hidden="true">
+        {Array.from({ length: 6 }).map(() => <span></span>)}
+      </div>
+
+      <div class="moon-calendar-detail__content">
+        <header class="moon-calendar-detail__header">
+          <div>
+            <p data-detail-weekday>{initialDay.weekday}</p>
+            <h2 data-detail-date>{initialDay.dateLong}</h2>
+          </div>
+          <span
+            class="moon-calendar-detail__today"
+            data-detail-today
+            hidden={!initialDay.isToday}
+            {...editAttributes.detail_today_badge}
+          >
+            {editable.detail_today_badge}
+          </span>
+        </header>
+
+        <div class="moon-calendar-detail__phase">
+          <svg viewBox="0 0 150 150" aria-hidden="true">
+            <circle cx="75" cy="75" r="70"></circle>
+            <path d={initialLargePath} data-detail-moon-path></path>
+            <circle cx="75" cy="75" r="70"></circle>
+          </svg>
+          <div>
+            <h3 data-detail-phase>{initialDay.phaseName}</h3>
+            <p data-detail-illumination>
+              {runtime.illuminationTemplate
+                .replace("{percent}", String(initialDay.illumination))
+                .replace("{direction}", initialDay.direction)}
+            </p>
+            <p data-detail-lunar-day>{initialDay.lunarDay}</p>
+          </div>
+        </div>
+
+        <div class="moon-calendar-detail__sign">
+          <span data-detail-sign-glyph>{initialZodiacGlyph}</span>
+          <div>
+            <strong data-detail-sign>
+              {runtime.moonInTemplate
+                .replace("{sign}", initialDay.zodiacName)
+                .replace("{degree}", initialDay.zodiacDegree)}
+            </strong>
+            <p data-detail-ingress>{initialDay.ingress}</p>
+          </div>
+        </div>
+
+        <div class="moon-calendar-detail__scroll" data-detail-scroll>
+          <section class="moon-calendar-detail__reading" aria-labelledby="moon-day-reading-title">
+            <p id="moon-day-reading-title">{operational.dayReadingLabel}</p>
+            <div>
+              <p data-detail-phase-reading>{operational.phaseReadings[initialDay.phase]}</p>
+              <p data-detail-sign-reading>
+                {operational.moonSignTones[runtime.zodiacNames.indexOf(initialDay.zodiacName)]}
+              </p>
+            </div>
+          </section>
+
+          <p class="moon-calendar-detail__ritual" data-detail-ritual>
+            {initialDay.ritual}
+          </p>
+          <p class="moon-calendar-detail__rest">
+            <strong {...editAttributes.detail_hold_off_label}>{editable.detail_hold_off_label}</strong>
+            <span data-detail-rest>{initialDay.rest}</span>
+          </p>
+
+          <div class="moon-calendar-detail__events" data-detail-events hidden>
+            <p>{operational.eventsToday}</p>
+            <ul data-detail-events-list></ul>
+          </div>
+        </div>
+
+        <a
+          class="moon-calendar-detail__link"
+          href={`${skyHref}${skyHref.includes("?") ? "&" : "?"}date=${initialDay.iso}`}
+          data-detail-link
+        >
+          <span {...editAttributes.detail_cta_label}>{editable.detail_cta_label}</span>
+        </a>
+      </div>
+    </article>
+  </div>
+</section>
+
+<script>
+  import {
+    getMoonCalendarDay,
+    getMoonCalendarMonth,
+    mergeMoonCalendarProviderDay,
+    moonCalendarPath,
+    type MoonCalendarDay,
+    type MoonCalendarProviderDay,
+    type MoonCalendarRuntimeCopy,
+  } from "../../../data/moon-calendar/calendar-model.ts";
+  import type { MoonCalendarOperationalCopy } from "../../../data/locale/moon-calendar/sections/calendar-day-detail.ts";
+
+  type EditableCopy = {
+    calendar_legend_new: string;
+    calendar_legend_quarter: string;
+    calendar_legend_full: string;
+  };
+
+  const fill = (template: string, values: Record<string, string | number>) =>
+    Object.entries(values).reduce(
+      (result, [key, value]) =>
+        result.replaceAll(`{${key}}`, String(value)),
+      template,
+    );
+
+  const enhanceMoonCalendar = (root: HTMLElement) => {
+    if (root.dataset.calendarBound === "true") return;
+    root.dataset.calendarBound = "true";
+
+    const runtime = JSON.parse(
+      root.querySelector<HTMLScriptElement>("[data-moon-calendar-runtime]")
+        ?.textContent ?? "{}",
+    ) as MoonCalendarRuntimeCopy;
+    const editable = JSON.parse(
+      root.querySelector<HTMLScriptElement>("[data-moon-calendar-editable]")
+        ?.textContent ?? "{}",
+    ) as EditableCopy;
+    const operational = JSON.parse(
+      root.querySelector<HTMLScriptElement>("[data-moon-calendar-operational]")
+        ?.textContent ?? "{}",
+    ) as MoonCalendarOperationalCopy;
+    const cells = Array.from(
+      root.querySelectorAll<HTMLButtonElement>("[data-calendar-cell]"),
+    );
+    const navigator = root.querySelector<HTMLElement>("[data-date-navigator]");
+    const navigatorLabel = navigator?.querySelector<HTMLElement>(
+      ".date-navigator__label",
+    );
+    const navigatorDescription = navigator?.querySelector<HTMLElement>(
+      ".date-navigator__description",
+    );
+    const status = root.querySelector<HTMLElement>("[data-calendar-status]");
+    const timezone = root.querySelector<HTMLElement>("[data-calendar-timezone]");
+    const calendarPanel = root.querySelector<HTMLElement>(".moon-calendar-grid");
+    const detailPanel = root.querySelector<HTMLElement>("[data-moon-calendar-detail]");
+    const detailContent = detailPanel?.querySelector<HTMLElement>(
+      ".moon-calendar-detail__content",
+    );
+    const detailScroll = detailPanel?.querySelector<HTMLElement>(
+      "[data-detail-scroll]",
+    );
+    const today = new Date();
+    const timezoneOffset = -today.getTimezoneOffset() / 60;
+    let visibleYear = Number(root.dataset.visibleYear);
+    let visibleMonth = Number(root.dataset.visibleMonth);
+    let selectedDate = root.dataset.selectedDate ?? "";
+    let monthDays = new Map<string, MoonCalendarDay>();
+    let monthRequest = 0;
+    let dayRequest = 0;
+    let detailAnimation: Animation | undefined;
+
+    const syncPanelHeights = () => {
+      if (!calendarPanel || !detailPanel) return;
+      detailPanel.style.setProperty(
+        "--moon-calendar-detail-height",
+        `${calendarPanel.getBoundingClientRect().height}px`,
+      );
+    };
+    syncPanelHeights();
+    if (calendarPanel && "ResizeObserver" in window) {
+      new ResizeObserver(syncPanelHeights).observe(calendarPanel);
+    } else {
+      window.addEventListener("resize", syncPanelHeights, { passive: true });
+    }
+
+    const animateDetailUpdate = () => {
+      if (
+        !detailContent ||
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      ) {
+        return;
+      }
+      detailAnimation?.cancel();
+      detailAnimation = detailContent.animate(
+        [
+          { opacity: 0.72, transform: "translateY(0.2rem)" },
+          { opacity: 1, transform: "translateY(0)" },
+        ],
+        {
+          duration: 220,
+          easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+        },
+      );
+    };
+
+    const formatOffset = (offset: number) => {
+      const sign = offset >= 0 ? "+" : "−";
+      const absolute = Math.abs(offset);
+      const hours = Math.floor(absolute);
+      const minutes = Math.round((absolute - hours) * 60);
+      return `${sign}${hours}${minutes ? `:${String(minutes).padStart(2, "0")}` : ""}`;
+    };
+    if (timezone) {
+      timezone.textContent = operational.timezoneTemplate.replace(
+        "{offset}",
+        formatOffset(timezoneOffset),
+      );
+    }
+
+    const cellLabel = (phase: string) => {
+      if (phase === "new") return editable.calendar_legend_new;
+      if (phase === "full") return editable.calendar_legend_full;
+      if (phase === "first-quarter" || phase === "last-quarter") {
+        return editable.calendar_legend_quarter;
+      }
+      return "";
+    };
+    const textGlyph = (glyph: string) => `${glyph.replace("︎", "")}︎`;
+
+    const detail = {
+      weekday: root.querySelector<HTMLElement>("[data-detail-weekday]"),
+      date: root.querySelector<HTMLElement>("[data-detail-date]"),
+      today: root.querySelector<HTMLElement>("[data-detail-today]"),
+      phase: root.querySelector<HTMLElement>("[data-detail-phase]"),
+      illumination: root.querySelector<HTMLElement>(
+        "[data-detail-illumination]",
+      ),
+      lunarDay: root.querySelector<HTMLElement>("[data-detail-lunar-day]"),
+      moonPath: root.querySelector<SVGPathElement>("[data-detail-moon-path]"),
+      signGlyph: root.querySelector<HTMLElement>("[data-detail-sign-glyph]"),
+      sign: root.querySelector<HTMLElement>("[data-detail-sign]"),
+      ingress: root.querySelector<HTMLElement>("[data-detail-ingress]"),
+      phaseReading: root.querySelector<HTMLElement>("[data-detail-phase-reading]"),
+      signReading: root.querySelector<HTMLElement>("[data-detail-sign-reading]"),
+      ritual: root.querySelector<HTMLElement>("[data-detail-ritual]"),
+      rest: root.querySelector<HTMLElement>("[data-detail-rest]"),
+      link: root.querySelector<HTMLAnchorElement>("[data-detail-link]"),
+      events: root.querySelector<HTMLElement>("[data-detail-events]"),
+      eventsList: root.querySelector<HTMLUListElement>("[data-detail-events-list]"),
+    };
+
+    const eventTime = (moment: string) => {
+      const parsed = new Date(moment);
+      return Number.isNaN(parsed.getTime())
+        ? ""
+        : new Intl.DateTimeFormat(runtime.locale, {
+            hour: "numeric",
+            minute: "2-digit",
+          }).format(parsed);
+    };
+
+    const eventLabel = (event: NonNullable<MoonCalendarDay["events"]>[number]) => {
+      if (event.kind === "void-of-course") return operational.voidOfCourse;
+      if (event.kind === "eclipse") return operational.eclipse;
+      if (event.kind === "sign-ingress") {
+        const sign = event.signIndex === undefined ? "" : runtime.zodiacNames[event.signIndex];
+        return operational.moonEntersTemplate.replace("{sign}", sign);
+      }
+      return runtime.phaseNames[event.kind];
+    };
+
+    const renderEvents = (day: MoonCalendarDay) => {
+      const events = day.events || [];
+      if (!detail.events || !detail.eventsList) return;
+      detail.events.hidden = events.length === 0;
+      detail.eventsList.replaceChildren(
+        ...events.map((event) => {
+          const item = document.createElement("li");
+          const content = document.createElement("div");
+          const label = document.createElement("span");
+          const description = document.createElement("p");
+          const time = document.createElement("time");
+          label.textContent = eventLabel(event);
+          if (event.kind === "sign-ingress" && event.signIndex !== undefined) {
+            description.textContent = fill(operational.signIngressDescriptionTemplate, {
+              previousSign: runtime.zodiacNames[(event.signIndex + 11) % 12],
+              sign: runtime.zodiacNames[event.signIndex],
+            });
+          } else if (event.kind === "void-of-course") {
+            description.textContent = operational.voidOfCourseDescription;
+          } else if (event.kind === "eclipse") {
+            description.textContent = operational.eclipseDescription;
+          } else {
+            const phaseName =
+              event.kind === "new" ||
+              event.kind === "first-quarter" ||
+              event.kind === "full" ||
+              event.kind === "last-quarter"
+                ? runtime.phaseNames[event.kind]
+                : "";
+            description.textContent = fill(operational.phaseEventDescriptionTemplate, {
+              phase: phaseName,
+            });
+          }
+          time.dateTime = event.moment;
+          time.textContent = eventTime(event.moment);
+          content.append(label, description);
+          item.append(content, time);
+          return item;
+        }),
+      );
+    };
+
+    const syncDetail = (day: MoonCalendarDay, animate = false) => {
+      selectedDate = day.iso;
+      root.dataset.selectedDate = day.iso;
+      if (detail.weekday) detail.weekday.textContent = day.weekday;
+      if (detail.date) detail.date.textContent = day.dateLong;
+      if (detail.today) detail.today.hidden = !day.isToday;
+      if (detail.phase) detail.phase.textContent = day.phaseName;
+      if (detail.illumination) {
+        detail.illumination.textContent = fill(runtime.illuminationTemplate, {
+          percent: day.illumination,
+          direction: day.direction,
+        });
+      }
+      if (detail.lunarDay) detail.lunarDay.textContent = day.lunarDay;
+      if (detail.moonPath) {
+        detail.moonPath.setAttribute(
+          "d",
+          moonCalendarPath(
+            day.illumination / 100,
+            day.direction === runtime.waxingLabel,
+            75,
+            70,
+          ),
+        );
+      }
+      if (detail.signGlyph) detail.signGlyph.textContent = textGlyph(day.zodiacGlyph);
+      if (detail.sign) {
+        detail.sign.textContent = fill(runtime.moonInTemplate, {
+          sign: day.zodiacName,
+          degree: day.zodiacDegree,
+        });
+      }
+      if (detail.ingress) detail.ingress.textContent = day.ingress;
+      if (detail.phaseReading) {
+        detail.phaseReading.textContent = operational.phaseReadings[day.phase];
+      }
+      if (detail.signReading) {
+        const signIndex = runtime.zodiacNames.indexOf(day.zodiacName);
+        detail.signReading.textContent = operational.moonSignTones[signIndex] || "";
+      }
+      if (detail.ritual) detail.ritual.textContent = day.ritual;
+      if (detail.rest) detail.rest.textContent = day.rest;
+      renderEvents(day);
+      if (detail.link) {
+        const destination = new URL(
+          root.dataset.skyHref ?? "/todays-sky",
+          window.location.origin,
+        );
+        destination.searchParams.set("date", day.iso);
+        detail.link.href = `${destination.pathname}${destination.search}`;
+      }
+      cells.forEach((cell) => {
+        const selected = cell.dataset.date === day.iso;
+        cell.classList.toggle("moon-calendar-grid__day--selected", selected);
+        if (!cell.hidden) {
+          cell.setAttribute("aria-pressed", String(selected));
+          cell.disabled = selected;
+        }
+      });
+      if (animate && detailScroll) {
+        detailScroll.scrollTo({ top: 0, behavior: "smooth" });
+      }
+      if (animate) animateDetailUpdate();
+    };
+
+    const hydrateDay = async (day: MoonCalendarDay, animate = false) => {
+      const requestId = ++dayRequest;
+      detailPanel?.setAttribute("aria-busy", "true");
+      try {
+        const destination = new URL(root.dataset.apiHref || "/api/astropages/generated-site/moon-guide", window.location.origin);
+        destination.searchParams.set("scope", "day");
+        destination.searchParams.set("date", day.iso);
+        destination.searchParams.set("timezoneOffset", String(timezoneOffset));
+        destination.searchParams.set("locale", runtime.locale);
+        const response = await fetch(destination);
+        const payload = await response.json();
+        if (!response.ok || !payload.ok || !payload.day) throw new Error(operational.error);
+        if (requestId !== dayRequest || selectedDate !== day.iso) return;
+        const exact = payload.day as {
+          phase: MoonCalendarDay["phase"];
+          illumination: number;
+          waxing: boolean;
+          moonSignIndex?: number;
+          moonDegree: number;
+        };
+        const phaseIndex = Object.keys(runtime.phaseNames).indexOf(exact.phase);
+        day.phase = exact.phase;
+        day.phaseName = runtime.phaseNames[exact.phase];
+        day.illumination = exact.illumination;
+        day.direction = exact.waxing ? runtime.waxingLabel : runtime.waningLabel;
+        day.moonPath = moonCalendarPath(exact.illumination / 100, exact.waxing);
+        day.ritual = runtime.rituals[phaseIndex];
+        day.rest = runtime.rests[phaseIndex];
+        if (exact.moonSignIndex !== undefined) {
+          day.zodiacName = runtime.zodiacNames[exact.moonSignIndex];
+          day.zodiacGlyph = runtime.zodiacGlyphs[exact.moonSignIndex];
+          const ingressSignIndex = day.events?.find(
+            (event) => event.kind === "sign-ingress" && event.signIndex !== undefined,
+          )?.signIndex;
+          const nextSignIndex = ingressSignIndex ?? (exact.moonSignIndex + 1) % 12;
+          day.ingress = fill(runtime.ingressTemplate, {
+            sign: runtime.zodiacNames[nextSignIndex],
+          });
+        }
+        day.zodiacDegree = `${exact.moonDegree}°`;
+        day.exact = true;
+        detailPanel?.setAttribute("aria-busy", "false");
+        syncDetail(day, animate);
+      } catch {
+        if (requestId !== dayRequest || selectedDate !== day.iso) return;
+        detailPanel?.setAttribute("aria-busy", "false");
+      }
+    };
+
+    const selectDay = (day: MoonCalendarDay, reveal = false) => {
+      syncDetail(day, reveal);
+      void hydrateDay(day, reveal);
+      if (reveal) {
+        document.dispatchEvent(
+          new CustomEvent("moon-day-selected", {
+            detail: { phase: day.phase },
+          }),
+        );
+      }
+      if (reveal && window.matchMedia("(max-width: 56rem)").matches) {
+        detailPanel?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    };
+
+    const renderMonth = () => {
+      const month = getMoonCalendarMonth(visibleYear, visibleMonth, runtime);
+      monthDays = new Map(
+        month.cells
+          .filter((day): day is MoonCalendarDay => Boolean(day))
+          .map((day) => [day.iso, day]),
+      );
+      if (navigatorLabel) navigatorLabel.textContent = month.label;
+      if (navigatorDescription) navigatorDescription.textContent = month.summary;
+
+      cells.forEach((cell, index) => {
+        const day = month.cells[index];
+        cell.hidden = !day;
+        if (!day) {
+          cell.removeAttribute("data-date");
+          return;
+        }
+        cell.dataset.date = day.iso;
+        cell.setAttribute("aria-label", `${day.dateLong}, ${day.phaseName}`);
+        cell.querySelector<HTMLElement>("[data-cell-day]")!.textContent = String(
+          day.day,
+        );
+        cell
+          .querySelector<SVGPathElement>("[data-cell-path]")
+          ?.setAttribute("d", day.moonPath);
+        cell.querySelector<HTMLElement>("[data-cell-label]")!.textContent =
+          cellLabel(day.phase);
+        const markers = cell.querySelector<HTMLElement>("[data-cell-markers]");
+        if (markers) {
+          markers.replaceChildren(
+            ...(day.events || []).flatMap((event) => {
+              if (event.kind === "void-of-course") {
+                const marker = document.createElement("abbr");
+                marker.title = operational.voidOfCourse;
+                marker.textContent = "v/c";
+                return [marker];
+              }
+              if (event.kind === "eclipse") {
+                const marker = document.createElement("i");
+                marker.title = operational.eclipse;
+                marker.className = "moon-calendar-grid__eclipse";
+                return [marker];
+              }
+              if (event.kind === "sign-ingress" && event.signIndex !== undefined) {
+                const marker = document.createElement("span");
+                marker.title = eventLabel(event);
+                marker.textContent = textGlyph(runtime.zodiacGlyphs[event.signIndex]);
+                return [marker];
+              }
+              return [];
+            }),
+          );
+        }
+      });
+
+      const selected = monthDays.get(selectedDate);
+      if (selected) {
+        selectDay(selected);
+      } else {
+        const first = month.cells.find(
+          (day): day is MoonCalendarDay => Boolean(day),
+        );
+        if (first) selectDay(first);
+      }
+    };
+
+    const loadMonth = async () => {
+      const requestId = ++monthRequest;
+      if (status) {
+        status.hidden = false;
+        status.textContent = operational.loading;
+        status.dataset.state = "loading";
+      }
+      try {
+        const destination = new URL(root.dataset.apiHref || "/api/astropages/generated-site/moon-guide", window.location.origin);
+        destination.searchParams.set("scope", "month");
+        destination.searchParams.set("year", String(visibleYear));
+        destination.searchParams.set("month", String(visibleMonth + 1));
+        destination.searchParams.set("timezoneOffset", String(timezoneOffset));
+        destination.searchParams.set("locale", runtime.locale);
+        const response = await fetch(destination);
+        const payload = await response.json();
+        if (!response.ok || !payload.ok || !payload.month?.days) throw new Error(operational.error);
+        if (requestId !== monthRequest) return;
+        const providerDays = new Map(
+          (payload.month.days as MoonCalendarProviderDay[]).map((day) => [day.iso, day]),
+        );
+        monthDays.forEach((day, iso) => {
+          const provider = providerDays.get(iso);
+          if (provider) monthDays.set(iso, mergeMoonCalendarProviderDay(day, provider, runtime));
+        });
+        cells.forEach((cell) => {
+          const day = cell.dataset.date ? monthDays.get(cell.dataset.date) : undefined;
+          if (!day) return;
+          cell.querySelector<SVGPathElement>("[data-cell-path]")?.setAttribute("d", day.moonPath);
+          const label = cell.querySelector<HTMLElement>("[data-cell-label]");
+          if (label) label.textContent = cellLabel(day.phase);
+        });
+        renderMonthFromCurrentDays();
+        if (status) status.hidden = true;
+      } catch {
+        if (requestId !== monthRequest || !status) return;
+        status.hidden = false;
+        status.textContent = operational.error;
+        status.dataset.state = "error";
+      }
+    };
+
+    const renderMonthFromCurrentDays = () => {
+      cells.forEach((cell) => {
+        const day = cell.dataset.date ? monthDays.get(cell.dataset.date) : undefined;
+        if (!day) return;
+        cell.querySelector<SVGPathElement>("[data-cell-path]")?.setAttribute("d", day.moonPath);
+        const label = cell.querySelector<HTMLElement>("[data-cell-label]");
+        if (label) label.textContent = cellLabel(day.phase);
+        const markers = cell.querySelector<HTMLElement>("[data-cell-markers]");
+        if (!markers) return;
+        markers.replaceChildren(
+          ...(day.events || []).flatMap((event) => {
+            const marker = event.kind === "void-of-course"
+              ? Object.assign(document.createElement("abbr"), { title: operational.voidOfCourse, textContent: "v/c" })
+              : event.kind === "eclipse"
+                ? Object.assign(document.createElement("i"), { title: operational.eclipse, className: "moon-calendar-grid__eclipse" })
+                : event.kind === "sign-ingress" && event.signIndex !== undefined
+                  ? Object.assign(document.createElement("span"), { title: eventLabel(event), textContent: textGlyph(runtime.zodiacGlyphs[event.signIndex]) })
+                  : null;
+            return marker ? [marker] : [];
+          }),
+        );
+      });
+      const selected = monthDays.get(selectedDate);
+      if (selected) selectDay(selected);
+    };
+
+    cells.forEach((cell) => {
+      cell.addEventListener("click", () => {
+        const day = cell.dataset.date
+          ? monthDays.get(cell.dataset.date)
+          : undefined;
+        if (day) selectDay(day, true);
+      });
+    });
+
+    navigator?.addEventListener("datechange", (event) => {
+      const action = (event as CustomEvent<{ action: string }>).detail.action;
+      if (action === "reset") {
+        visibleYear = today.getFullYear();
+        visibleMonth = today.getMonth();
+        selectedDate = getMoonCalendarDay(today, runtime).iso;
+      } else {
+        const monthDate = new Date(
+          visibleYear,
+          visibleMonth + (action === "next" ? 1 : -1),
+          1,
+        );
+        visibleYear = monthDate.getFullYear();
+        visibleMonth = monthDate.getMonth();
+      }
+      root.dataset.visibleYear = String(visibleYear);
+      root.dataset.visibleMonth = String(visibleMonth);
+      renderMonth();
+      void loadMonth();
+    });
+
+    document.addEventListener("moon-phase-select", (event) => {
+      const phase = (event as CustomEvent<{ phase?: MoonCalendarDay["phase"] }>).detail?.phase;
+      if (!phase) return;
+      const candidates = [...monthDays.values()].filter((day) => day.phase === phase);
+      const selectedDayNumber = monthDays.get(selectedDate)?.day || today.getDate();
+      const match = candidates.sort(
+        (left, right) => Math.abs(left.day - selectedDayNumber) - Math.abs(right.day - selectedDayNumber),
+      )[0];
+      if (match) {
+        selectDay(match, true);
+        if (!window.matchMedia("(max-width: 56rem)").matches) {
+          root.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }
+    });
+
+    renderMonth();
+    void loadMonth();
+  };
+
+  const enhanceMoonCalendars = () => {
+    document
+      .querySelectorAll<HTMLElement>("[data-moon-calendar-workspace]")
+      .forEach(enhanceMoonCalendar);
+  };
+
+  enhanceMoonCalendars();
+  document.addEventListener("astro:page-load", enhanceMoonCalendars);
+</script>

@@ -1,0 +1,108 @@
+---
+import Badge from "../../shared/Badge.astro";
+import CardGrid from "../../shared/CardGrid.astro";
+import "../../../styles/retrogrades/sections/current-status.css";
+
+type EditAttributes = Record<string, string>;
+
+type StatusCard = {
+  id: string;
+  glyph: string;
+  title: string;
+  position: string;
+  description: string;
+  period: string;
+  shadowLabel?: string;
+  shadowDate?: string;
+  titleEditAttributes?: EditAttributes;
+  descriptionEditAttributes?: EditAttributes;
+  shadowLabelEditAttributes?: EditAttributes;
+};
+
+type Props = {
+  sectionLabel: string;
+  retrogradeNowLabel: string;
+  cards: StatusCard[];
+  statusEditAttributes?: EditAttributes;
+};
+
+const {
+  sectionLabel,
+  retrogradeNowLabel,
+  cards,
+  statusEditAttributes = {},
+} = Astro.props as Props;
+---
+
+<section
+  class="retrogrades-current-status"
+  aria-label={sectionLabel}
+  data-screen-label="Retrogrades · Status"
+>
+  <CardGrid
+    as="ul"
+    columns={3}
+    tabletColumns={2}
+    mobileColumns={1}
+    class="retrogrades-current-status__grid"
+  >
+    {
+      cards.map((card) => (
+        <li class="retrogrades-current-status__card">
+          <div class="retrogrades-current-status__topline">
+            <span
+              class="retrogrades-current-status__glyph"
+              aria-hidden="true"
+            >
+              {card.glyph}
+            </span>
+            <Badge
+              tone="accent"
+              appearance="solid"
+              size="compact"
+              uppercase
+              class="retrogrades-current-status__badge"
+              {...statusEditAttributes}
+            >
+              {retrogradeNowLabel}
+            </Badge>
+          </div>
+
+          <h2
+            class="retrogrades-current-status__title"
+            {...card.titleEditAttributes}
+          >
+            {card.title}
+          </h2>
+          <p class="retrogrades-current-status__position">{card.position}</p>
+          <p
+            class="retrogrades-current-status__description"
+            {...card.descriptionEditAttributes}
+          >
+            {card.description}
+          </p>
+
+          <div class="retrogrades-current-status__dates">
+            <span class="retrogrades-current-status__period">
+              {card.period}
+            </span>
+            {
+              card.shadowDate ? (
+                <span class="retrogrades-current-status__shadow">
+                  {card.shadowLabel ? (
+                    <>
+                      <span {...card.shadowLabelEditAttributes}>
+                        {card.shadowLabel}
+                      </span>{" "}
+                    </>
+                  ) : null}
+                  {card.shadowDate}
+                </span>
+              ) : null
+            }
+          </div>
+        </li>
+      ))
+    }
+  </CardGrid>
+</section>

@@ -1,0 +1,124 @@
+---
+import Avatar from "../../shared/Avatar.astro";
+import Button from "../../shared/Button.astro";
+import MediaThumbnail from "../../shared/MediaThumbnail.astro";
+import "../../../styles/blog/sections/blog-article-header.css";
+
+type EditAttributes = Record<string, string>;
+
+type Props = {
+  backHref: string;
+  backLabel: string;
+  category: string;
+  title: string;
+  author: string;
+  publishedDate: string;
+  readTime: string;
+  glyph: string;
+  coverSrc?: string;
+  coverAlt?: string;
+  coverWidth?: number;
+  coverHeight?: number;
+  coverTone: "terracotta" | "ochre" | "rose" | "slate" | "olive" | "stone";
+  editAttributes?: (field: string) => EditAttributes;
+  fields: {
+    category: string;
+    title: string;
+    author: string;
+    publishedDate: string;
+    readTime: string;
+  };
+};
+
+const {
+  backHref,
+  backLabel,
+  category,
+  title,
+  author,
+  publishedDate,
+  readTime,
+  glyph,
+  coverSrc,
+  coverAlt = title,
+  coverWidth,
+  coverHeight,
+  coverTone,
+  editAttributes = () => ({}),
+  fields,
+} = Astro.props as Props;
+---
+
+<article class="blog-article-header" data-screen-label="Blog · Article">
+  <div class="blog-article-header__navigation">
+    <Button
+      href={backHref}
+      variant="link"
+      size="compact"
+      class="blog-article-header__back"
+      editAttributes={editAttributes("blog_article_back_label")}
+    >
+      <span slot="leading-icon">←</span>
+      {backLabel}
+    </Button>
+  </div>
+
+  <header class="blog-article-header__masthead">
+    <p
+      class="blog-article-header__category"
+      {...editAttributes(fields.category)}
+    >
+      {category}
+    </p>
+    <h1
+      class="blog-article-header__title"
+      {...editAttributes(fields.title)}
+    >
+      {title}
+    </h1>
+    <div class="blog-article-header__byline">
+      <Avatar
+        name={author}
+        size="compact"
+        tone="accent"
+        fallback="initials"
+      />
+      <div class="blog-article-header__byline-copy">
+        <p
+          class="blog-article-header__author"
+          {...editAttributes(fields.author)}
+        >
+          {author}
+        </p>
+        <p class="blog-article-header__meta">
+          <span {...editAttributes(fields.publishedDate)}>{publishedDate}</span>
+          <span aria-hidden="true"> · </span>
+          <span {...editAttributes(fields.readTime)}>{readTime}</span>
+        </p>
+      </div>
+    </div>
+  </header>
+
+  <div class="blog-article-header__cover-shell">
+    <div
+      class:list={[
+        "blog-article-header__cover",
+        `blog-article-header__cover--${coverTone}`,
+      ]}
+      role="img"
+      aria-label={title}
+    >
+      {coverSrc ? (
+        <MediaThumbnail
+          class="blog-article-header__thumbnail"
+          src={coverSrc}
+          alt={coverAlt}
+          width={coverWidth}
+          height={coverHeight}
+        />
+      ) : (
+        <span aria-hidden="true">{glyph}</span>
+      )}
+    </div>
+  </div>
+</article>

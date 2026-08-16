@@ -1,0 +1,187 @@
+.sidera-order-summary {
+  --order-summary-surface: var(--color-panel);
+  --order-summary-ink: var(--color-text);
+  --order-summary-muted: var(--color-muted);
+  --order-summary-border: rgba(var(--color-text-rgb), 0.1);
+
+  inline-size: min(100%, 23rem);
+  min-inline-size: 0;
+  border: 1px solid var(--order-summary-border);
+  border-radius: 1.375rem;
+  padding: 1.625rem;
+  background: var(--order-summary-surface);
+  color: var(--order-summary-ink);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+.sidera-order-summary--checkout {
+  box-shadow: 0 1.25rem 3.125rem -2.125rem rgba(var(--color-text-rgb), 0.55);
+}
+
+.sidera-order-summary--receipt {
+  inline-size: min(100%, 41.25rem);
+}
+
+.sidera-order-summary--tone-inverse {
+  --order-summary-surface: rgba(240, 230, 214, 0.06);
+  --order-summary-ink: var(--color-surface-soft);
+  --order-summary-muted: var(--color-line);
+  --order-summary-border: rgba(240, 230, 214, 0.16);
+}
+
+.sidera-order-summary--sticky {
+  position: sticky;
+  inset-block-start: 5.5rem;
+}
+
+.sidera-order-summary__header {
+  padding-block-end: 1rem;
+  border-block-end: 1px solid var(--order-summary-border);
+}
+
+.sidera-order-summary--cart .sidera-order-summary__header,
+.sidera-order-summary--booking .sidera-order-summary__header {
+  padding-block-end: 0;
+  border-block-end: 0;
+}
+
+.sidera-order-summary__title {
+  margin: 0;
+  color: var(--order-summary-ink);
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 1.5rem;
+  font-weight: 400;
+  line-height: 1.1;
+}
+
+.sidera-order-summary__items {
+  min-inline-size: 0;
+  display: grid;
+  gap: 0.875rem;
+  margin-block: 1rem;
+}
+
+.sidera-order-summary__rows {
+  min-inline-size: 0;
+  display: grid;
+  gap: 0.75rem;
+  margin-block: 1.125rem;
+}
+
+.sidera-order-summary__extension,
+.sidera-order-summary__before-total,
+.sidera-order-summary__after-total,
+.sidera-order-summary__footer {
+  min-inline-size: 0;
+  margin-block-start: 0.875rem;
+}
+
+.sidera-order-summary__extension {
+  border-block-start: 1px solid var(--order-summary-border);
+  padding-block-start: 0.875rem;
+}
+
+.sidera-order-summary__status {
+  min-inline-size: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.875rem 0 0;
+  color: #3f7d5c;
+  font-size: 0.78125rem;
+  font-weight: 600;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.sidera-order-summary__status > span {
+  flex: none;
+  inline-size: 0.4375rem;
+  block-size: 0.4375rem;
+  border-radius: 50%;
+  background: var(--color-success);
+}
+
+.sidera-order-summary--cart .sidera-order-summary__status {
+  border-radius: 0.625rem;
+  padding: 0.625rem 0.75rem;
+  background: rgba(63, 143, 95, 0.1);
+  font-weight: 400;
+}
+
+.sidera-order-summary--cart .sidera-order-summary__status > span {
+  display: none;
+}
+
+.sidera-order-summary--tone-inverse .sidera-order-summary__status {
+  color: #a9d5b6;
+}
+
+.sidera-order-summary__total {
+  min-inline-size: 0;
+}
+
+.sidera-order-summary--booking .sidera-order-summary__total {
+  margin-block-start: 1rem;
+  border-radius: 0.875rem;
+  padding: 0.875rem 1rem;
+  background: var(--color-surface);
+}
+
+.sidera-order-summary--booking .sidera-order-summary__total .summary-row--total {
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+.sidera-order-summary__action {
+  margin-block-start: 1.125rem;
+}
+
+.sidera-order-summary__note {
+  margin: 0.75rem 0 0;
+  color: var(--order-summary-muted);
+  font-size: 0.71875rem;
+  line-height: 1.5;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.sidera-order-summary--cart .sidera-order-summary__note,
+.sidera-order-summary--booking .sidera-order-summary__note {
+  text-align: start;
+}
+
+.sidera-order-summary--tone-inverse .sidera-order-line-item {
+  color: var(--order-summary-ink);
+}
+
+@media (max-width: 40rem) {
+  .sidera-order-summary {
+    inline-size: 100%;
+    border-radius: 1.125rem;
+    padding: 1.25rem;
+  }
+
+  .sidera-order-summary--sticky {
+    position: static;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidera-order-summary {
+    scroll-behavior: auto;
+  }
+}
+
+@media (forced-colors: active) {
+  .sidera-order-summary,
+  .sidera-order-summary__header,
+  .sidera-order-summary__extension {
+    border-color: CanvasText;
+  }
+
+  .sidera-order-summary__status > span {
+    background: CanvasText;
+  }
+}

@@ -1,0 +1,262 @@
+---
+import type { SupportedLocale } from "../../data/localization-contract.ts";
+import "../../styles/shared/results-shell.css";
+import Breadcrumb from "./Breadcrumb.astro";
+import ChartWheel from "./ChartWheel.astro";
+import SectionHeading from "./SectionHeading.astro";
+
+type HeadingLevel = 1 | 2 | 3;
+type ChartWheelMode = "decorative" | "natal" | "transit" | "synastry";
+type ChartWheelSize = "compact" | "standard" | "large";
+type PlanetRing = "inner" | "outer";
+
+type BreadcrumbItem = {
+  label: string;
+  href?: string;
+  current?: boolean;
+  editAttributes?: Record<string, string>;
+};
+
+type SummaryItem = {
+  label: string;
+  detail?: string;
+  tone?: "terracotta" | "forest" | "neutral";
+  editAttributes?: Record<string, string>;
+};
+
+type ChartPlanet = {
+  glyph: string;
+  longitude: number;
+  label: string;
+  color?: string;
+  ring?: PlanetRing;
+  selected?: boolean;
+};
+
+type ChartAspect = {
+  from: number;
+  to: number;
+  color?: string;
+  weight?: number;
+  dashed?: boolean;
+};
+
+type Props = {
+  id: string;
+  title: string;
+  eyebrow?: string;
+  description?: string;
+  headingLevel?: HeadingLevel;
+  breadcrumbs?: BreadcrumbItem[];
+  breadcrumbAriaLabel?: string;
+  locale?: SupportedLocale;
+  summaryItems?: SummaryItem[];
+  notice?: string;
+  chartTitle: string;
+  chartDescription?: string;
+  chartCaption?: string;
+  chartMode?: ChartWheelMode;
+  chartSize?: ChartWheelSize;
+  chartRotation?: number;
+  chartHouseCusps?: number[];
+  chartPlanets?: ChartPlanet[];
+  chartAspects?: ChartAspect[];
+  chartShowHouses?: boolean;
+  chartShowAspects?: boolean;
+  chartInteractive?: boolean;
+  chartCenterGlyph?: string;
+  layout?: "split" | "stacked";
+  chartSurface?: "plain" | "panel";
+  class?: string;
+  eyebrowEditAttributes?: Record<string, string>;
+  titleEditAttributes?: Record<string, string>;
+  descriptionEditAttributes?: Record<string, string>;
+  noticeEditAttributes?: Record<string, string>;
+  [attribute: string]: unknown;
+};
+
+const {
+  id,
+  title,
+  eyebrow,
+  description,
+  headingLevel = 2,
+  breadcrumbs = [],
+  breadcrumbAriaLabel = "Results breadcrumb",
+  locale,
+  summaryItems = [],
+  notice,
+  chartTitle,
+  chartDescription,
+  chartCaption,
+  chartMode = "natal",
+  chartSize = "large",
+  chartRotation = 0,
+  chartHouseCusps = [],
+  chartPlanets = [],
+  chartAspects = [],
+  chartShowHouses,
+  chartShowAspects = true,
+  chartInteractive = false,
+  chartCenterGlyph,
+  layout = "split",
+  chartSurface = "panel",
+  class: className,
+  eyebrowEditAttributes = {},
+  titleEditAttributes = {},
+  descriptionEditAttributes = {},
+  noticeEditAttributes = {},
+  ...rootAttributes
+} = Astro.props as Props;
+
+const headingId = `${id}-heading`;
+const hasSummarySlot = Astro.slots.has("summary");
+const hasSummary = hasSummarySlot || summaryItems.length > 0;
+const hasOrientation = Astro.slots.has("orientation");
+const hasChartSlot = Astro.slots.has("chart");
+const hasInspector = Astro.slots.has("inspector");
+const hasActions = Astro.slots.has("actions");
+const hasContent = Astro.slots.has("default");
+const safeLayout = hasInspector ? layout : "stacked";
+const classes = [
+  "results-shell",
+  `results-shell--${safeLayout}`,
+  `results-shell--${chartSurface}`,
+  !hasInspector && "results-shell--chart-only",
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+---
+
+<section
+  {...rootAttributes}
+  class={classes}
+  id={id}
+  aria-labelledby={headingId}
+  data-results-shell
+>
+  <div class="results-shell__header">
+    {
+      breadcrumbs.length > 0 ? (
+        <Breadcrumb
+          items={breadcrumbs}
+          ariaLabel={breadcrumbAriaLabel}
+          locale={locale}
+          class="results-shell__breadcrumb"
+        />
+      ) : null
+    }
+
+    <SectionHeading
+      title={title}
+      eyebrow={eyebrow}
+      description={description}
+      headingLevel={headingLevel}
+      headingId={headingId}
+      size="page"
+      class="results-shell__heading"
+      eyebrowEditAttributes={eyebrowEditAttributes}
+      titleEditAttributes={titleEditAttributes}
+      descriptionEditAttributes={descriptionEditAttributes}
+    >
+      <Fragment slot="title">
+        <slot name="title">{title}</slot>
+      </Fragment>
+      {
+        hasSummary ? (
+          <Fragment slot="action">
+            {hasSummarySlot ? (
+              <slot name="summary" />
+            ) : (
+              <div class="results-shell__summary" aria-label="Chart context">
+                {summaryItems.map((item) => (
+                  <p
+                    class:list={[
+                      "results-shell__summary-item",
+                      `results-shell__summary-item--${item.tone ?? "neutral"}`,
+                    ]}
+                    {...item.editAttributes}
+                  >
+                    <span class="results-shell__summary-marker" aria-hidden="true" />
+                    <span>
+                      <strong>{item.label}</strong>
+                      {item.detail ? <small>{item.detail}</small> : null}
+                    </span>
+                  </p>
+                ))}
+              </div>
+            )}
+          </Fragment>
+        ) : null
+      }
+    </SectionHeading>
+
+    {
+      notice ? (
+        <p class="results-shell__notice" {...noticeEditAttributes}>
+          <span aria-hidden="true">⌖</span>
+          {notice}
+        </p>
+      ) : null
+    }
+
+    {
+      hasActions ? (
+        <div class="results-shell__actions">
+          <slot name="actions" />
+        </div>
+      ) : null
+    }
+  </div>
+
+  {
+    hasOrientation ? (
+      <div class="results-shell__orientation">
+        <slot name="orientation" />
+      </div>
+    ) : null
+  }
+
+  <div class="results-shell__workspace">
+    <div class="results-shell__chart">
+      {
+        hasChartSlot ? (
+          <slot name="chart" />
+        ) : (
+          <ChartWheel
+            title={chartTitle}
+            description={chartDescription}
+            caption={chartCaption}
+            mode={chartMode}
+            size={chartSize}
+            rotation={chartRotation}
+            houseCusps={chartHouseCusps}
+            planets={chartPlanets}
+            aspects={chartAspects}
+            showHouses={chartShowHouses}
+            showAspects={chartShowAspects}
+            interactive={chartInteractive}
+            centerGlyph={chartCenterGlyph}
+          />
+        )
+      }
+    </div>
+
+    {
+      hasInspector ? (
+        <aside class="results-shell__inspector" aria-label={`${title} details`}>
+          <slot name="inspector" />
+        </aside>
+      ) : null
+    }
+  </div>
+
+  {
+    hasContent ? (
+      <div class="results-shell__content">
+        <slot />
+      </div>
+    ) : null
+  }
+</section>

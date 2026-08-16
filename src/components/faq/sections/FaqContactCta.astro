@@ -1,0 +1,47 @@
+---
+import type { SupportedLocale } from "../../../data/localization-contract.ts";
+import FinalCtaSection from "../../shared/FinalCtaSection.astro";
+import "../../../styles/faq/sections/faq-contact-cta.css";
+
+type Props = {
+  title: string;
+  description: string;
+  actionLabel: string;
+  actionHref: string;
+  locale: SupportedLocale;
+  titleEditAttributes?: Record<string, string>;
+  descriptionEditAttributes?: Record<string, string>;
+  actionEditAttributes?: Record<string, string>;
+};
+
+const {
+  title,
+  description,
+  actionLabel,
+  actionHref,
+  locale,
+  titleEditAttributes = {},
+  descriptionEditAttributes = {},
+  actionEditAttributes = {},
+} = Astro.props as Props;
+---
+
+<div class="faq-contact-cta">
+  <div class="faq-contact-cta__inner">
+    <FinalCtaSection
+      id="faq-contact"
+      title={title}
+      description={description}
+      primaryLabel={actionLabel}
+      primaryHref={actionHref}
+      locale={locale}
+      tone="dark"
+      layout="centered"
+      surface="panel"
+      density="compact"
+      titleEditAttributes={titleEditAttributes}
+      descriptionEditAttributes={descriptionEditAttributes}
+      primaryEditAttributes={actionEditAttributes}
+    />
+  </div>
+</div>

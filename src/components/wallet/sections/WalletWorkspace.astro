@@ -1,0 +1,113 @@
+---
+import Button from "../../shared/Button.astro";
+
+type Props = { copy: Record<string, string>; wallet: { balance: string; balanceCents: number }; transactions: Array<Record<string, unknown>>; offers: ReadonlyArray<{ id: string; amountCents: number; creditCents: number; bonusCents: number }>; recentLimit: number; csrfToken: string; locale: string; browseHref: string; transactionsHref: string; paymentState: string; rechargeId: string; attemptId: string; sessionId: string };
+const { copy, wallet, transactions, offers, recentLimit, csrfToken, locale, browseHref, transactionsHref, paymentState, rechargeId, attemptId, sessionId } = Astro.props as Props;
+const state = paymentState === "success" ? "verifying" : paymentState === "cancelled" ? "cancelled" : paymentState === "failed" ? "failed" : "idle";
+const formatDate = (value: unknown) => value ? new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(String(value))) : "";
+---
+<main class="wallet-page" data-wallet-app data-csrf={csrfToken} data-locale={locale} data-recent-limit={recentLimit} data-state={state} data-recharge-id={rechargeId} data-attempt-id={attemptId} data-session-id={sessionId}>
+  <section class="wallet-hero" aria-labelledby="wallet-title">
+    <div class="wallet-hero__copy">
+      <p>{copy.eyebrow}</p>
+      <h1 id="wallet-title">{copy.title}</h1>
+      <span>{copy.body}</span>
+      <div class="wallet-hero__actions">
+        <Button href={browseHref} variant="primary" size="large" shape="rounded">{copy.browse}</Button>
+        <Button href={transactionsHref} variant="secondary" size="large" shape="rounded">{copy.transactions}</Button>
+      </div>
+    </div>
+    <div class="wallet-balance-card"><span>{copy.available}</span><strong data-wallet-balance-main>{wallet.balance}</strong></div>
+  </section>
+
+  <section class:list={["wallet-notice", state !== "idle" && "is-visible"]} data-wallet-notice aria-live="polite">
+    <span class="wallet-notice__icon" aria-hidden="true">{state === "cancelled" || state === "failed" ? "!" : "✓"}</span>
+    <div><strong data-wallet-notice-title>{state === "cancelled" ? copy.cancelled_title : state === "failed" ? copy.failed_title : copy.success_title}</strong><p data-wallet-notice-body>{state === "cancelled" ? copy.cancelled_body : state === "failed" ? copy.failed_body : copy.verifying}</p></div>
+    <a href="#wallet-recharge">{copy.retry}</a>
+  </section>
+
+  <section class="wallet-grid">
+    <form class="wallet-recharge" id="wallet-recharge" data-wallet-form>
+      <h2>{copy.recharge_title}</h2>
+      <label class="wallet-custom">
+        <span>{copy.amount}</span>
+        <div><b>$</b><input name="amount" type="number" min="20" max="5000" step="1" value="100" inputmode="decimal" required /></div>
+      </label>
+      <div class="wallet-offers" role="radiogroup" aria-label={copy.choose_amount}>
+        {offers.map((offer, index) => <button type="button" class:list={["wallet-offer", index === 0 && "is-selected"]} role="radio" aria-checked={index === 0 ? "true" : "false"} data-offer-id={offer.id} data-amount={offer.amountCents / 100} data-credit={offer.creditCents / 100}><strong>${offer.amountCents / 100}</strong>{offer.bonusCents ? <span>+ ${offer.bonusCents / 100}</span> : null}</button>)}
+      </div>
+      <div class="wallet-summary" aria-live="polite">
+        <div><span>{copy.current_balance}</span><strong data-wallet-balance>{wallet.balance}</strong></div>
+        <div><span>{copy.recharge_amount}</span><strong data-wallet-recharge-amount>$100</strong></div>
+        <div><span>{copy.after_recharge}</span><strong data-wallet-after-recharge>${wallet.balanceCents / 100 + 100}</strong></div>
+      </div>
+      <p class="wallet-form-error" data-wallet-error aria-live="polite"></p>
+      <Button class="wallet-pay" type="submit" variant="primary" size="large" shape="rounded" fullWidth data-wallet-submit>{copy.add_amount} $100</Button>
+      <p class="wallet-secure">✦ {copy.secure}</p>
+    </form>
+
+    <div class="wallet-activity" id="wallet-activity">
+      <div class="wallet-activity__heading"><div><p>{copy.recent}</p><h2>{copy.activity}</h2></div><Button href={transactionsHref} variant="link" size="compact">{copy.view_all}</Button></div>
+      <div data-wallet-transactions aria-live="polite">
+        {transactions.length ? transactions.map((item) => <article class:list={["wallet-transaction", Number(item.amountCents) < 0 && "is-debit"]}><div><span aria-hidden="true">{Number(item.amountCents) < 0 ? "↗" : "↙"}</span><div><strong>{String(item.description)}</strong><small>{formatDate(item.createdAt)}</small></div></div><div><b>{String(item.signedAmount)}</b><small>{copy.balance_after}: {String(item.balanceAfter)}</small></div></article>) : <p class="wallet-empty" data-wallet-empty>{copy.empty}</p>}
+      </div>
+    </div>
+  </section>
+</main>
+
+<script is:inline define:vars={{ copy }}>
+(() => {
+  const root = document.querySelector("[data-wallet-app]"); if (!root) return;
+  const form = root.querySelector("[data-wallet-form]"); const input = form?.querySelector("input[name=amount]");
+  const error = root.querySelector("[data-wallet-error]"); const submit = root.querySelector("[data-wallet-submit]");
+  const rechargeAmount = root.querySelector("[data-wallet-recharge-amount]"); const afterRecharge = root.querySelector("[data-wallet-after-recharge]");
+  let offerId = "wl_100"; let credit = 100; let requestKey = crypto.randomUUID();
+  const readPayload = async (response) => {
+    const text = await response.text();
+    if (!text) return {};
+    try { return JSON.parse(text); }
+    catch { return { message: text.trim().startsWith("<") ? copy.failed_body : text.trim().slice(0, 240) }; }
+  };
+  const formatClientDate = (value) => {
+    if (!value) return "";
+    try { return new Intl.DateTimeFormat(root.dataset.locale || "en", { dateStyle: "medium", timeStyle: "short" }).format(new Date(String(value))); }
+    catch { return new Date(String(value)).toLocaleString(); }
+  };
+  const buildTransaction = (item) => {
+    const article = document.createElement("article"); article.className = `wallet-transaction${Number(item.amountCents || 0) < 0 ? " is-debit" : ""}`;
+    const details = document.createElement("div"); const icon = document.createElement("span"); icon.setAttribute("aria-hidden", "true"); icon.textContent = Number(item.amountCents || 0) < 0 ? "↗" : "↙";
+    const text = document.createElement("div"); const title = document.createElement("strong"); title.textContent = String(item.description || "");
+    const date = document.createElement("small"); date.textContent = formatClientDate(item.createdAt); text.append(title, date); details.append(icon, text);
+    const amounts = document.createElement("div"); const signed = document.createElement("b"); signed.textContent = String(item.signedAmount || item.amount || "");
+    const balance = document.createElement("small"); balance.textContent = `${copy.balance_after}: ${String(item.balanceAfter || "")}`; amounts.append(signed, balance); article.append(details, amounts);
+    return article;
+  };
+  const renderTransactions = (items) => {
+    const container = root.querySelector("[data-wallet-transactions]"); if (!container) return;
+    container.replaceChildren(); const limit = Math.max(1, Number(root.dataset.recentLimit) || 8); const recent = Array.isArray(items) ? items.slice(0, limit) : [];
+    if (!recent.length) { const empty = document.createElement("p"); empty.className = "wallet-empty"; empty.dataset.walletEmpty = ""; empty.textContent = copy.empty; container.append(empty); return; }
+    recent.forEach((item) => container.append(buildTransaction(item)));
+  };
+  const updateSummary = () => { const amount = Number(input.value) || 0; rechargeAmount.textContent = `$${amount}`; afterRecharge.textContent = `$${(Number(root.querySelector("[data-wallet-balance-main]").textContent.replace(/[^0-9.-]/g, "")) || 0) + credit}`; submit.querySelector("span").textContent = `${copy.add_amount} $${amount}`; };
+  root.querySelectorAll("[data-offer-id]").forEach((button) => button.addEventListener("click", () => {
+    root.querySelectorAll("[data-offer-id]").forEach((item) => { item.classList.remove("is-selected"); item.setAttribute("aria-checked", "false"); });
+    button.classList.add("is-selected"); button.setAttribute("aria-checked", "true"); offerId = button.dataset.offerId || ""; input.value = button.dataset.amount || ""; credit = Number(button.dataset.credit) || Number(input.value); updateSummary();
+  }));
+  input?.addEventListener("input", () => { offerId = ""; credit = Number(input.value) || 0; root.querySelectorAll("[data-offer-id]").forEach((item) => { item.classList.remove("is-selected"); item.setAttribute("aria-checked", "false"); }); updateSummary(); });
+  form?.addEventListener("submit", async (event) => {
+    event.preventDefault(); error.textContent = ""; const amount = Number(input.value);
+    if (!Number.isFinite(amount) || amount < 20 || amount > 5000) { error.textContent = copy.minimum; return; }
+    submit.disabled = true; submit.querySelector("span").textContent = copy.preparing;
+    try {
+      const response = await fetch("/api/wallet/recharges", { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json", "x-astropages-customer-csrf": root.dataset.csrf || "" }, body: JSON.stringify({ amount, offerId: offerId || undefined, requestKey, locale: root.dataset.locale }) });
+      const payload = await readPayload(response); if (!response.ok || !payload?.data?.checkoutUrl) throw new Error(payload?.message || copy.failed_body);
+      requestKey = crypto.randomUUID(); window.location.assign(payload.data.checkoutUrl);
+    } catch (reason) { error.textContent = reason instanceof Error ? reason.message : copy.failed_body; submit.disabled = false; updateSummary(); }
+  });
+  if (root.dataset.state === "verifying") {
+    fetch("/api/astropages/generated-site/payments/stripe/wallet-confirm", { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json", "x-astropages-customer-csrf": root.dataset.csrf || "" }, body: JSON.stringify({ rechargeId: root.dataset.rechargeId, attemptId: root.dataset.attemptId, sessionId: root.dataset.sessionId, locale: root.dataset.locale }) })
+      .then(async (response) => { const payload = await readPayload(response); if (!response.ok || !payload?.data?.wallet) throw new Error(payload?.message || copy.failed_body); document.querySelectorAll("[data-wallet-balance]").forEach((node) => node.textContent = payload.data.wallet.balance); root.querySelector("[data-wallet-balance-main]").textContent = payload.data.wallet.balance; renderTransactions(payload.data.transactions); updateSummary(); root.querySelector("[data-wallet-notice-body]").textContent = copy.success_body; history.replaceState({}, "", new URL(window.location.href).pathname + (root.dataset.locale !== "en" ? `?locale=${root.dataset.locale}` : "")); })
+      .catch((reason) => { root.querySelector("[data-wallet-notice-title]").textContent = copy.failed_title; root.querySelector("[data-wallet-notice-body]").textContent = reason instanceof Error ? reason.message : copy.failed_body; root.querySelector("[data-wallet-notice]").classList.add("is-error"); });
+  }
+})();
+</script>

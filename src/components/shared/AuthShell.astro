@@ -1,0 +1,140 @@
+---
+import {
+  defaultLocale,
+  localizePath,
+  type SupportedLocale,
+} from "../../data/localization-contract.ts";
+import BrandLogo from "./BrandLogo.astro";
+import "../../styles/shared/auth-shell.css";
+
+type AuthShellPerk = {
+  icon: string;
+  label: string;
+  labelEditAttributes?: Record<string, string>;
+};
+
+type Props = {
+  id?: string;
+  brandLabel: string;
+  brandHref?: string;
+  brandAriaLabel?: string;
+  backLabel: string;
+  backHref?: string;
+  panelKicker: string;
+  panelTitle: string;
+  panelDescription?: string;
+  perks?: AuthShellPerk[];
+  formLabel: string;
+  locale?: SupportedLocale;
+  class?: string;
+  brandEditAttributes?: Record<string, string>;
+  backEditAttributes?: Record<string, string>;
+  kickerEditAttributes?: Record<string, string>;
+  titleEditAttributes?: Record<string, string>;
+  descriptionEditAttributes?: Record<string, string>;
+};
+
+const {
+  id = "sidera-auth-shell",
+  brandLabel,
+  brandHref = "/",
+  brandAriaLabel,
+  backLabel,
+  backHref = "/",
+  panelKicker,
+  panelTitle,
+  panelDescription,
+  perks = [],
+  formLabel,
+  locale = defaultLocale,
+  class: className,
+  brandEditAttributes = {},
+  backEditAttributes = {},
+  kickerEditAttributes = {},
+  titleEditAttributes = {},
+  descriptionEditAttributes = {},
+} = Astro.props as Props;
+
+const titleId = `${id}-title`;
+const classes = ["sidera-auth-shell", className]
+  .filter(Boolean)
+  .join(" ");
+const localizedBrandHref = localizePath(brandHref, locale);
+const localizedBackHref = localizePath(backHref, locale);
+---
+
+<main
+  class={classes}
+  id={id}
+  aria-labelledby={titleId}
+>
+  <header class="sidera-auth-shell__nav">
+    <div class="sidera-auth-shell__nav-inner">
+      <BrandLogo
+        label={brandLabel}
+        href={localizedBrandHref}
+        ariaLabel={brandAriaLabel}
+        size="compact"
+        editAttributes={brandEditAttributes}
+      />
+      <a
+        class="sidera-auth-shell__back"
+        href={localizedBackHref}
+        aria-label={backLabel}
+        {...backEditAttributes}
+      >
+        <span aria-hidden="true">←</span>
+        <span>{backLabel}</span>
+      </a>
+    </div>
+  </header>
+
+  <div class="sidera-auth-shell__frame">
+    <section class="sidera-auth-shell__panel">
+      <div class="sidera-auth-shell__story">
+        <span
+          class="sidera-auth-shell__ring sidera-auth-shell__ring--large"
+          aria-hidden="true"
+        ></span>
+        <span
+          class="sidera-auth-shell__ring sidera-auth-shell__ring--small"
+          aria-hidden="true"
+        ></span>
+
+        <div class="sidera-auth-shell__intro">
+          <p class="sidera-auth-shell__kicker" {...kickerEditAttributes}>
+            <span aria-hidden="true">✦</span>
+            {panelKicker}
+          </p>
+          <h1 id={titleId} {...titleEditAttributes}>{panelTitle}</h1>
+          {
+            panelDescription ? (
+              <p class="sidera-auth-shell__description" {...descriptionEditAttributes}>
+                {panelDescription}
+              </p>
+            ) : null
+          }
+        </div>
+
+        {
+          perks.length > 0 ? (
+            <ul class="sidera-auth-shell__perks" aria-label="Account benefits">
+              {perks.map((perk) => (
+                <li>
+                  <span class="sidera-auth-shell__perk-icon" aria-hidden="true">
+                    {perk.icon}
+                  </span>
+                  <span {...perk.labelEditAttributes}>{perk.label}</span>
+                </li>
+              ))}
+            </ul>
+          ) : null
+        }
+      </div>
+
+      <div class="sidera-auth-shell__form" aria-label={formLabel}>
+        <slot />
+      </div>
+    </section>
+  </div>
+</main>

@@ -1,0 +1,41 @@
+.todays-sky-page-header.sidera-page-intro {
+  padding: 2.875rem 2.125rem 0;
+  background: var(--color-surface);
+}
+
+.todays-sky-page-header__context {
+  min-inline-size: min(100%, 20rem);
+  color: var(--color-muted);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 0.84375rem;
+  line-height: 1.5;
+  text-align: end;
+}
+
+.todays-sky-page-header__context p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.todays-sky-page-header__context-primary {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+@media (max-width: 40rem) {
+  .todays-sky-page-header.sidera-page-intro {
+    padding: 2.75rem 1.25rem 0;
+  }
+
+  .todays-sky-page-header__context {
+    min-inline-size: 0;
+    text-align: start;
+  }
+}
+
+@media (forced-colors: active) {
+  .todays-sky-page-header__context,
+  .todays-sky-page-header__context-primary {
+    color: CanvasText;
+  }
+}

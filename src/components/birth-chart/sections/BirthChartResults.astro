@@ -1,0 +1,298 @@
+---
+import type { PreparedBirthChartResult } from "../../../data/birth-chart/results.ts";
+import type { SupportedLocale } from "../../../data/localization-contract.ts";
+import type { BirthChartResultsCopy } from "../../../data/locale/birth-chart/sections/results.ts";
+import AspectRow from "../../shared/AspectRow.astro";
+import PlanetPositionRow from "../../shared/PlanetPositionRow.astro";
+import ResultsShell from "../../shared/ResultsShell.astro";
+import BirthChartNatalReportHandoff from "./BirthChartNatalReportHandoff.astro";
+import "../../../styles/birth-chart/sections/results.css";
+
+type Props = {
+  copy: BirthChartResultsCopy;
+  locale: SupportedLocale;
+  result: PreparedBirthChartResult;
+  editAttributes?: (
+    field: keyof BirthChartResultsCopy,
+  ) => Record<string, string>;
+};
+
+const { copy, locale, result, editAttributes = () => ({}) } = Astro.props as Props;
+const sectionId = "birth-chart-results";
+
+const roleCopy = {
+  sun: {
+    label: copy.results_sun_role,
+    blurb: copy.results_sun_blurb,
+    labelField: "results_sun_role",
+    blurbField: "results_sun_blurb",
+  },
+  moon: {
+    label: copy.results_moon_role,
+    blurb: copy.results_moon_blurb,
+    labelField: "results_moon_role",
+    blurbField: "results_moon_blurb",
+  },
+  rising: {
+    label: copy.results_rising_role,
+    blurb: copy.results_rising_blurb,
+    labelField: "results_rising_role",
+    blurbField: "results_rising_blurb",
+  },
+} as const;
+
+const chartPlanets = result.planets.map((planet, index) => ({
+  glyph: planet.glyph,
+  longitude: planet.longitude,
+  label: planet.label,
+  color: planet.color,
+  selected: index === 0,
+}));
+const chartAspects = result.aspects.map((aspect) => ({
+  from: aspect.firstIndex,
+  to: aspect.secondIndex,
+  color: aspect.color,
+  weight: aspect.weight,
+  dashed: aspect.dashed,
+}));
+---
+
+<ResultsShell
+  id={sectionId}
+  class="birth-chart-results"
+  title={result.chartName}
+  eyebrow={copy.results_eyebrow}
+  notice={result.unknownTime ? copy.results_unknown_time_notice : undefined}
+  chartTitle={result.chartTitle}
+  chartDescription={result.chartDescription}
+  chartMode="natal"
+  chartSize="large"
+  chartRotation={result.chartRotation}
+  chartHouseCusps={result.houseCusps}
+  chartPlanets={chartPlanets}
+  chartAspects={chartAspects}
+  chartInteractive
+  chartCenterGlyph="✦"
+  layout="split"
+  chartSurface="panel"
+  eyebrowEditAttributes={editAttributes("results_eyebrow")}
+  noticeEditAttributes={editAttributes("results_unknown_time_notice")}
+  data-birth-chart-results
+  data-time-accuracy={result.unknownTime ? "approximate" : "exact"}
+>
+  <div slot="summary" class="birth-chart-results__summary" aria-label="Birth details">
+    <strong>{result.birthSummary}</strong>
+    <span>{result.birthPlace} · {result.houseSystem}</span>
+  </div>
+
+  <div slot="orientation" class="birth-chart-results__big-three">
+    {
+      result.bigThree.map((item) => {
+        const preparedRole = roleCopy[item.role];
+        return (
+          <article class="birth-chart-results__orientation-card">
+            <span
+              class:list={[
+                "birth-chart-results__orientation-glyph",
+                `birth-chart-results__orientation-glyph--${item.element}`,
+              ]}
+              aria-hidden="true"
+            >
+              {item.glyph}
+            </span>
+            <div>
+              <p
+                class="birth-chart-results__orientation-role"
+                {...editAttributes(preparedRole.labelField)}
+              >
+                {preparedRole.label}
+              </p>
+              <h3>{item.sign}</h3>
+              <p
+                class="birth-chart-results__orientation-blurb"
+                {...editAttributes(preparedRole.blurbField)}
+              >
+                {preparedRole.blurb}
+              </p>
+            </div>
+          </article>
+        );
+      })
+    }
+  </div>
+
+  <div slot="inspector" class="birth-chart-results__inspector" aria-live="polite">
+    <p
+      class="birth-chart-results__reading-kicker"
+      {...editAttributes("results_reading_kicker")}
+    >
+      {copy.results_reading_kicker}
+    </p>
+    {
+      result.planets.map((planet, index) => (
+        <section
+          class="birth-chart-results__planet-reading"
+          data-result-planet-panel={index}
+          hidden={index !== 0}
+          aria-label={planet.label}
+        >
+          <div class="birth-chart-results__planet-identity">
+            <span
+              class="birth-chart-results__planet-glyph"
+              style={{ "--planet-accent": planet.color }}
+              aria-hidden="true"
+            >
+              {planet.glyph}
+            </span>
+            <div>
+              <h3>{planet.name}{planet.retrograde ? " ℞" : ""}</h3>
+              <p>{planet.positionLabel}</p>
+            </div>
+          </div>
+          <p class="birth-chart-results__interpretation">{planet.interpretation}</p>
+          <dl class="birth-chart-results__facts">
+            <div>
+              <dt {...editAttributes("results_sign_label")}>{copy.results_sign_label}</dt>
+              <dd>{planet.signName}</dd>
+            </div>
+            <div>
+              <dt {...editAttributes("results_house_label")}>{copy.results_house_label}</dt>
+              <dd>{planet.houseText}</dd>
+            </div>
+            <div>
+              <dt {...editAttributes("results_element_label")}>{copy.results_element_label}</dt>
+              <dd>{planet.elementName}</dd>
+            </div>
+          </dl>
+        </section>
+      ))
+    }
+  </div>
+
+  <div class="birth-chart-results__lists">
+    <section class="birth-chart-results__positions" aria-labelledby="birth-chart-positions-title">
+      <header class="birth-chart-results__list-header">
+        <h3 id="birth-chart-positions-title" {...editAttributes("results_positions_title")}>
+          {copy.results_positions_title}
+        </h3>
+        <p {...editAttributes("results_zodiac_label")}>{copy.results_zodiac_label}</p>
+      </header>
+      <div class="birth-chart-results__position-columns" aria-hidden="true">
+        <span {...editAttributes("results_body_header")}>{copy.results_body_header}</span>
+        <span {...editAttributes("results_sign_header")}>{copy.results_sign_header}</span>
+        <span {...editAttributes("results_degree_header")}>{copy.results_degree_header}</span>
+        <span {...editAttributes("results_house_header")}>{copy.results_house_header}</span>
+      </div>
+      <div class="birth-chart-results__position-rows">
+        {
+          result.planets.map((planet, index) => (
+            <PlanetPositionRow
+              planetName={`${planet.name}${planet.retrograde ? " ℞" : ""}`}
+              planetGlyph={planet.glyph}
+              signName={planet.signName}
+              signGlyph={planet.signGlyph}
+              degreeText={planet.degreeText}
+              houseText={planet.houseText}
+              interactive
+              selected={index === 0}
+              ariaLabel={planet.label}
+              data-result-planet-row={index}
+            />
+          ))
+        }
+      </div>
+    </section>
+
+    <section class="birth-chart-results__aspects" aria-labelledby="birth-chart-aspects-title">
+      <header class="birth-chart-results__list-header">
+        <h3 id="birth-chart-aspects-title" {...editAttributes("results_aspects_title")}>
+          {copy.results_aspects_title}
+        </h3>
+        <p>{result.aspects.length} <span {...editAttributes("results_found_label")}>{copy.results_found_label}</span></p>
+      </header>
+      <div class="birth-chart-results__aspect-rows">
+        {
+          result.aspects.map((aspect) => {
+            const first = result.planets[aspect.firstIndex];
+            const second = result.planets[aspect.secondIndex];
+            if (!first || !second) return null;
+            return (
+              <AspectRow
+                firstLabel={first.name}
+                firstGlyph={first.glyph}
+                secondLabel={second.name}
+                secondGlyph={second.glyph}
+                aspectLabel={aspect.aspectLabel}
+                aspectGlyph={aspect.aspectGlyph}
+                orb={aspect.orb}
+                tone={aspect.tone}
+                size="compact"
+              />
+            );
+          })
+        }
+      </div>
+      <p class="birth-chart-results__aspect-legend">
+        <span><i class="birth-chart-results__legend-dot birth-chart-results__legend-dot--conjunction" /> <b {...editAttributes("results_conjunction_label")}>{copy.results_conjunction_label}</b></span>
+        <span><i class="birth-chart-results__legend-dot birth-chart-results__legend-dot--harmonious" /> <b {...editAttributes("results_harmonious_label")}>{copy.results_harmonious_label}</b></span>
+        <span><i class="birth-chart-results__legend-dot birth-chart-results__legend-dot--challenging" /> <b {...editAttributes("results_challenging_label")}>{copy.results_challenging_label}</b></span>
+      </p>
+    </section>
+  </div>
+
+  <BirthChartNatalReportHandoff
+    copy={copy}
+    locale={locale}
+    editAttributes={editAttributes}
+  />
+</ResultsShell>
+
+<script>
+  const initializeBirthChartResults = () => {
+    document.querySelectorAll<HTMLElement>("[data-birth-chart-results]").forEach((results) => {
+      if (results.dataset.resultsReady === "true") return;
+
+      const selectPlanet = (index: number) => {
+        results
+          .querySelectorAll<HTMLElement>("[data-result-planet-panel]")
+          .forEach((panel) => {
+            panel.hidden = Number(panel.dataset.resultPlanetPanel) !== index;
+          });
+
+        results
+          .querySelectorAll<HTMLButtonElement>("[data-result-planet-row]")
+          .forEach((row) => {
+            const selected = Number(row.dataset.resultPlanetRow) === index;
+            row.classList.toggle("sidera-planet-position-row--selected", selected);
+            row.setAttribute("aria-pressed", String(selected));
+          });
+
+        results
+          .querySelectorAll<SVGGElement>("[data-planet-index]")
+          .forEach((planet) => {
+            planet.classList.toggle(
+              "chart-wheel__planet--selected",
+              Number(planet.dataset.planetIndex) === index,
+            );
+          });
+      };
+
+      results.addEventListener("planetselect", (event) => {
+        selectPlanet((event as CustomEvent<{ index: number }>).detail.index);
+      });
+
+      results
+        .querySelectorAll<HTMLButtonElement>("[data-result-planet-row]")
+        .forEach((row) => {
+          row.addEventListener("click", () => {
+            selectPlanet(Number(row.dataset.resultPlanetRow));
+          });
+        });
+
+      results.dataset.resultsReady = "true";
+    });
+  };
+
+  initializeBirthChartResults();
+  document.addEventListener("astro:page-load", initializeBirthChartResults);
+</script>

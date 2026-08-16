@@ -1,0 +1,93 @@
+---
+import Avatar from "../../shared/Avatar.astro";
+import "../../../styles/blog/sections/blog-article-body.css";
+
+type EditAttributes = Record<string, string>;
+
+type BodyBlock = {
+  kind: "paragraph" | "heading" | "quote";
+  text: string;
+  field: string;
+};
+
+type Props = {
+  title: string;
+  blocks: BodyBlock[];
+  author: string;
+  authorField: string;
+  authorBio: string;
+  editAttributes?: (field: string) => EditAttributes;
+};
+
+const {
+  title,
+  blocks,
+  author,
+  authorField,
+  authorBio,
+  editAttributes = () => ({}),
+} = Astro.props as Props;
+---
+
+<article class="blog-article-body" aria-label={title}>
+  <div class="blog-article-body__content">
+    {
+      blocks.map((block) => {
+        if (block.kind === "heading") {
+          return (
+            <h2
+              class="blog-article-body__heading"
+              {...editAttributes(block.field)}
+            >
+              {block.text}
+            </h2>
+          );
+        }
+
+        if (block.kind === "quote") {
+          return (
+            <blockquote
+              class="blog-article-body__quote"
+              {...editAttributes(block.field)}
+            >
+              {block.text}
+            </blockquote>
+          );
+        }
+
+        return (
+          <p
+            class="blog-article-body__paragraph"
+            {...editAttributes(block.field)}
+          >
+            {block.text}
+          </p>
+        );
+      })
+    }
+
+    <footer class="blog-article-body__author">
+      <Avatar
+        class="blog-article-body__avatar"
+        name={author}
+        size="standard"
+        tone="accent"
+        fallback="initials"
+      />
+      <div class="blog-article-body__author-copy">
+        <p
+          class="blog-article-body__author-name"
+          {...editAttributes(authorField)}
+        >
+          {author}
+        </p>
+        <p
+          class="blog-article-body__author-bio"
+          {...editAttributes("blog_article_author_bio")}
+        >
+          {authorBio}
+        </p>
+      </div>
+    </footer>
+  </div>
+</article>

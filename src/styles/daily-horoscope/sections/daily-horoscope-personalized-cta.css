@@ -1,0 +1,23 @@
+.daily-horoscope-personalized-cta {
+  --sidera-final-cta-background: var(--color-dark);
+  --sidera-final-cta-color: var(--color-surface-soft);
+  --sidera-final-cta-accent: var(--color-primary-soft);
+  --sidera-final-cta-muted: var(--color-line);
+
+  inline-size: min(100% - 4.25rem, 73.75rem);
+  margin: 1.625rem auto 3.75rem;
+  box-shadow: none;
+}
+
+@media (max-width: 42rem) {
+  .daily-horoscope-personalized-cta {
+    inline-size: min(100% - 2rem, 73.75rem);
+    margin-block: 1.25rem 2rem;
+  }
+}
+
+@media (forced-colors: active) {
+  .daily-horoscope-personalized-cta {
+    border: 1px solid CanvasText;
+  }
+}

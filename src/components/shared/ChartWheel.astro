@@ -1,0 +1,298 @@
+---
+import "../../styles/shared/chart-wheel.css";
+
+type ChartWheelMode = "decorative" | "natal" | "transit" | "synastry";
+type ChartWheelTone = "default" | "inverse";
+type ChartWheelSize = "compact" | "standard" | "large";
+type PlanetRing = "inner" | "outer";
+
+type Planet = {
+  glyph: string;
+  longitude: number;
+  label: string;
+  color?: string;
+  ring?: PlanetRing;
+  selected?: boolean;
+};
+
+type Aspect = {
+  from: number;
+  to: number;
+  color?: string;
+  weight?: number;
+  dashed?: boolean;
+};
+
+type Props = {
+  title: string;
+  description?: string;
+  caption?: string;
+  mode?: ChartWheelMode;
+  tone?: ChartWheelTone;
+  size?: ChartWheelSize;
+  rotation?: number;
+  houseCusps?: number[];
+  planets?: Planet[];
+  aspects?: Aspect[];
+  showHouses?: boolean;
+  showAspects?: boolean;
+  interactive?: boolean;
+  centerGlyph?: string;
+  class?: string;
+};
+
+const zodiacGlyphs = [
+  "\u2648\uFE0E",
+  "\u2649\uFE0E",
+  "\u264A\uFE0E",
+  "\u264B\uFE0E",
+  "\u264C\uFE0E",
+  "\u264D\uFE0E",
+  "\u264E\uFE0E",
+  "\u264F\uFE0E",
+  "\u2650\uFE0E",
+  "\u2651\uFE0E",
+  "\u2652\uFE0E",
+  "\u2653\uFE0E",
+];
+
+const legacyPaletteAliases: Record<string, string> = {
+  "#9c4f38": "var(--chart-color-fire)",
+  "#6c6254": "var(--chart-color-earth)",
+  "#b07a3c": "var(--chart-color-air)",
+  "#2f4a41": "var(--chart-color-water)",
+  "#8c5a6a": "var(--chart-color-venus)",
+  "#426b68": "var(--chart-color-uranus)",
+  "#4a5a6b": "var(--chart-color-neptune)",
+  "#6b5346": "var(--chart-color-pluto)",
+  "#5b382c": "var(--chart-color-transit)",
+  "#9b5273": "var(--chart-color-fire)",
+  "#9b654a": "var(--chart-color-earth)",
+  "#6e88a2": "var(--chart-color-neptune)",
+};
+const themedColor = (color?: string) =>
+  color ? legacyPaletteAliases[color.toLowerCase()] || color : undefined;
+
+const {
+  title,
+  description,
+  caption,
+  mode = "natal",
+  tone = "default",
+  size = "standard",
+  rotation = 0,
+  houseCusps = [],
+  planets = [],
+  aspects = [],
+  showHouses = mode === "natal" || mode === "transit",
+  showAspects = true,
+  interactive = false,
+  centerGlyph = mode === "decorative" ? "☉" : undefined,
+  class: className,
+} = Astro.props as Props;
+
+const center = 250;
+const toPoint = (longitude: number, radius: number) => {
+  const angle = (180 + longitude - rotation) * (Math.PI / 180);
+  return {
+    x: Number((center + radius * Math.cos(angle)).toFixed(2)),
+    y: Number((center - radius * Math.sin(angle)).toFixed(2)),
+  };
+};
+
+const signDividers = zodiacGlyphs.map((_, index) => ({
+  inner: toPoint(index * 30, 200),
+  outer: toPoint(index * 30, 242),
+}));
+const signs = zodiacGlyphs.map((glyph, index) => ({
+  glyph,
+  ...toPoint(index * 30 + 15, 221),
+}));
+const normalizedHouseCusps = houseCusps.length === 12 && houseCusps.every(Number.isFinite)
+  ? houseCusps.map((cusp) => ((cusp % 360) + 360) % 360)
+  : Array.from({ length: 12 }, (_, index) => rotation + index * 30);
+const midpoint = (start: number, end: number) => {
+  const distance = ((end - start) % 360 + 360) % 360;
+  return start + distance / 2;
+};
+const houses = normalizedHouseCusps.map((cusp, index) => ({
+  index,
+  inner: toPoint(cusp, 70),
+  outer: toPoint(cusp, 200),
+  number: toPoint(midpoint(cusp, normalizedHouseCusps[(index + 1) % 12]), 84),
+}));
+
+const ringRadius = (ring: PlanetRing) => {
+  if (mode === "transit") return ring === "outer" ? 184 : 132;
+  if (mode === "synastry") return ring === "outer" ? 176 : 126;
+  return ring === "outer" ? 176 : 154;
+};
+
+const plottedPlanets = planets.map((planet, index) => {
+  const ring = planet.ring ?? "inner";
+  return {
+    ...planet,
+    index,
+    ring,
+    ...toPoint(planet.longitude, ringRadius(ring)),
+  };
+});
+const plottedAspects = aspects
+  .map((aspect) => ({
+    ...aspect,
+    fromPlanet: plottedPlanets[aspect.from],
+    toPlanet: plottedPlanets[aspect.to],
+  }))
+  .filter((aspect) => aspect.fromPlanet && aspect.toPlanet);
+
+const classes = [
+  "chart-wheel",
+  `chart-wheel--${mode}`,
+  `chart-wheel--${tone}`,
+  `chart-wheel--${size}`,
+  interactive && "chart-wheel--interactive",
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+---
+
+<figure class={classes} data-chart-wheel>
+  <svg
+    class="chart-wheel__svg"
+    viewBox="0 0 500 500"
+    role="img"
+    aria-label={title}
+    preserveAspectRatio="xMidYMid meet"
+  >
+    <title>{title}</title>
+    {description && <desc>{description}</desc>}
+
+    <circle class="chart-wheel__disc chart-wheel__disc--outer" cx="250" cy="250" r="242" />
+    <circle class="chart-wheel__disc chart-wheel__disc--signs" cx="250" cy="250" r="200" />
+    <circle class="chart-wheel__disc chart-wheel__disc--inner" cx="250" cy="250" r="70" />
+
+    <g class="chart-wheel__sign-band" aria-hidden="true">
+      {
+        signDividers.map((divider) => (
+          <line
+            x1={divider.inner.x}
+            y1={divider.inner.y}
+            x2={divider.outer.x}
+            y2={divider.outer.y}
+          />
+        ))
+      }
+      {
+        signs.map((sign) => (
+          <text x={sign.x} y={sign.y}>{sign.glyph}</text>
+        ))
+      }
+    </g>
+
+    {
+      showHouses && (
+        <g class="chart-wheel__houses" aria-hidden="true">
+          {houses.map((house) => (
+            <>
+              <line
+                class:list={{ "chart-wheel__house-angle": house.index % 3 === 0 }}
+                x1={house.inner.x}
+                y1={house.inner.y}
+                x2={house.outer.x}
+                y2={house.outer.y}
+              />
+              <text x={house.number.x} y={house.number.y}>{house.index + 1}</text>
+            </>
+          ))}
+        </g>
+      )
+    }
+
+    {
+      showAspects && (
+        <g class="chart-wheel__aspects" aria-hidden="true">
+          {plottedAspects.map((aspect) => (
+            <line
+              x1={aspect.fromPlanet.x}
+              y1={aspect.fromPlanet.y}
+              x2={aspect.toPlanet.x}
+              y2={aspect.toPlanet.y}
+              stroke-width={aspect.weight}
+              stroke-dasharray={aspect.dashed ? "5 5" : undefined}
+              style={{ "--aspect-color": themedColor(aspect.color) }}
+            />
+          ))}
+        </g>
+      )
+    }
+
+    <g class="chart-wheel__planets">
+      {
+        plottedPlanets.map((planet) => (
+          <g
+            class:list={{
+              "chart-wheel__planet": true,
+              "chart-wheel__planet--outer": planet.ring === "outer",
+              "chart-wheel__planet--selected": planet.selected,
+            }}
+            role={interactive ? "button" : undefined}
+            tabindex={interactive ? 0 : undefined}
+            aria-label={interactive ? planet.label : undefined}
+            data-planet-index={interactive ? planet.index : undefined}
+            style={{ "--planet-color": themedColor(planet.color) }}
+          >
+            <circle cx={planet.x} cy={planet.y} r={planet.selected ? 18 : 14.5} />
+            <text x={planet.x} y={planet.y}>{planet.glyph}</text>
+          </g>
+        ))
+      }
+    </g>
+
+    {
+      centerGlyph && (
+        <g class="chart-wheel__center" aria-hidden="true">
+          <circle cx="250" cy="250" r="44" />
+          <text x="250" y="250" dy="0.1em">{centerGlyph}</text>
+        </g>
+      )
+    }
+  </svg>
+  {caption && <figcaption class="chart-wheel__caption">{caption}</figcaption>}
+</figure>
+
+<script>
+  const enhanceChartWheel = (wheel: HTMLElement) => {
+    if (wheel.dataset.chartWheelBound === "true") return;
+    wheel.dataset.chartWheelBound = "true";
+
+    const selectPlanet = (planet: SVGGElement) => {
+      wheel
+        .querySelectorAll<SVGGElement>("[data-planet-index]")
+        .forEach((node) => node.classList.toggle("chart-wheel__planet--selected", node === planet));
+
+      wheel.dispatchEvent(
+        new CustomEvent("planetselect", {
+          bubbles: true,
+          detail: { index: Number(planet.dataset.planetIndex) },
+        }),
+      );
+    };
+
+    wheel.querySelectorAll<SVGGElement>("[data-planet-index]").forEach((planet) => {
+      planet.addEventListener("click", () => selectPlanet(planet));
+      planet.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        selectPlanet(planet);
+      });
+    });
+  };
+
+  const enhanceChartWheels = () => {
+    document.querySelectorAll<HTMLElement>("[data-chart-wheel]").forEach(enhanceChartWheel);
+  };
+
+  enhanceChartWheels();
+  document.addEventListener("astro:page-load", enhanceChartWheels);
+</script>

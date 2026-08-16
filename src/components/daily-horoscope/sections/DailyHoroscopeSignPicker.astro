@@ -1,0 +1,119 @@
+---
+import PageIntro from "../../shared/PageIntro.astro";
+import ZodiacSignItem from "../../shared/ZodiacSignItem.astro";
+import "../../../styles/daily-horoscope/sections/daily-horoscope-sign-picker.css";
+
+type EditAttributes = Record<string, string>;
+type ElementTone = "fire" | "earth" | "air" | "water";
+
+type SignItem = {
+  slug: string;
+  glyph: string;
+  elementTone: ElementTone;
+  name: string;
+  dates: string;
+  element: string;
+  href: string;
+  nameEditAttributes?: EditAttributes;
+  datesEditAttributes?: EditAttributes;
+  elementEditAttributes?: EditAttributes;
+};
+
+type Props = {
+  eyebrow: string;
+  titleAccent: string;
+  titleRest: string;
+  description: string;
+  helperPrefix: string;
+  helperCta: string;
+  helperHref: string;
+  signs: SignItem[];
+  eyebrowEditAttributes?: EditAttributes;
+  titleAccentEditAttributes?: EditAttributes;
+  titleRestEditAttributes?: EditAttributes;
+  descriptionEditAttributes?: EditAttributes;
+  helperPrefixEditAttributes?: EditAttributes;
+  helperCtaEditAttributes?: EditAttributes;
+};
+
+const {
+  eyebrow,
+  titleAccent,
+  titleRest,
+  description,
+  helperPrefix,
+  helperCta,
+  helperHref,
+  signs,
+  eyebrowEditAttributes = {},
+  titleAccentEditAttributes = {},
+  titleRestEditAttributes = {},
+  descriptionEditAttributes = {},
+  helperPrefixEditAttributes = {},
+  helperCtaEditAttributes = {},
+} = Astro.props as Props;
+---
+
+<div
+  class="daily-horoscope-sign-picker"
+  data-screen-label="Choose Your Sign"
+  data-daily-horoscope-sign-picker
+>
+  <PageIntro
+    title={`${titleAccent} ${titleRest}`}
+    eyebrow={eyebrow}
+    alignment="center"
+    id="daily-horoscope-sign-picker"
+    headingId="daily-horoscope-sign-picker-title"
+    class="daily-horoscope-sign-picker__intro"
+    eyebrowEditAttributes={eyebrowEditAttributes}
+  >
+    <Fragment slot="title">
+      <em {...titleAccentEditAttributes}>{titleAccent}</em>{" "}<span
+        {...titleRestEditAttributes}>{titleRest}</span
+      >
+    </Fragment>
+  </PageIntro>
+
+  <div class="daily-horoscope-sign-picker__inner">
+    <p
+      id="daily-horoscope-sign-picker-description"
+      class="daily-horoscope-sign-picker__description"
+      {...descriptionEditAttributes}
+    >
+      {description}
+    </p>
+
+    <ul
+      class="daily-horoscope-sign-picker__grid"
+      aria-labelledby="daily-horoscope-sign-picker-title"
+      aria-describedby="daily-horoscope-sign-picker-description"
+    >
+      {
+        signs.map((sign) => (
+          <li>
+            <ZodiacSignItem
+              sign={sign.name}
+              glyph={sign.glyph}
+              dates={sign.dates}
+              element={sign.element}
+              elementTone={sign.elementTone}
+              size="standard"
+              href={sign.href}
+              ariaLabel={`${sign.name}, ${sign.dates}, ${sign.element}`}
+              class="daily-horoscope-sign-picker__sign"
+              signEditAttributes={sign.nameEditAttributes}
+              datesEditAttributes={sign.datesEditAttributes}
+              elementEditAttributes={sign.elementEditAttributes}
+            />
+          </li>
+        ))
+      }
+    </ul>
+
+    <p class="daily-horoscope-sign-picker__helper">
+      <span {...helperPrefixEditAttributes}>{helperPrefix}</span>{" "}
+      <a href={helperHref} {...helperCtaEditAttributes}>{helperCta}</a>
+    </p>
+  </div>
+</div>

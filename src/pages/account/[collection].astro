@@ -1,0 +1,74 @@
+---
+import type { BuilderEditAttributes } from "../../builder/builder.ts";
+import { loadPublicPageContent } from "../../builder/public-page.ts";
+import AccountCollectionPage from "../../components/account/shared/AccountCollectionPage.astro";
+import AccountCollectionEmptyState from "../../components/account/shared/AccountCollectionEmptyState.astro";
+import AccountDocument from "../../components/account/shared/AccountDocument.astro";
+import AccountPeopleGrid from "../../components/account/shared/AccountPeopleGrid.astro";
+import AccountSavedChartGrid from "../../components/account/shared/AccountSavedChartGrid.astro";
+import AccountOrdersList from "../../components/account/shared/AccountOrdersList.astro";
+import { prepareAccountPeople, prepareAccountPeopleFromProfiles } from "../../data/account/people.ts";
+import { prepareAccountSavedCharts, prepareAccountSavedChartsFromRuntime } from "../../data/account/saved-charts.ts";
+import { prepareAccountOrders, prepareAccountOrdersFromRuntime } from "../../data/account/orders.ts";
+import { localizePath } from "../../data/localization-contract.ts";
+import { getCustomerSession } from "../../server/aggregator/customer-auth.ts";
+import { listCustomerUserProfiles } from "../../server/aggregator/customer-profiles.ts";
+import { listCommerceOrders } from "../../server/aggregator/commerce-orders.ts";
+import { listBirthChartReadings } from "../../server/aggregator/birth-chart-api.ts";
+import { getRuntimeEnv } from "../../server/generated-site/request.ts";
+import "../../styles/account/account.css";
+
+export const prerender = false;
+const collection = Astro.params.collection;
+if (collection !== "charts" && collection !== "people" && collection !== "orders") return Astro.redirect("/account", 302);
+
+const loaded = await loadPublicPageContent(Astro, "account");
+const { content, locale, builder, builderPage, chromePage, reviewTargets, builderEdit, chromeEdit } = loaded;
+const runtimeEnv = await getRuntimeEnv(Astro);
+const customerSession = await getCustomerSession(runtimeEnv, Astro.request).catch(() => null);
+const accountHref = localizePath("/account", locale);
+if (!customerSession && !builder.launcherEnabled) return Astro.redirect(`${localizePath("/login", locale)}?next=${encodeURIComponent(Astro.url.pathname + Astro.url.search)}`, 302);
+
+const attrs = (value: BuilderEditAttributes): Record<string, string> => Object.fromEntries(Object.entries(value).filter((entry): entry is [string, string | true] => entry[1] !== undefined).map(([key, value]) => [key, value === true ? "true" : value]));
+const ownedProfiles = collection === "people" && customerSession ? await listCustomerUserProfiles(runtimeEnv, customerSession.account.id) : [];
+const runtimeOrders = collection === "orders" && customerSession ? await listCommerceOrders({ env: runtimeEnv, accountId: customerSession.account.id, pageSize: 50 }) : null;
+const runtimeCharts = (collection === "charts" || collection === "people") && customerSession ? await listBirthChartReadings({ env: runtimeEnv, accountId: customerSession.account.id, pageSize: 50 }) : null;
+const allItems = collection === "charts"
+  ? (runtimeCharts ? prepareAccountSavedChartsFromRuntime(runtimeCharts.items, locale) : prepareAccountSavedCharts(locale))
+  : collection === "people"
+    ? (customerSession ? prepareAccountPeopleFromProfiles(ownedProfiles, locale, runtimeCharts?.items) : prepareAccountPeople(locale))
+    : (runtimeOrders ? prepareAccountOrdersFromRuntime(runtimeOrders.items, locale) : prepareAccountOrders(locale));
+const pageSize = collection === "orders" ? 10 : 8;
+const totalPages = Math.max(1, Math.ceil(allItems.length / pageSize));
+const requestedPage = Number.parseInt(Astro.url.searchParams.get("page") || "1", 10);
+const currentPage = Number.isFinite(requestedPage) ? Math.min(totalPages, Math.max(1, requestedPage)) : 1;
+const items = allItems.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+const hrefForPage = (page: number) => { const url = new URL(Astro.url); page <= 1 ? url.searchParams.delete("page") : url.searchParams.set("page", String(page)); return `${url.pathname}${url.search}`; };
+const seo = { seo_title: `${collection === "charts" ? content.account_saved_charts_title : collection === "people" ? content.account_people_title : content.account_orders_title} | ${content.brand_name}`, seo_description: content.seo_description, seo_canonical_path: Astro.url.pathname, seo_robots: content.seo_robots, og_title: content.og_title, og_description: content.og_description, og_image: content.og_image, og_image_alt: content.og_image_alt, twitter_card: content.twitter_card, twitter_title: content.twitter_title, twitter_description: content.twitter_description, twitter_image: content.twitter_image };
+const builderToolbar = { launcherEnabled: builder.launcherEnabled, studioModeEnabled: builder.studioModeEnabled, collection: builder.collection, entry: builder.entry, locale: builder.locale, csrfToken: builder.csrfToken, canPublish: builder.canPublish, seo, hasSavedDraft: builderPage.hasSavedDraft || chromePage.hasSavedDraft, reviewTargets };
+const title = collection === "charts" ? content.account_saved_charts_title : collection === "people" ? content.account_people_title : content.account_orders_title;
+const eyebrow = collection === "charts" ? content.account_saved_charts_eyebrow : collection === "people" ? content.account_people_eyebrow : content.account_orders_eyebrow;
+const titleField = collection === "charts" ? "account_saved_charts_title" : collection === "people" ? "account_people_title" : "account_orders_title";
+const eyebrowField = collection === "charts" ? "account_saved_charts_eyebrow" : collection === "people" ? "account_people_eyebrow" : "account_orders_eyebrow";
+const emptyTitle = collection === "charts" ? content.account_saved_charts_empty_title : collection === "people" ? content.account_people_empty_title : content.account_orders_empty_title;
+const emptyDescription = collection === "charts" ? content.account_saved_charts_empty_description : collection === "people" ? content.account_people_empty_description : content.account_orders_empty_description;
+const emptyActionLabel = collection === "charts" ? content.account_saved_charts_empty_action_label : collection === "people" ? content.account_people_empty_action_label : content.account_orders_empty_action_label;
+const emptyActionHref = localizePath(collection === "charts" || collection === "people" ? "/birth-chart" : "/shop", locale);
+const emptyFieldPrefix = collection === "charts" ? "account_saved_charts" : collection === "people" ? "account_people" : "account_orders";
+---
+
+<AccountDocument {content} {locale} requestUrl={Astro.request.url} {seo} {builderToolbar} {chromeEdit}>
+  <main class="sidera-account">
+    <AccountCollectionPage title={title} titleField={titleField} eyebrow={eyebrow} eyebrowField={eyebrowField} total={allItems.length} itemsLabel={content.account_collection_items_label} backLabel={content.account_collection_back_label} backHref={`${accountHref}#${collection}`} {currentPage} {totalPages} {hrefForPage} paginationLabel={content.account_collection_pagination_label} previousLabel={content.account_collection_previous_label} nextLabel={content.account_collection_next_label} pageLabel={content.account_collection_page_label} edit={(field: string) => attrs(builderEdit(field))}>
+      {items.length === 0 ? (
+        <AccountCollectionEmptyState id={`account-${collection}-collection-empty`} title={emptyTitle} description={emptyDescription} actionLabel={emptyActionLabel} actionHref={emptyActionHref} titleField={`${emptyFieldPrefix}_empty_title`} descriptionField={`${emptyFieldPrefix}_empty_description`} actionField={`${emptyFieldPrefix}_empty_action_label`} edit={(field: string) => attrs(builderEdit(field))} />
+      ) : collection === "charts" ? (
+        <AccountSavedChartGrid charts={items as ReturnType<typeof prepareAccountSavedCharts>} chartTypes={[1, 2, 3, 4].map((index) => content[`account_saved_charts_type_${index}`])} openLabel={content.account_saved_charts_open_label} reportLabel={content.account_saved_charts_report_label} openHref={localizePath("/birth-chart", locale)} reportHref={localizePath("/reports", locale)} edit={(field: string) => attrs(builderEdit(field))} />
+      ) : collection === "people" ? (
+        <AccountPeopleGrid people={items as ReturnType<typeof prepareAccountPeople>} synastryLabel={content.account_people_synastry_label} synastryHref={localizePath("/synastry", locale)} ownProfileLabel={content.account_people_own_profile_label} generateBirthChartLabel={content.account_people_generate_birth_chart_label} openBirthChartLabel={content.account_saved_charts_open_label} edit={(field: string) => attrs(builderEdit(field))} />
+      ) : collection === "orders" ? (
+        <AccountOrdersList orders={items as ReturnType<typeof prepareAccountOrders>} deliveredLabel={content.account_orders_delivered_label} shippedLabel={content.account_orders_shipped_label} edit={(field: string) => attrs(builderEdit(field))} />
+      ) : null}
+    </AccountCollectionPage>
+  </main>
+</AccountDocument>

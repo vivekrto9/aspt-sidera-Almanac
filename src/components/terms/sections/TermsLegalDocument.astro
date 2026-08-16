@@ -1,0 +1,63 @@
+---
+import type { SupportedLocale } from "../../../data/localization-contract.ts";
+import LegalDocumentLayout from "../../shared/LegalDocumentLayout.astro";
+import "../../../styles/terms/sections/legal-document.css";
+
+type TermsSection = {
+  id: string;
+  title: string;
+  body: string;
+  titleEditAttributes?: Record<string, string>;
+  bodyEditAttributes?: Record<string, string>;
+};
+
+type Props = {
+  id: string;
+  eyebrow: string;
+  title: string;
+  updatedLabel: string;
+  sections: TermsSection[];
+  contactText: string;
+  locale: SupportedLocale;
+  eyebrowEditAttributes?: Record<string, string>;
+  titleEditAttributes?: Record<string, string>;
+  updatedEditAttributes?: Record<string, string>;
+  contactEditAttributes?: Record<string, string>;
+};
+
+const {
+  id,
+  eyebrow,
+  title,
+  updatedLabel,
+  sections,
+  contactText,
+  locale,
+  eyebrowEditAttributes = {},
+  titleEditAttributes = {},
+  updatedEditAttributes = {},
+  contactEditAttributes = {},
+} = Astro.props as Props;
+---
+
+<LegalDocumentLayout
+  id={id}
+  eyebrow={eyebrow}
+  title={title}
+  updatedLabel={updatedLabel}
+  sections={sections.map((section) => ({
+    id: section.id,
+    title: section.title,
+    paragraphs: [section.body],
+    headingEditAttributes: section.titleEditAttributes,
+    paragraphEditAttributes: [section.bodyEditAttributes ?? {}],
+  }))}
+  contactPrefix={contactText}
+  locale={locale}
+  eyebrowEditAttributes={eyebrowEditAttributes}
+  titleEditAttributes={titleEditAttributes}
+  updatedEditAttributes={updatedEditAttributes}
+  contactEditAttributes={contactEditAttributes}
+  class="terms-legal-document"
+  data-terms-legal-document
+/>

@@ -1,0 +1,296 @@
+---
+import type { BuilderEditAttributes } from "../../builder/builder.ts";
+import { loadPublicPageContent } from "../../builder/public-page.ts";
+import ReportsDetailNavigation from "../../components/reports/sections/ReportsDetailNavigation.astro";
+import ReportsDetailPanel from "../../components/reports/sections/ReportsDetailPanel.astro";
+import Footer from "../../components/shared/Footer.astro";
+import Header from "../../components/shared/Header.astro";
+import {
+  activeLocales,
+  defaultLocale,
+  localizePath,
+  type SupportedLocale,
+} from "../../data/localization-contract.ts";
+import { reportCatalog } from "../../data/reports/catalog.ts";
+import { createSharedFooterProps } from "../../data/shared-footer-navigation.ts";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getReportProductBySlug } from "../../server/aggregator/report-catalog.ts";
+import { getCommerceOrder } from "../../server/aggregator/commerce-orders.ts";
+import { getCustomerSession } from "../../server/aggregator/customer-auth.ts";
+import { listCustomerUserProfiles } from "../../server/aggregator/customer-profiles.ts";
+import { getRuntimeEnv } from "../../server/generated-site/request.ts";
+import "../../styles/reports/reports.css";
+
+export const prerender = false;
+
+const slug = Astro.params.slug ?? "";
+const {
+  content,
+  locale,
+  builder,
+  builderPage,
+  chromePage,
+  reviewTargets,
+  builderEdit,
+  chromeEdit,
+} = await loadPublicPageContent(Astro, "reports");
+const reportIndex = reportCatalog.findIndex((report) => report.slug === slug);
+const runtimeEnv = await getRuntimeEnv(Astro);
+const report = await getReportProductBySlug(runtimeEnv, slug, locale);
+const customerSession = await getCustomerSession(runtimeEnv, Astro.request).catch(() => null);
+const customerProfiles = customerSession ? await listCustomerUserProfiles(runtimeEnv, customerSession.account.id) : [];
+const paymentOrderId = Astro.url.searchParams.get("orderId") ?? "";
+const paymentState = Astro.url.searchParams.get("payment") ?? "";
+const paymentAttemptId = Astro.url.searchParams.get("attemptId") ?? "";
+const stripeSessionId = Astro.url.searchParams.get("session_id") ?? "";
+const paymentOrder = customerSession && paymentOrderId && paymentState === "success"
+  ? await getCommerceOrder(runtimeEnv, paymentOrderId, customerSession.account.id)
+  : null;
+if (reportIndex < 0 || !report) {
+  return Astro.redirect(localizePath("/reports", locale));
+}
+
+const reportNumber = reportIndex + 1;
+const reportTitle = content[`catalog_report_${reportNumber}_title`];
+const detailPrefix = `detail_report_${reportNumber}`;
+const seoContent = {
+  seo_title: `${reportTitle} | Sidera`,
+  seo_description: content[`catalog_report_${reportNumber}_description`],
+  seo_canonical_path: `/reports/${slug}`,
+  seo_robots: "index,follow",
+  og_title: reportTitle,
+  og_description: content[`catalog_report_${reportNumber}_description`],
+  og_image: content.og_image,
+  og_image_alt: content.og_image_alt,
+  twitter_card: content.twitter_card,
+  twitter_title: reportTitle,
+  twitter_description: content[`catalog_report_${reportNumber}_description`],
+  twitter_image: content.twitter_image,
+};
+
+const componentEditAttributes = (
+  attributes: BuilderEditAttributes,
+): Record<string, string> =>
+  Object.fromEntries(
+    Object.entries(attributes)
+      .filter((entry): entry is [string, string | true] => entry[1] !== undefined)
+      .map(([key, value]) => [key, value === true ? "true" : value]),
+  );
+
+const chapters = Array.from({ length: 5 }, (_, index) => {
+  const chapterNumber = index + 1;
+  const titleField = `${detailPrefix}_chapter_${chapterNumber}_title`;
+  const descriptionField = `${detailPrefix}_chapter_${chapterNumber}_description`;
+  return {
+    title: content[titleField],
+    description: content[descriptionField],
+    titleEditAttributes: componentEditAttributes(builderEdit(titleField)),
+    descriptionEditAttributes: componentEditAttributes(
+      builderEdit(descriptionField),
+    ),
+  };
+});
+
+const localeHref = (targetLocale: SupportedLocale) => {
+  const url = new URL(Astro.request.url);
+  if (targetLocale === defaultLocale) {
+    if (locale === defaultLocale) {
+      url.searchParams.delete("locale");
+    } else {
+      url.searchParams.set("locale", defaultLocale);
+    }
+  } else {
+    url.searchParams.set("locale", targetLocale);
+  }
+  return `${url.pathname}${url.search}${url.hash}`;
+};
+
+const navigation = [
+  {
+    label: content.nav_todays_sky,
+    href: localizePath("/todays-sky", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_todays_sky")),
+  },
+  {
+    label: content.nav_charts,
+    href: localizePath("/birth-chart", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_charts")),
+  },
+  {
+    label: content.nav_compatibility,
+    href: localizePath("/synastry", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_compatibility")),
+  },
+  {
+    label: content.nav_moon,
+    href: localizePath("/moon-calendar", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_moon")),
+  },
+  {
+    label: content.nav_horoscope,
+    href: localizePath("/daily-horoscope", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_horoscope")),
+  },
+  {
+    label: content.nav_astrologers,
+    href: localizePath("/astrologers", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_astrologers")),
+  },
+  {
+    label: content.nav_blog,
+    href: localizePath("/blog", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_blog")),
+  },
+];
+
+const actions = [
+  {
+    id: "sign-in",
+    label: content.action_sign_in,
+    href: localizePath("/login", locale),
+    variant: "ghost" as const,
+    editAttributes: componentEditAttributes(chromeEdit("action_sign_in")),
+  },
+  {
+    id: "get-chart",
+    label: content.action_get_chart,
+    href: localizePath("/birth-chart", locale),
+    variant: "primary" as const,
+    editAttributes: componentEditAttributes(chromeEdit("action_get_chart")),
+  },
+];
+
+const languageOptions = activeLocales.map((item) => {
+  const field = `language_option_${item.code}_label`;
+  return {
+    code: item.code,
+    label: content[field] || item.nativeName,
+    href: localeHref(item.code),
+    lang: item.code,
+    hreflang: item.hreflang,
+    editAttributes: componentEditAttributes(chromeEdit(field)),
+  };
+});
+
+const footerProps = createSharedFooterProps({
+  content,
+  locale,
+  editAttributes: (field) => componentEditAttributes(chromeEdit(field)),
+});
+const purchaseRuntimeCopy = {
+  en: { profileLabel: "Birth profile", addProfile: "Add a birth profile before purchasing this report.", preparing: "Preparing secure checkout…", createError: "Report order could not be created.", checkoutError: "Secure checkout could not be started.", confirmed: "Payment confirmed. Your report is queued for generation.", confirming: "Confirming your payment…", pending: "Payment confirmation is still pending.", cancelled: "Payment was not completed. No charge was made." },
+  es: { profileLabel: "Perfil natal", addProfile: "Añade un perfil natal antes de comprar este informe.", preparing: "Preparando el pago seguro…", createError: "No se pudo crear el pedido del informe.", checkoutError: "No se pudo iniciar el pago seguro.", confirmed: "Pago confirmado. Tu informe está en cola para generarse.", confirming: "Confirmando tu pago…", pending: "La confirmación del pago sigue pendiente.", cancelled: "El pago no se completó. No se realizó ningún cargo." },
+  fr: { profileLabel: "Profil de naissance", addProfile: "Ajoutez un profil de naissance avant d’acheter ce rapport.", preparing: "Préparation du paiement sécurisé…", createError: "La commande du rapport n’a pas pu être créée.", checkoutError: "Le paiement sécurisé n’a pas pu démarrer.", confirmed: "Paiement confirmé. Votre rapport est en attente de génération.", confirming: "Confirmation de votre paiement…", pending: "La confirmation du paiement est toujours en attente.", cancelled: "Le paiement n’a pas abouti. Aucun débit n’a été effectué." },
+  pt: { profileLabel: "Perfil natal", addProfile: "Adicione um perfil natal antes de comprar este relatório.", preparing: "Preparando o pagamento seguro…", createError: "Não foi possível criar o pedido do relatório.", checkoutError: "Não foi possível iniciar o pagamento seguro.", confirmed: "Pagamento confirmado. Seu relatório está na fila para geração.", confirming: "Confirmando seu pagamento…", pending: "A confirmação do pagamento ainda está pendente.", cancelled: "O pagamento não foi concluído. Nenhuma cobrança foi feita." },
+  ru: { profileLabel: "Натальная анкета", addProfile: "Добавьте натальную анкету перед покупкой отчёта.", preparing: "Подготавливаем безопасную оплату…", createError: "Не удалось создать заказ отчёта.", checkoutError: "Не удалось начать безопасную оплату.", confirmed: "Оплата подтверждена. Отчёт поставлен в очередь на создание.", confirming: "Подтверждаем оплату…", pending: "Подтверждение оплаты ещё ожидается.", cancelled: "Оплата не завершена. Списание не производилось." },
+  it: { profileLabel: "Profilo natale", addProfile: "Aggiungi un profilo natale prima di acquistare questo report.", preparing: "Preparazione del pagamento sicuro…", createError: "Impossibile creare l’ordine del report.", checkoutError: "Impossibile avviare il pagamento sicuro.", confirmed: "Pagamento confermato. Il report è in coda per la generazione.", confirming: "Conferma del pagamento…", pending: "La conferma del pagamento è ancora in sospeso.", cancelled: "Il pagamento non è stato completato. Non è stato effettuato alcun addebito." },
+  de: { profileLabel: "Geburtsprofil", addProfile: "Füge vor dem Kauf dieses Berichts ein Geburtsprofil hinzu.", preparing: "Sichere Zahlung wird vorbereitet…", createError: "Die Berichtsbestellung konnte nicht erstellt werden.", checkoutError: "Die sichere Zahlung konnte nicht gestartet werden.", confirmed: "Zahlung bestätigt. Dein Bericht wartet auf die Erstellung.", confirming: "Zahlung wird bestätigt…", pending: "Die Zahlungsbestätigung steht noch aus.", cancelled: "Die Zahlung wurde nicht abgeschlossen. Es wurde nichts berechnet." },
+}[locale];
+---
+
+<BaseLayout
+  seo={seoContent}
+  bodyClass="reports-body"
+  builderToolbar={{
+    launcherEnabled: builder.launcherEnabled,
+    studioModeEnabled: builder.studioModeEnabled,
+    collection: builder.collection,
+    entry: builder.entry,
+    locale: builder.locale,
+    csrfToken: builder.csrfToken,
+    canPublish: builder.canPublish,
+    seo: seoContent,
+    hasSavedDraft: builderPage.hasSavedDraft || chromePage.hasSavedDraft,
+    reviewTargets,
+  }}
+>
+  <Header
+    id="reports-detail-header"
+    brandLabel={content.brand_name}
+    brandHref={localizePath("/", locale)}
+    brandAriaLabel={content.brand_aria_label}
+    navigationLabel={content.primary_navigation_label}
+    chromeNavigation={{ content, edit: chromeEdit }}
+    navigation={navigation}
+    actions={actions}
+    language={{
+      activeLocale: locale,
+      options: languageOptions,
+      triggerLabel: content.language_trigger_label,
+      menuLabel: content.language_menu_label,
+    }}
+    mobileUtilityActionId="sign-in"
+    menuLabel={content.menu_open_label}
+    closeMenuLabel={content.menu_close_label}
+    brandEditAttributes={componentEditAttributes(chromeEdit("brand_name"))}
+  />
+
+  <main class="reports-page">
+    <ReportsDetailNavigation
+      backHref={localizePath("/reports", locale)}
+      backLabel={content.detail_back_label}
+      backLabelEditAttributes={componentEditAttributes(
+        builderEdit("detail_back_label"),
+      )}
+    />
+    <ReportsDetailPanel
+      title={reportTitle}
+      glyph={report.glyph}
+      pagesLabel={report.pages}
+      price={report.price}
+      coverTone={report.coverTone}
+      coverSrc={report.imageUrl}
+      coverAlt={reportTitle}
+      coverWidth={1200}
+      coverHeight={760}
+      pdfLabel={content.detail_pdf_label}
+      deliveryLabel={content.detail_delivery_label}
+      buyLabel={content.detail_buy_label}
+      purchaseHref={localizePath("/account", locale)}
+      loginHref={`${localizePath("/login", locale)}?next=${encodeURIComponent(`${Astro.url.pathname}${Astro.url.search}`)}`}
+      reportSlug={slug}
+      profiles={customerProfiles.map((profile) => ({ value: profile.id, label: profile.profileName }))}
+      csrfToken={customerSession?.csrfToken || ""}
+      paymentOrder={paymentOrder}
+      paymentAttemptId={paymentAttemptId}
+      stripeSessionId={stripeSessionId}
+      paymentState={paymentState}
+      locale={locale}
+      runtimeCopy={purchaseRuntimeCopy}
+      purchaseNote={content.detail_purchase_note}
+      longDescription={content[`${detailPrefix}_long_description`]}
+      insideLabel={content.detail_inside_label}
+      chapters={chapters}
+      sampleLabel={content.detail_sample_label}
+      sample={content[`${detailPrefix}_sample`]}
+      titleEditAttributes={componentEditAttributes(
+        builderEdit(`catalog_report_${reportNumber}_title`),
+      )}
+      pdfLabelEditAttributes={componentEditAttributes(
+        builderEdit("detail_pdf_label"),
+      )}
+      deliveryLabelEditAttributes={componentEditAttributes(
+        builderEdit("detail_delivery_label"),
+      )}
+      buyLabelEditAttributes={componentEditAttributes(
+        builderEdit("detail_buy_label"),
+      )}
+      purchaseNoteEditAttributes={componentEditAttributes(
+        builderEdit("detail_purchase_note"),
+      )}
+      longDescriptionEditAttributes={componentEditAttributes(
+        builderEdit(`${detailPrefix}_long_description`),
+      )}
+      insideLabelEditAttributes={componentEditAttributes(
+        builderEdit("detail_inside_label"),
+      )}
+      sampleLabelEditAttributes={componentEditAttributes(
+        builderEdit("detail_sample_label"),
+      )}
+      sampleEditAttributes={componentEditAttributes(
+        builderEdit(`${detailPrefix}_sample`),
+      )}
+    />
+  </main>
+  <Footer {...footerProps} />
+</BaseLayout>

@@ -1,0 +1,265 @@
+.astrology-profile-form {
+  --profile-accent: var(--color-primary);
+  inline-size: 100%;
+  min-inline-size: 0;
+  color: var(--color-text);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+.astrology-profile-form__intro,
+.astrology-profile-form__extension {
+  min-inline-size: 0;
+}
+
+.astrology-profile-form__intro {
+  margin-block-end: 2rem;
+  text-align: center;
+}
+
+.astrology-profile-form__extension--before {
+  margin-block-end: 1.875rem;
+}
+
+.astrology-profile-form__extension--after {
+  margin-block-start: 1.25rem;
+}
+
+.astrology-profile-form__profiles {
+  min-inline-size: 0;
+}
+
+.astrology-profile-form--single .astrology-profile-form__profiles {
+  max-inline-size: 32rem;
+  margin-inline: auto;
+}
+
+.astrology-profile-form--paired .astrology-profile-form__profiles {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 3.25rem minmax(0, 1fr);
+  align-items: stretch;
+  gap: 1.5rem;
+}
+
+.astrology-profile-form__profile {
+  min-inline-size: 0;
+}
+
+.astrology-profile-form--cards .astrology-profile-form__profile {
+  padding: 1.75rem;
+  border: 1px solid rgba(var(--color-text-rgb), 0.1);
+  border-radius: 1rem;
+  background: var(--color-panel);
+  box-shadow: 0 1.25rem 2.75rem -2.25rem rgba(var(--color-text-rgb), 0.38);
+}
+
+.astrology-profile-form__profile--forest {
+  --profile-accent: var(--color-dark);
+}
+
+.astrology-profile-form__profile-heading {
+  min-inline-size: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-block-end: 1.25rem;
+}
+
+.astrology-profile-form__badge {
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--profile-accent);
+  color: var(--color-surface);
+  font-family: var(--font-serif);
+  font-size: 1.125rem;
+}
+
+.astrology-profile-form__profile-title {
+  min-inline-size: 0;
+  margin: 0;
+  color: var(--profile-accent);
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  font-weight: 400;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.astrology-profile-form__profile-heading-action {
+  min-inline-size: 0;
+  margin-inline-start: auto;
+  flex: none;
+}
+
+.astrology-profile-form__fields {
+  min-inline-size: 0;
+  display: grid;
+  gap: 1.125rem;
+}
+
+.astrology-profile-form__profile-extra {
+  min-inline-size: 0;
+  margin-block-start: 1.125rem;
+}
+
+.astrology-profile-form__connector {
+  min-block-size: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  align-self: stretch;
+}
+
+.astrology-profile-form__connector-line {
+  inline-size: 1px;
+  flex: 1;
+  background: linear-gradient(var(--color-surface), rgba(var(--color-text-rgb), 0.2));
+}
+
+.astrology-profile-form__connector-line:last-child {
+  background: linear-gradient(rgba(var(--color-text-rgb), 0.2), var(--color-surface));
+}
+
+.astrology-profile-form__connector-label {
+  inline-size: 3.25rem;
+  block-size: 3.25rem;
+  flex: none;
+  display: grid;
+  place-items: center;
+  margin-block: 1rem;
+  border-radius: 50%;
+  background: var(--color-dark);
+  color: var(--color-surface);
+  font-family: Georgia, serif;
+  font-size: 1.625rem;
+  line-height: 1;
+}
+
+.astrology-profile-form__summary {
+  display: grid;
+  gap: 0.875rem;
+  margin: 0;
+}
+
+.astrology-profile-form__summary-item {
+  min-inline-size: 0;
+  display: grid;
+  gap: 0.375rem;
+}
+
+.astrology-profile-form__summary-item dt {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.astrology-profile-form__summary-item dd {
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0.75rem 0.875rem;
+  border: 1px solid rgba(var(--color-text-rgb), 0.16);
+  border-radius: 0.625rem;
+  background: #ffffff;
+  color: var(--color-text);
+  font-size: 0.875rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.astrology-profile-form__summary-item .astrology-profile-form__summary-value--muted {
+  color: var(--color-muted-soft);
+}
+
+.astrology-profile-form__footer {
+  min-inline-size: 0;
+  display: grid;
+  justify-items: center;
+  gap: 0.75rem;
+  margin-block-start: 2.375rem;
+  text-align: center;
+}
+
+.astrology-profile-form--single .astrology-profile-form__footer {
+  max-inline-size: 32rem;
+  margin-inline: auto;
+  margin-block-start: 2rem;
+}
+
+.astrology-profile-form__footer-text {
+  max-inline-size: 42rem;
+  margin: 0;
+  color: var(--color-muted-soft);
+  font-size: 0.78125rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.astrology-profile-form--compact .astrology-profile-form__fields {
+  gap: 1rem;
+}
+
+.astrology-profile-form--compact.astrology-profile-form--cards
+  .astrology-profile-form__profile {
+  padding: 1.5rem;
+}
+
+@media (max-width: 54rem) {
+  .astrology-profile-form--paired .astrology-profile-form__profiles {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+  }
+
+  .astrology-profile-form__connector {
+    min-block-size: auto;
+    flex-direction: row;
+  }
+
+  .astrology-profile-form__connector-line {
+    inline-size: auto;
+    block-size: 1px;
+    background: linear-gradient(90deg, var(--color-surface), rgba(var(--color-text-rgb), 0.2));
+  }
+
+  .astrology-profile-form__connector-line:last-child {
+    background: linear-gradient(90deg, rgba(var(--color-text-rgb), 0.2), var(--color-surface));
+  }
+
+  .astrology-profile-form__connector-label {
+    margin-block: 0;
+    margin-inline: 0.875rem;
+  }
+}
+
+@media (max-width: 30rem) {
+  .astrology-profile-form--cards .astrology-profile-form__profile,
+  .astrology-profile-form--compact.astrology-profile-form--cards
+    .astrology-profile-form__profile {
+    padding: 1.125rem;
+    border-radius: 0.875rem;
+  }
+
+  .astrology-profile-form__profile-heading {
+    align-items: flex-start;
+  }
+
+  .astrology-profile-form__footer {
+    justify-items: stretch;
+  }
+
+  .astrology-profile-form__footer > .sidera-button {
+    inline-size: 100%;
+  }
+}
+
+@media (forced-colors: active) {
+  .astrology-profile-form__profile,
+  .astrology-profile-form__summary-item dd,
+  .astrology-profile-form__connector-label,
+  .astrology-profile-form__badge {
+    border: 1px solid CanvasText;
+  }
+}

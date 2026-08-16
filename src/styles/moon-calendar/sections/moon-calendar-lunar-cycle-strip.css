@@ -1,0 +1,161 @@
+.moon-calendar-cycle {
+  inline-size: 100%;
+  min-inline-size: 0;
+  padding: 1.75rem 2.125rem 0;
+}
+
+.moon-calendar-cycle__panel {
+  inline-size: min(100%, 73.75rem);
+  margin-inline: auto;
+  padding: 1.625rem 1.75rem;
+  border: 1px solid rgba(var(--color-text-rgb), 0.1);
+  border-radius: 1.375rem;
+  background: var(--color-panel);
+}
+
+.moon-calendar-cycle__header {
+  min-inline-size: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.625rem 1.5rem;
+  margin-block-end: 1.25rem;
+}
+
+.moon-calendar-cycle__title,
+.moon-calendar-cycle__description {
+  margin: 0;
+}
+
+.moon-calendar-cycle__title {
+  color: var(--color-text);
+  font-family: var(--font-serif), Georgia, "Times New Roman", serif;
+  font-size: 1.5rem;
+  font-weight: 400;
+  line-height: 1.15;
+}
+
+.moon-calendar-cycle__description {
+  max-inline-size: 34rem;
+  color: var(--color-muted-soft);
+  font-size: 0.78125rem;
+  line-height: 1.45;
+  text-align: end;
+}
+
+.moon-calendar-cycle__grid {
+  --sidera-card-grid-columns: 8 !important;
+  --sidera-card-grid-tablet-columns: 4 !important;
+  --sidera-card-grid-mobile-columns: 2 !important;
+  --sidera-card-grid-gap: 0.625rem;
+}
+
+.moon-calendar-cycle__grid > li {
+  display: flex;
+}
+
+.moon-calendar-cycle__phase-button {
+  inline-size: 100%;
+  display: block;
+  border: 0;
+  border-radius: 1rem;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: inherit;
+}
+
+.moon-calendar-cycle__phase-button .sidera-moon-phase-item {
+  inline-size: 100%;
+  min-block-size: 7.25rem;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    transform 160ms ease;
+}
+
+.moon-calendar-cycle__phase-button:hover .sidera-moon-phase-item {
+  border-color: rgba(var(--color-primary-rgb), 0.48);
+  background: var(--color-surface-soft);
+  transform: translateY(-0.0625rem);
+}
+
+.moon-calendar-cycle__phase-button[aria-pressed="true"]
+  .sidera-moon-phase-item {
+  --moon-phase-background: var(--color-surface-soft);
+  --moon-phase-border: var(--color-primary);
+  --moon-phase-name: var(--color-primary);
+  box-shadow: inset 0 0 0 1px var(--color-primary);
+  transform: none;
+}
+
+.moon-calendar-cycle__phase-button[aria-pressed="true"]:hover
+  .sidera-moon-phase-item {
+  background: var(--color-surface-soft);
+  transform: none;
+}
+
+.moon-calendar-cycle__phase-button:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
+.moon-calendar-cycle__phase-button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 3px;
+}
+
+@media (max-width: 64rem) {
+  .moon-calendar-cycle__grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 42rem) {
+  .moon-calendar-cycle {
+    padding: 1.25rem 1rem 0;
+  }
+
+  .moon-calendar-cycle__panel {
+    padding: 1.25rem 1rem;
+    border-radius: 1.125rem;
+  }
+
+  .moon-calendar-cycle__header {
+    display: grid;
+    justify-content: stretch;
+    margin-block-end: 1rem;
+  }
+
+  .moon-calendar-cycle__description {
+    text-align: start;
+  }
+
+  .moon-calendar-cycle__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 25rem) {
+  .moon-calendar-cycle__grid {
+    --sidera-card-grid-gap: 0.5rem;
+  }
+
+  .moon-calendar-cycle__phase-button .sidera-moon-phase-item {
+    min-block-size: 6.875rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .moon-calendar-cycle__phase-button .sidera-moon-phase-item {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .moon-calendar-cycle__panel {
+    border-color: CanvasText;
+  }
+}

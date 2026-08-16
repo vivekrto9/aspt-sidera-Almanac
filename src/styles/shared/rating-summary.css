@@ -1,0 +1,74 @@
+.sidera-rating-summary {
+  --rating-summary-value: var(--color-text);
+  --rating-summary-meta: var(--color-muted);
+  --rating-summary-label: var(--color-muted);
+
+  max-inline-size: 100%;
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 0.5rem;
+  row-gap: 0.25rem;
+  color: var(--rating-summary-meta);
+  font: 400 0.875rem / 1.4 var(--font-sans), system-ui, sans-serif;
+}
+
+.sidera-rating-summary--compact {
+  column-gap: 0.375rem;
+  font-size: 0.75rem;
+}
+
+.sidera-rating-summary--inverse {
+  --rating-summary-value: var(--color-surface-soft);
+  --rating-summary-meta: var(--color-line);
+  --rating-summary-label: #e2ccba;
+}
+
+.sidera-rating-summary__score {
+  min-inline-size: max-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sidera-rating-summary--compact .sidera-rating-summary__score {
+  gap: 0.375rem;
+}
+
+.sidera-rating-summary__value {
+  color: var(--rating-summary-value);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.sidera-rating-summary__count {
+  color: var(--rating-summary-meta);
+}
+
+.sidera-rating-summary__label {
+  color: var(--rating-summary-label);
+  font-weight: 500;
+}
+
+.sidera-rating-summary__separator {
+  color: var(--rating-summary-meta);
+  opacity: 0.72;
+}
+
+@media (max-width: 40rem) {
+  .sidera-rating-summary {
+    font-size: max(0.8125rem, 1em);
+  }
+
+  .sidera-rating-summary--compact {
+    font-size: 0.8125rem;
+  }
+}
+
+@media (forced-colors: active) {
+  .sidera-rating-summary {
+    --rating-summary-value: CanvasText;
+    --rating-summary-meta: CanvasText;
+    --rating-summary-label: CanvasText;
+  }
+}

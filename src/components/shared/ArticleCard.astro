@@ -1,0 +1,144 @@
+---
+import Badge from "./Badge.astro";
+import MediaThumbnail from "./MediaThumbnail.astro";
+import "../../styles/shared/article-card.css";
+
+type ArticleCardVariant = "standard" | "featured" | "compact";
+type ArticleCoverTone = "terracotta" | "ochre" | "rose" | "olive" | "slate" | "stone";
+type HeadingLevel = 2 | 3;
+
+type Props = {
+  title: string;
+  eyebrow: string;
+  href: string;
+  excerpt?: string;
+  author?: string;
+  readTime?: string;
+  glyph?: string;
+  coverSrc?: string;
+  coverAlt?: string;
+  coverWidth?: number;
+  coverHeight?: number;
+  variant?: ArticleCardVariant;
+  coverTone?: ArticleCoverTone;
+  headingLevel?: HeadingLevel;
+  ariaLabel?: string;
+  target?: "_self" | "_blank" | "_parent" | "_top";
+  rel?: string;
+  class?: string;
+  eyebrowEditAttributes?: Record<string, string>;
+  titleEditAttributes?: Record<string, string>;
+  excerptEditAttributes?: Record<string, string>;
+  authorEditAttributes?: Record<string, string>;
+  readTimeEditAttributes?: Record<string, string>;
+  coverAltEditAttributes?: Record<string, string>;
+};
+
+const {
+  title,
+  eyebrow,
+  href,
+  excerpt,
+  author,
+  readTime,
+  glyph = "✦",
+  coverSrc,
+  coverAlt = title,
+  coverWidth,
+  coverHeight,
+  variant = "standard",
+  coverTone = "terracotta",
+  headingLevel = 3,
+  ariaLabel,
+  target,
+  rel,
+  class: className,
+  eyebrowEditAttributes = {},
+  titleEditAttributes = {},
+  excerptEditAttributes = {},
+  authorEditAttributes = {},
+  readTimeEditAttributes = {},
+  coverAltEditAttributes = {},
+} = Astro.props as Props;
+
+const HeadingTag = `h${headingLevel}` as const;
+const hasCoverSlot = Astro.slots.has("cover");
+const classes = [
+  "sidera-article-card",
+  `sidera-article-card--${variant}`,
+  `sidera-article-card--${coverTone}`,
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+---
+
+<article class={classes}>
+  <a
+    class="sidera-article-card__link"
+    href={href}
+    aria-label={ariaLabel ?? title}
+    target={target}
+    rel={rel}
+  >
+    <div class="sidera-article-card__cover" aria-hidden="true">
+      {hasCoverSlot ? (
+        <MediaThumbnail class="sidera-article-card__thumbnail" alt={coverAlt} decorative>
+          <slot name="cover" />
+        </MediaThumbnail>
+      ) : coverSrc ? (
+        <MediaThumbnail
+          class="sidera-article-card__thumbnail"
+          src={coverSrc}
+          alt={coverAlt}
+          width={coverWidth}
+          height={coverHeight}
+          decorative
+          imageEditAttributes={coverAltEditAttributes}
+        />
+      ) : (
+        <MediaThumbnail class="sidera-article-card__thumbnail" alt={coverAlt} decorative>
+          <span class="sidera-article-card__cover-glyph">{glyph}</span>
+        </MediaThumbnail>
+      )}
+    </div>
+
+    <div class="sidera-article-card__body">
+      <Badge
+        tone="accent"
+        size="compact"
+        uppercase
+        class="sidera-article-card__eyebrow"
+        {...eyebrowEditAttributes}
+      >
+        {eyebrow}
+      </Badge>
+
+      <HeadingTag class="sidera-article-card__title" {...titleEditAttributes}>
+        {title}
+      </HeadingTag>
+
+      {
+        excerpt ? (
+          <p class="sidera-article-card__excerpt" {...excerptEditAttributes}>
+            {excerpt}
+          </p>
+        ) : null
+      }
+
+      {
+        author || readTime ? (
+          <div class="sidera-article-card__meta">
+            {author ? (
+              <span class="sidera-article-card__author" {...authorEditAttributes}>
+                {author}
+              </span>
+            ) : null}
+            {author && readTime ? <span aria-hidden="true">·</span> : null}
+            {readTime ? <span {...readTimeEditAttributes}>{readTime}</span> : null}
+          </div>
+        ) : null
+      }
+    </div>
+  </a>
+</article>

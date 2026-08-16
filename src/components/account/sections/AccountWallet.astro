@@ -1,0 +1,111 @@
+---
+import Button from "../../shared/Button.astro";
+import SectionHeading from "../../shared/SectionHeading.astro";
+import "../../../styles/account/sections/account-wallet.css";
+
+type Wallet = { balance: string; balanceCents: number };
+type Transaction = {
+  id: string;
+  amountCents: number;
+  signedAmount: string;
+  balanceAfter: string;
+  description: string;
+  createdAt: string;
+};
+type Props = {
+  wallet: Wallet;
+  transactions: { items: Transaction[]; totalItems: number };
+  locale: string;
+  eyebrow: string;
+  title: string;
+  description: string;
+  entriesLabel: string;
+  availableLabel: string;
+  usage: string;
+  addLabel: string;
+  browseLabel: string;
+  historyLabel: string;
+  balanceAfterLabel: string;
+  creditFallback: string;
+  debitFallback: string;
+  emptyTitle: string;
+  emptyDescription: string;
+  viewAllLabel: string;
+  walletHref: string;
+  browseHref: string;
+  historyHref: string;
+  edit: (field: string) => Record<string, string>;
+};
+
+const props = Astro.props as Props;
+const recentTransactions = props.transactions.items.slice(0, 4);
+const formatDate = (value: string) => value
+  ? new Intl.DateTimeFormat(props.locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value))
+  : "";
+const transactionTitle = (item: Transaction) => {
+  const fallback = item.amountCents >= 0 ? props.creditFallback : props.debitFallback;
+  return /^(wallet recharge|paid chat|chat question)$/i.test(item.description.trim())
+    ? fallback
+    : item.description || fallback;
+};
+---
+
+<section id="wallet" class="account-wallet" aria-labelledby="account-wallet-title">
+  <div class="account-wallet__heading-row">
+    <SectionHeading
+      class="account-wallet__heading"
+      eyebrow={props.eyebrow}
+      title={props.title}
+      headingId="account-wallet-title"
+      eyebrowEditAttributes={props.edit("account_wallet_eyebrow")}
+      titleEditAttributes={props.edit("account_wallet_title")}
+    />
+    <span class="account-wallet__count" aria-label={`${props.transactions.totalItems} ${props.entriesLabel}`}>
+      <strong>{props.transactions.totalItems}</strong>
+      <span {...props.edit("account_wallet_entries_label")}>{props.entriesLabel}</span>
+    </span>
+  </div>
+  <p class="account-wallet__description" {...props.edit("account_wallet_description")}>{props.description}</p>
+
+  <div class="account-wallet__summary">
+    <div>
+      <p {...props.edit("account_wallet_available_label")}>{props.availableLabel}</p>
+      <strong data-wallet-balance>{props.wallet.balance}</strong>
+      <span {...props.edit("account_wallet_usage")}>{props.usage}</span>
+    </div>
+    <div class="account-wallet__actions">
+      <Button href={props.walletHref} variant="primary" size="standard" shape="rounded" editAttributes={props.edit("account_wallet_add_label")}>{props.addLabel}</Button>
+      <Button href={props.browseHref} variant="secondary" size="standard" shape="rounded" editAttributes={props.edit("account_wallet_browse_label")}>{props.browseLabel}</Button>
+    </div>
+  </div>
+
+  <div class="account-wallet__activity">
+    <div class="account-wallet__activity-heading">
+      <h3 {...props.edit("account_wallet_history_label")}>{props.historyLabel}</h3>
+      {props.transactions.totalItems ? <Button href={props.historyHref} variant="link" size="compact">{props.viewAllLabel}</Button> : null}
+    </div>
+    {recentTransactions.length ? (
+      <div class="account-wallet__list">
+        {recentTransactions.map((item) => {
+          const credit = item.amountCents >= 0;
+          return (
+            <article class:list={["account-wallet__transaction", credit ? "is-credit" : "is-debit"]}>
+              <span aria-hidden="true">{credit ? "+" : "−"}</span>
+              <div>
+                <strong>{transactionTitle(item)}</strong>
+                <small>{formatDate(item.createdAt)} · {props.balanceAfterLabel} {item.balanceAfter}</small>
+              </div>
+              <b>{item.signedAmount}</b>
+            </article>
+          );
+        })}
+      </div>
+    ) : (
+      <div class="account-wallet__empty">
+        <h3 {...props.edit("account_wallet_empty_title")}>{props.emptyTitle}</h3>
+        <p {...props.edit("account_wallet_empty_description")}>{props.emptyDescription}</p>
+        <Button href={props.walletHref} variant="primary" size="compact" shape="rounded" editAttributes={props.edit("account_wallet_add_label")}>{props.addLabel}</Button>
+      </div>
+    )}
+  </div>
+</section>

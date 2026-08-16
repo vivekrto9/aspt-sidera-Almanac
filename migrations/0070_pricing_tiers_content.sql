@@ -1,0 +1,30 @@
+ALTER TABLE ec_site_pricing ADD COLUMN pricing_tier_free_name TEXT;
+ALTER TABLE ec_site_pricing ADD COLUMN pricing_tier_free_description TEXT;
+ALTER TABLE ec_site_pricing ADD COLUMN pricing_tier_free_action_label TEXT;
+ALTER TABLE ec_site_pricing ADD COLUMN pricing_tier_free_feature_1 TEXT;
+ALTER TABLE ec_site_pricing ADD COLUMN pricing_tier_free_feature_2 TEXT;
+ALTER TABLE ec_site_pricing ADD COLUMN pricing_tier_free_feature_3 TEXT;
+ALTER TABLE ec_site_pricing ADD COLUMN pricing_tier_free_feature_4 TEXT;
+ALTER TABLE ec_site_pricing ADD COLUMN pricing_tier_free_feature_5 TEXT;
+ALTER TABLE ec_site_pricing ADD COLUMN pricing_tier_free_feature_6 TEXT;
+
+ALTER TABLE ec_site_pricing ADD COLUMN pricing_tier_star_name TEXT;
+ALTER TABLE ec_site_pricing ADD COLUMN pricing_tier_star_description TEXT;
+ALTER TABLE ec_site_pricing ADD COLUMN pricing_tier_star_action_label TEXT;
+ALTER TABLE ec_site_pricing ADD COLUMN pricing_tier_star_badge_label TEXT;
+ALTER TABLE ec_site_pricing ADD COLUMN pricing_tier_star_feature_1 TEXT;
+ALTER TABLE ec_site_pricing ADD COLUMN pricing_tier_star_feature_2 TEXT;
+ALTER TABLE ec_site_pricing ADD COLUMN pricing_tier_star_feature_3 TEXT;
+ALTER TABLE ec_site_pricing ADD COLUMN pricing_tier_star_feature_4 TEXT;
+ALTER TABLE ec_site_pricing ADD COLUMN pricing_tier_star_feature_5 TEXT;
+ALTER TABLE ec_site_pricing ADD COLUMN pricing_tier_star_feature_6 TEXT;
+
+ALTER TABLE ec_site_pricing ADD COLUMN pricing_tier_cosmos_name TEXT;
+ALTER TABLE ec_site_pricing ADD COLUMN pricing_tier_cosmos_description TEXT;
+ALTER TABLE ec_site_pricing ADD COLUMN pricing_tier_cosmos_action_label TEXT;
+ALTER TABLE ec_site_pricing ADD COLUMN pricing_tier_cosmos_feature_1 TEXT;
+ALTER TABLE ec_site_pricing ADD COLUMN pricing_tier_cosmos_feature_2 TEXT;
+ALTER TABLE ec_site_pricing ADD COLUMN pricing_tier_cosmos_feature_3 TEXT;
+ALTER TABLE ec_site_pricing ADD COLUMN pricing_tier_cosmos_feature_4 TEXT;
+ALTER TABLE ec_site_pricing ADD COLUMN pricing_tier_cosmos_feature_5 TEXT;
+ALTER TABLE ec_site_pricing ADD COLUMN pricing_tier_cosmos_feature_6 TEXT;

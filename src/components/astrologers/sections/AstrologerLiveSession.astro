@@ -1,0 +1,592 @@
+---
+import type { BrowseAstrologer } from "../../../data/astrologers/browse.ts";
+import type { AstrologerLiveSessionCopy } from "../../../data/locale/astrologers/sections/live-session.ts";
+import AstrologerChatHistory from "../shared/AstrologerChatHistory.astro";
+import Avatar from "../../shared/Avatar.astro";
+import Button from "../../shared/Button.astro";
+import ChartWheel from "../../shared/ChartWheel.astro";
+import Dialog from "../../shared/Dialog.astro";
+import IconButton from "../../shared/IconButton.astro";
+import StatusDot from "../../shared/StatusDot.astro";
+import TextField from "../../shared/TextField.astro";
+import "../../../styles/astrologers/sections/live-session.css";
+
+type EditAttributes = Record<string, string>;
+type Props = {
+  astrologer: BrowseAstrologer;
+  copy: AstrologerLiveSessionCopy;
+  sessionMode: string;
+  sessionActive?: boolean;
+  exitHref: string;
+  sessionId?: string;
+  csrfToken?: string;
+  walletBalance: string;
+  walletBalanceCents: number;
+  questionPrice: string;
+  questionPriceCents: number;
+  walletHref: string;
+  newChatHref: string;
+  locale: string;
+  chatSessions?: Array<{
+    id: string;
+    astrologerName: string;
+    astrologerImage: string;
+    profileName: string;
+    partnerProfileName: string;
+    status: string;
+    updatedAt: string;
+    lastMessage: string;
+  }>;
+  walletTransactions?: Array<{
+    id: string;
+    type: string;
+    amountCents: number;
+    signedAmount: string;
+    description: string;
+    createdAt: string;
+  }>;
+  activeProfileLabel?: string;
+  initialMessages?: Array<{
+    id: string;
+    role: "user" | "assistant" | "system";
+    message: string;
+    createdAt: string;
+  }>;
+  chartContext?: {
+    owner: string;
+    label: string;
+    rotation: number;
+    planets: Array<{
+      glyph: string;
+      longitude: number;
+      label: string;
+      color?: string;
+    }>;
+    placements: Array<{
+      role: "sun" | "moon" | "rising";
+      label: string;
+    }>;
+  };
+  editAttributes?: (field: string) => EditAttributes;
+};
+
+const {
+  astrologer,
+  copy,
+  sessionMode,
+  sessionActive = true,
+  exitHref,
+  sessionId = "",
+  csrfToken = "",
+  walletBalance,
+  walletBalanceCents,
+  questionPrice,
+  questionPriceCents,
+  walletHref,
+  newChatHref,
+  locale,
+  chatSessions = [],
+  walletTransactions = [],
+  activeProfileLabel = "",
+  initialMessages = [],
+  chartContext,
+  editAttributes = () => ({}),
+} = Astro.props as Props;
+
+const firstName = astrologer.name.split(" ")[0];
+const withName = (value: string) => value.replaceAll("{name}", firstName);
+const quickReplies = [
+  ["live_quick_year", copy.quickYear],
+  ["live_quick_career", copy.quickCareer],
+  ["live_quick_love", copy.quickLove],
+  ["live_quick_transits", copy.quickTransits],
+] as const;
+const placementView = {
+  sun: ["☉", "#9b5273"],
+  moon: ["☽", "#16261f"],
+  rising: ["↑", "#2e594c"],
+} as const;
+const latestQuestion =
+  [...initialMessages]
+    .reverse()
+    .find((message) => message.role === "user")
+    ?.message.trim() || "";
+const personalizedOpeningMessage = copy.openingMessage.replaceAll(
+  "Alex",
+  activeProfileLabel,
+);
+---
+
+<div class="astrologer-chat-shell" data-chat-shell>
+  <AstrologerChatHistory
+    astrologer={astrologer}
+    sessions={chatSessions}
+    transactions={walletTransactions}
+    activeSessionId={sessionId}
+    activeProfileLabel={activeProfileLabel}
+    locale={locale}
+    newChatHref={newChatHref}
+    walletHref={walletHref}
+    walletBalance={walletBalance}
+    questionPrice={questionPrice}
+    sessionMode={sessionMode}
+    sessionActive={sessionActive}
+    exitHref={exitHref}
+    copy={copy}
+    editAttributes={editAttributes}
+  />
+  <section
+    class="astrologer-live"
+    data-live-session
+    data-session-id={sessionId}
+    data-csrf-token={csrfToken}
+    data-wallet-balance-cents={walletBalanceCents}
+    data-question-price-cents={questionPriceCents}
+    aria-label={`${sessionMode} ${sessionActive ? copy.connected : copy.sessionEnded}`}
+  >
+  <header class="astrologer-live__bar">
+    <div class="astrologer-live__identity">
+      <Avatar
+        name={astrologer.name}
+        src={astrologer.imageUrl}
+        alt={astrologer.name}
+        initials={astrologer.name.split(" ").map((part) => part[0]).join("")}
+        fallback="placeholder"
+        size="compact"
+        class="astrologer-live__avatar"
+      />
+      <div>
+        <strong>{astrologer.name}</strong>
+        <StatusDot
+          label={`${sessionMode} · ${sessionActive ? copy.connected : copy.sessionEnded}`}
+          tone={sessionActive ? "success" : "neutral"}
+          contrast="inverse"
+          size="compact"
+          editAttributes={editAttributes(sessionActive ? "live_connected" : "live_session_ended")}
+        />
+      </div>
+    </div>
+    <div class="astrologer-live__session-actions">
+      <IconButton
+        type="button"
+        variant="ghost"
+        shape="circle"
+        size="compact"
+        ariaLabel={copy.openHistory}
+        controls="astrologer-chat-history"
+        expanded={false}
+        class="astrologer-live__history-trigger"
+        data-chat-history-open
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 5h16M4 12h16M4 19h10" />
+        </svg>
+      </IconButton>
+      <div class="astrologer-live__meter">
+        <strong data-wallet-balance>{walletBalance}</strong>
+        <span>
+          <span {...editAttributes("live_wallet_label")}>{copy.walletLabel}</span>
+          · {questionPrice} <span {...editAttributes("live_meter_label")}>{copy.meterLabel}</span>
+        </span>
+      </div>
+      {sessionActive ? (
+        <Button
+          href={exitHref}
+          data-live-end
+          variant="danger"
+          size="compact"
+          class="astrologer-live__end"
+          loading={false}
+          loadingLabel={copy.endSession}
+          editAttributes={editAttributes("live_end_session")}
+        >
+          {copy.endSession}
+        </Button>
+      ) : (
+        <Button
+          href={newChatHref}
+          variant="secondary"
+          size="compact"
+          class="astrologer-live__end"
+          editAttributes={editAttributes("live_new_chat")}
+        >
+          {copy.newChat}
+        </Button>
+      )}
+    </div>
+  </header>
+
+  <div class="astrologer-live__workspace">
+    <section class="astrologer-live__conversation" aria-label={sessionMode}>
+      <div class="astrologer-live__messages" data-message-list aria-live="polite">
+        <p class="astrologer-live__started" {...editAttributes("live_session_started")}>
+          {withName(copy.sessionStarted)}
+        </p>
+        {
+          sessionId && initialMessages.length ? (
+            initialMessages.map((item) => (
+              <div class={`astrologer-live__message astrologer-live__message--${item.role === "assistant" ? "reader" : "user"}`}>
+                <p>{item.message}</p>
+              </div>
+            ))
+          ) : sessionId ? (
+            <div class="astrologer-live__message astrologer-live__message--reader">
+              <p {...editAttributes("live_opening_message")}>
+                {personalizedOpeningMessage}
+              </p>
+            </div>
+          ) : (
+            <>
+              <div class="astrologer-live__message astrologer-live__message--reader">
+                <p {...editAttributes("live_opening_message")}>{copy.openingMessage}</p>
+              </div>
+              <div class="astrologer-live__message astrologer-live__message--user">
+                <p {...editAttributes("live_reply_message")}>{copy.replyMessage}</p>
+              </div>
+            </>
+          )
+        }
+      </div>
+
+      {sessionActive ? <form class="astrologer-live__composer" data-live-composer>
+        <div class="astrologer-live__quick-replies" aria-label={sessionMode}>
+          {
+            quickReplies.map(([field, label]) => (
+              <span class="astrologer-live__quick-wrap" data-quick-reply={label}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="compact"
+                  class="astrologer-live__quick"
+                  loading={false}
+                  loadingLabel={label}
+                  editAttributes={editAttributes(field)}
+                >
+                  {label}
+                </Button>
+              </span>
+            ))
+          }
+        </div>
+        <div class="astrologer-live__input-row">
+          <TextField
+            id="live-session-message"
+            name="message"
+            placeholder={copy.messagePlaceholder}
+            autocomplete="off"
+            maxlength={600}
+            ariaLabel={copy.messagePlaceholder}
+            class="astrologer-live__input"
+            data-builder-placeholder
+            {...editAttributes("live_message_placeholder")}
+          />
+          <IconButton
+            type="submit"
+            variant="solid"
+            size="large"
+            ariaLabel={copy.sendMessage}
+            class="astrologer-live__send"
+            loading={false}
+            loadingLabel={copy.sendMessage}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 19V5m0 0-6 6m6-6 6 6" />
+            </svg>
+          </IconButton>
+        </div>
+        <p class="astrologer-live__error" data-live-error role="alert" hidden></p>
+      </form> : null}
+    </section>
+
+    <aside class="astrologer-live__context" aria-labelledby="live-chart-title">
+      <h2 id="live-chart-title" {...editAttributes("live_chart_title")}>{copy.chartTitle}</h2>
+      <div class="astrologer-live__chart" aria-hidden="true">
+        <ChartWheel
+          title={`${copy.chartTitle}: ${chartContext?.owner || ""}`}
+          mode="natal"
+          size="compact"
+          rotation={chartContext?.rotation || 0}
+          planets={chartContext?.planets || []}
+          showAspects={false}
+          interactive={false}
+          centerGlyph="✦"
+        />
+      </div>
+      <p class="astrologer-live__chart-owner">
+        {chartContext?.owner}
+      </p>
+      <p class="astrologer-live__chart-label">
+        {chartContext?.label}
+      </p>
+
+      <div
+        class="astrologer-live__context-section"
+        data-live-question-section
+        hidden={!latestQuestion}
+      >
+        <h2 {...editAttributes("live_asked_title")}>{copy.askedTitle}</h2>
+        <p class="astrologer-live__asked" data-live-question>{latestQuestion}</p>
+      </div>
+
+      {
+        Boolean(chartContext?.placements.length) && (
+          <div class="astrologer-live__context-section">
+            <h2 {...editAttributes("live_placements_title")}>{copy.placementsTitle}</h2>
+            <div class="astrologer-live__placements">
+              {chartContext?.placements.map((placement) => {
+                const [glyph, color] = placementView[placement.role];
+                return (
+                  <div class="astrologer-live__placement">
+                    <span aria-hidden="true" style={`color:${color}`}>{glyph}</span>
+                    <strong>{placement.label}</strong>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )
+      }
+    </aside>
+  </div>
+  </section>
+</div>
+
+<button
+  type="button"
+  data-dialog-open="astrologer-wallet-required"
+  data-wallet-dialog-trigger
+  hidden
+></button>
+
+<Dialog
+  id="astrologer-wallet-required"
+  eyebrow={copy.walletLabel}
+  title={copy.walletLowTitle}
+  description={copy.walletLowDescription}
+  closeLabel={copy.walletCloseLabel}
+  width="compact"
+  class="astrologer-live__wallet-dialog"
+  eyebrowEditAttributes={editAttributes("live_wallet_label")}
+  titleEditAttributes={editAttributes("live_wallet_low_title")}
+  descriptionEditAttributes={editAttributes("live_wallet_low_description")}
+>
+  <dl class="astrologer-live__wallet-summary">
+    <div>
+      <dt {...editAttributes("live_wallet_current_label")}>{copy.walletCurrentLabel}</dt>
+      <dd data-wallet-current>{walletBalance}</dd>
+    </div>
+    <div>
+      <dt {...editAttributes("live_wallet_required_label")}>{copy.walletRequiredLabel}</dt>
+      <dd data-wallet-required>{questionPrice}</dd>
+    </div>
+    <div>
+      <dt {...editAttributes("live_wallet_shortfall_label")}>{copy.walletShortfallLabel}</dt>
+      <dd data-wallet-shortfall>{questionPrice}</dd>
+    </div>
+  </dl>
+  <div slot="actions" class="sidera-dialog__actions">
+    <Button type="button" variant="outline" data-wallet-dialog-close>
+      <span {...editAttributes("live_wallet_close_label")}>{copy.walletCloseLabel}</span>
+    </Button>
+    <Button href={walletHref} variant="primary">
+      <span {...editAttributes("live_add_funds_label")}>{copy.addFundsLabel}</span>
+    </Button>
+  </div>
+</Dialog>
+
+<script>
+  import { isActionLoading, setActionLoading } from "../../../scripts/action-loading.ts";
+
+  const liveSession = document.querySelector<HTMLElement>("[data-live-session]");
+  if (liveSession && liveSession.dataset.ready !== "true") {
+    const form = liveSession.querySelector<HTMLFormElement>("[data-live-composer]");
+    const input = form?.querySelector<HTMLInputElement>("#live-session-message");
+    const messageList = liveSession.querySelector<HTMLElement>("[data-message-list]");
+    const quickReplies = liveSession.querySelectorAll<HTMLElement>("[data-quick-reply]");
+    const quickButtons = liveSession.querySelectorAll<HTMLButtonElement>(".astrologer-live__quick");
+    const exitActions = document.querySelectorAll<HTMLAnchorElement>("[data-live-end]");
+    const submitButton = form?.querySelector<HTMLButtonElement>('button[type="submit"]');
+    const errorMessage = form?.querySelector<HTMLElement>("[data-live-error]");
+    const walletBalance = liveSession.querySelector<HTMLElement>("[data-wallet-balance]");
+    const walletDialogTrigger = document.querySelector<HTMLButtonElement>("[data-wallet-dialog-trigger]");
+    const walletDialog = document.querySelector<HTMLDialogElement>("#astrologer-wallet-required");
+    const walletCurrent = walletDialog?.querySelector<HTMLElement>("[data-wallet-current]");
+    const walletRequired = walletDialog?.querySelector<HTMLElement>("[data-wallet-required]");
+    const walletShortfall = walletDialog?.querySelector<HTMLElement>("[data-wallet-shortfall]");
+    const questionSection = liveSession.querySelector<HTMLElement>("[data-live-question-section]");
+    const questionText = liveSession.querySelector<HTMLElement>("[data-live-question]");
+    let sending = false;
+
+    const formatWalletAmount = (cents: number) =>
+      new Intl.NumberFormat(document.documentElement.lang || "en", {
+        style: "currency",
+        currency: "USD",
+        minimumFractionDigits: 2,
+      }).format(Math.max(0, cents) / 100);
+
+    walletDialog
+      ?.querySelector<HTMLButtonElement>("[data-wallet-dialog-close]")
+      ?.addEventListener("click", () => walletDialog.close("cancel"));
+
+    const appendMessage = (value: string, role: "user" | "assistant") => {
+      if (!messageList || !value.trim()) return;
+      const row = document.createElement("div");
+      row.className = `astrologer-live__message astrologer-live__message--${role === "assistant" ? "reader" : "user"}`;
+      const message = document.createElement("p");
+      message.textContent = value.trim();
+      row.append(message);
+      messageList.append(row);
+      messageList.scrollTop = messageList.scrollHeight;
+      return row;
+    };
+
+    const sendMessage = async (value: string, sourceAction: HTMLButtonElement | null = submitButton ?? null) => {
+      const cleanValue = value.trim();
+      if (!cleanValue || sending || !liveSession.dataset.sessionId) return;
+      sending = true;
+      const requestKey = input?.dataset.requestKey || `message:${crypto.randomUUID()}`;
+      setActionLoading(sourceAction, true, sourceAction?.getAttribute("aria-label") || sourceAction?.textContent?.trim());
+      if (submitButton && submitButton !== sourceAction) submitButton.disabled = true;
+      quickButtons.forEach((button) => {
+        if (button !== sourceAction) button.disabled = true;
+      });
+      if (errorMessage) errorMessage.hidden = true;
+      const pending = appendMessage(cleanValue, "user");
+      try {
+        const response = await fetch("/api/astro-chat/send-message", {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            "x-astropages-customer-csrf": liveSession.dataset.csrfToken || "",
+            "x-idempotency-key": requestKey,
+          },
+          body: JSON.stringify({
+            sessionId: liveSession.dataset.sessionId,
+            message: cleanValue,
+          }),
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (
+          response.status === 402 &&
+          payload?.data?.code === "INSUFFICIENT_WALLET_BALANCE"
+        ) {
+          pending?.remove();
+          if (input) {
+            input.value = cleanValue;
+            input.dataset.requestKey = requestKey;
+          }
+          const currentCents = Number(payload.data.balanceCents || 0);
+          const requiredCents = Number(payload.data.requiredCents || 0);
+          const shortfallCents = Number(payload.data.shortfallCents || 0);
+          if (walletCurrent) walletCurrent.textContent = formatWalletAmount(currentCents);
+          if (walletRequired) walletRequired.textContent = formatWalletAmount(requiredCents);
+          if (walletShortfall) walletShortfall.textContent = formatWalletAmount(shortfallCents);
+          walletDialogTrigger?.click();
+          return;
+        }
+        if (!response.ok) throw new Error(payload?.message || "Message could not be sent.");
+        appendMessage(String(payload?.data?.answer || ""), "assistant");
+        const activeHistory = document.querySelector<HTMLElement>(
+          `[data-chat-history-session="${CSS.escape(liveSession.dataset.sessionId || "")}"]`,
+        );
+        const historySummary = activeHistory?.querySelector<HTMLElement>("[data-chat-history-summary]");
+        const historyTime = activeHistory?.querySelector<HTMLTimeElement>("[data-chat-history-time]");
+        if (historySummary) historySummary.textContent = String(payload?.data?.answer || cleanValue);
+        if (historyTime) {
+          const now = new Date();
+          historyTime.dateTime = now.toISOString();
+          historyTime.textContent = new Intl.DateTimeFormat(document.documentElement.lang || "en", {
+            month: "short",
+            day: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+          }).format(now);
+        }
+        if (questionText) questionText.textContent = cleanValue;
+        if (questionSection) questionSection.hidden = false;
+        const balanceAfterCents = Number(payload?.data?.balanceAfterCents);
+        if (Number.isFinite(balanceAfterCents)) {
+          liveSession.dataset.walletBalanceCents = String(balanceAfterCents);
+          if (walletBalance) walletBalance.textContent = formatWalletAmount(balanceAfterCents);
+        }
+        if (input) delete input.dataset.requestKey;
+      } catch (error) {
+        pending?.remove();
+        if (input) {
+          input.value = cleanValue;
+          input.dataset.requestKey = requestKey;
+        }
+        if (errorMessage) {
+          errorMessage.textContent = error instanceof Error ? error.message : "Message could not be sent.";
+          errorMessage.hidden = false;
+        }
+      } finally {
+        sending = false;
+        setActionLoading(sourceAction, false);
+        if (submitButton) submitButton.disabled = false;
+        quickButtons.forEach((button) => { button.disabled = false; });
+        input?.focus();
+      }
+    };
+
+    form?.addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (!input) return;
+      const value = input.value;
+      input.value = "";
+      void sendMessage(value, submitButton ?? null);
+    });
+
+    quickReplies.forEach((wrapper) => {
+      wrapper.querySelector("button")?.addEventListener("click", (event) => {
+        void sendMessage(wrapper.dataset.quickReply ?? "", event.currentTarget as HTMLButtonElement);
+      });
+    });
+
+    exitActions.forEach((exitAction) => exitAction.addEventListener("click", async (event) => {
+        event.preventDefault();
+        if (isActionLoading(exitAction)) return;
+        const destination = exitAction.href;
+        setActionLoading(exitAction, true, exitAction.textContent?.trim());
+        try {
+          await fetch(`/api/astro-chat/session/${encodeURIComponent(liveSession.dataset.sessionId || "")}`, {
+            method: "PATCH",
+            headers: {
+              "content-type": "application/json",
+              "x-astropages-customer-csrf": liveSession.dataset.csrfToken || "",
+            },
+            body: JSON.stringify({ action: "complete" }),
+          });
+        } finally {
+          window.location.assign(destination);
+        }
+      }));
+
+    liveSession.dataset.ready = "true";
+  }
+</script>
+
+<script>
+  const chatShell = document.querySelector<HTMLElement>("[data-chat-shell]");
+  if (chatShell && chatShell.dataset.historyReady !== "true") {
+    const openButton = chatShell.querySelector<HTMLButtonElement>("[data-chat-history-open]");
+    const closeButtons = chatShell.querySelectorAll<HTMLButtonElement>("[data-chat-history-close]");
+    const closeButton = chatShell.querySelector<HTMLButtonElement>(".astrologer-chat-history__close");
+
+    const setHistoryOpen = (open: boolean) => {
+      chatShell.classList.toggle("is-history-open", open);
+      openButton?.setAttribute("aria-expanded", String(open));
+      if (open) closeButton?.focus();
+      else openButton?.focus();
+    };
+
+    openButton?.addEventListener("click", () => setHistoryOpen(true));
+    closeButtons.forEach((button) => button.addEventListener("click", () => setHistoryOpen(false)));
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && chatShell.classList.contains("is-history-open")) {
+        setHistoryOpen(false);
+      }
+    });
+    chatShell.dataset.historyReady = "true";
+  }
+</script>

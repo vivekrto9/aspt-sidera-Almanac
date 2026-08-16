@@ -1,0 +1,187 @@
+.sidera-choice-chips {
+  --choice-chip-background: transparent;
+  --choice-chip-border: rgba(var(--color-text-rgb), 0.2);
+  --choice-chip-color: var(--color-muted);
+  --choice-chip-hover-background: rgba(var(--color-text-rgb), 0.05);
+  --choice-chip-hover-border: rgba(var(--color-text-rgb), 0.36);
+  --choice-chip-checked-background: var(--color-dark);
+  --choice-chip-checked-border: var(--color-dark);
+  --choice-chip-checked-color: var(--color-surface);
+  --choice-chip-focus: rgba(var(--color-primary-rgb), 0.5);
+  --choice-chip-radius: 999px;
+  --choice-chip-min-height: 2.625rem;
+  --choice-chip-padding: 0.5625rem 1.125rem;
+  --choice-chip-font-size: 0.84375rem;
+
+  min-inline-size: 0;
+  margin: 0;
+  border: 0;
+  padding: 0;
+  color: var(--color-text);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+.sidera-choice-chips__legend {
+  margin-block-end: 0.625rem;
+  padding: 0;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.sidera-choice-chips__legend--hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.sidera-choice-chips__required,
+.sidera-choice-chips__message--error {
+  color: var(--color-primary);
+}
+
+.sidera-choice-chips__options {
+  min-inline-size: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.sidera-choice-chips__option {
+  position: relative;
+  min-inline-size: 0;
+  display: inline-flex;
+  cursor: pointer;
+}
+
+.sidera-choice-chips__input {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.sidera-choice-chips__chip {
+  min-block-size: var(--choice-chip-min-height);
+  max-inline-size: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--choice-chip-border);
+  border-radius: var(--choice-chip-radius);
+  padding: var(--choice-chip-padding);
+  background: var(--choice-chip-background);
+  color: var(--choice-chip-color);
+  font-size: var(--choice-chip-font-size);
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  overflow-wrap: anywhere;
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease,
+    color 150ms ease;
+}
+
+.sidera-choice-chips__option:hover .sidera-choice-chips__chip {
+  border-color: var(--choice-chip-hover-border);
+  background: var(--choice-chip-hover-background);
+}
+
+.sidera-choice-chips__input:checked + .sidera-choice-chips__chip {
+  border-color: var(--choice-chip-checked-border);
+  background: var(--choice-chip-checked-background);
+  color: var(--choice-chip-checked-color);
+}
+
+.sidera-choice-chips__input:focus-visible + .sidera-choice-chips__chip {
+  outline: 0.1875rem solid var(--choice-chip-focus);
+  outline-offset: 0.1875rem;
+}
+
+.sidera-choice-chips__input:disabled + .sidera-choice-chips__chip,
+.sidera-choice-chips:disabled .sidera-choice-chips__chip {
+  cursor: not-allowed;
+  opacity: 0.46;
+}
+
+.sidera-choice-chips__option:has(.sidera-choice-chips__input:disabled),
+.sidera-choice-chips:disabled .sidera-choice-chips__option {
+  cursor: not-allowed;
+}
+
+.sidera-choice-chips--rounded {
+  --choice-chip-radius: 0.625rem;
+}
+
+.sidera-choice-chips--compact {
+  --choice-chip-min-height: 2.25rem;
+  --choice-chip-padding: 0.4375rem 0.875rem;
+  --choice-chip-font-size: 0.78125rem;
+}
+
+.sidera-choice-chips--tone-inverse {
+  --choice-chip-background: transparent;
+  --choice-chip-border: rgba(240, 230, 214, 0.4);
+  --choice-chip-color: var(--color-surface);
+  --choice-chip-hover-background: rgba(240, 230, 214, 0.08);
+  --choice-chip-hover-border: rgba(240, 230, 214, 0.58);
+  --choice-chip-checked-background: var(--color-surface);
+  --choice-chip-checked-border: var(--color-surface);
+  --choice-chip-checked-color: var(--color-text);
+  --choice-chip-focus: rgba(214, 154, 106, 0.66);
+
+  color: var(--color-surface-soft);
+}
+
+.sidera-choice-chips--tone-inverse .sidera-choice-chips__legend {
+  color: var(--color-line);
+}
+
+.sidera-choice-chips--invalid {
+  --choice-chip-border: rgba(var(--color-primary-rgb), 0.72);
+}
+
+.sidera-choice-chips__message {
+  margin-block: 0.5rem 0;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.sidera-choice-chips__message--help {
+  color: #8b7768;
+}
+
+.sidera-choice-chips__message--error[hidden] {
+  display: none;
+}
+
+@media (max-width: 40rem) {
+  .sidera-choice-chips {
+    --choice-chip-min-height: 2.75rem;
+  }
+
+  .sidera-choice-chips__chip {
+    max-inline-size: min(100%, 18rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidera-choice-chips__chip {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .sidera-choice-chips__input:checked + .sidera-choice-chips__chip {
+    border-color: Highlight;
+    background: Highlight;
+    color: HighlightText;
+  }
+}

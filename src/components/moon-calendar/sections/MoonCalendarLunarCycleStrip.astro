@@ -1,0 +1,136 @@
+---
+import CardGrid from "../../shared/CardGrid.astro";
+import MoonPhaseItem from "../../shared/MoonPhaseItem.astro";
+import type { MoonCalendarPhase } from "../../../data/moon-calendar/calendar-model.ts";
+import "../../../styles/moon-calendar/sections/moon-calendar-lunar-cycle-strip.css";
+
+type EditAttributes = Record<string, string>;
+
+type PhaseItem = {
+  phase: MoonCalendarPhase;
+  name: string;
+  nameEditAttributes?: EditAttributes;
+};
+
+type Props = {
+  title: string;
+  description: string;
+  phases: PhaseItem[];
+  currentPhase: MoonCalendarPhase;
+  selectPhaseTemplate: string;
+  titleEditAttributes?: EditAttributes;
+  descriptionEditAttributes?: EditAttributes;
+};
+
+const {
+  title,
+  description,
+  phases,
+  currentPhase,
+  selectPhaseTemplate,
+  titleEditAttributes = {},
+  descriptionEditAttributes = {},
+} = Astro.props as Props;
+---
+
+<section
+  class="moon-calendar-cycle"
+  aria-labelledby="moon-calendar-cycle-heading"
+>
+  <div class="moon-calendar-cycle__panel">
+    <header class="moon-calendar-cycle__header">
+      <h2
+        id="moon-calendar-cycle-heading"
+        class="moon-calendar-cycle__title"
+        {...titleEditAttributes}
+      >
+        {title}
+      </h2>
+      <p
+        class="moon-calendar-cycle__description"
+        {...descriptionEditAttributes}
+      >
+        {description}
+      </p>
+    </header>
+
+    <CardGrid
+      as="ol"
+      columns={4}
+      tabletColumns={2}
+      mobileColumns={2}
+      gap="compact"
+      ariaLabelledby="moon-calendar-cycle-heading"
+      class="moon-calendar-cycle__grid"
+    >
+      {phases.map((item) => (
+        <li>
+          <button
+            type="button"
+            class="moon-calendar-cycle__phase-button"
+            data-moon-phase-select={item.phase}
+            aria-label={selectPhaseTemplate.replace("{phase}", item.name)}
+            aria-pressed={item.phase === currentPhase ? "true" : "false"}
+            disabled={item.phase === currentPhase}
+          >
+            <MoonPhaseItem
+              phase={item.phase}
+              name={item.name}
+              nameEditAttributes={item.nameEditAttributes}
+            />
+          </button>
+        </li>
+      ))}
+    </CardGrid>
+  </div>
+</section>
+
+<script>
+  import type { MoonCalendarPhase } from "../../../data/moon-calendar/calendar-model.ts";
+
+  const enhanceMoonPhaseSelectors = () => {
+    const phaseButtons = () =>
+      Array.from(
+        document.querySelectorAll<HTMLButtonElement>(
+          "[data-moon-phase-select]",
+        ),
+      );
+    const buttons = phaseButtons();
+    const selectPhase = (phase?: string) => {
+      if (!phase) return;
+      phaseButtons().forEach((button) => {
+        const selected = button.dataset.moonPhaseSelect === phase;
+        button.setAttribute(
+          "aria-pressed",
+          String(selected),
+        );
+        button.disabled = selected;
+      });
+    };
+
+    buttons.forEach((button) => {
+      if (button.dataset.phaseBound === "true") return;
+      button.dataset.phaseBound = "true";
+      button.addEventListener("click", () => {
+        selectPhase(button.dataset.moonPhaseSelect);
+        document.dispatchEvent(
+          new CustomEvent("moon-phase-select", {
+            detail: { phase: button.dataset.moonPhaseSelect },
+          }),
+        );
+      });
+    });
+
+    if (document.documentElement.dataset.moonPhaseSyncBound !== "true") {
+      document.documentElement.dataset.moonPhaseSyncBound = "true";
+      document.addEventListener("moon-day-selected", (event) => {
+        selectPhase(
+          (event as CustomEvent<{ phase?: MoonCalendarPhase }>).detail?.phase,
+        );
+      });
+    }
+  };
+
+  enhanceMoonPhaseSelectors();
+  document.addEventListener("astro:page-load", enhanceMoonPhaseSelectors);
+</script>

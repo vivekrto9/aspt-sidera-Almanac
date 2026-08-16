@@ -1,0 +1,7 @@
+ALTER TABLE ec_site_astrologers_chat_history ADD COLUMN live_chats_label TEXT;
+ALTER TABLE ec_site_astrologers_chat_history ADD COLUMN live_transactions_label TEXT;
+ALTER TABLE ec_site_astrologers_chat_history ADD COLUMN live_no_transactions TEXT;
+ALTER TABLE ec_site_astrologers_chat_history ADD COLUMN live_chatting_as TEXT;
+ALTER TABLE ec_site_astrologers_chat_history ADD COLUMN live_secure_private TEXT;
+ALTER TABLE ec_site_astrologers_chat_history ADD COLUMN live_back_to_astrologers TEXT;
+ALTER TABLE ec_site_astrologers_chat_history ADD COLUMN live_load_more TEXT;

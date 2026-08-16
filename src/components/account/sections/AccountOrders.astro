@@ -1,0 +1,24 @@
+---
+import type { AccountOrderRecord } from "../../../data/account/orders.ts";
+import SectionHeading from "../../shared/SectionHeading.astro";
+import AccountCollectionEmptyState from "../shared/AccountCollectionEmptyState.astro";
+import AccountOrdersList from "../shared/AccountOrdersList.astro";
+import "../../../styles/account/sections/account-orders.css";
+
+type Props = {
+  eyebrow: string; title: string; orders: AccountOrderRecord[];
+  deliveredLabel: string; shippedLabel: string; viewAllLabel: string; viewAllHref: string;
+  emptyTitle: string; emptyDescription: string; emptyActionLabel: string; emptyActionHref: string;
+  edit: (field: string) => Record<string, string>;
+};
+const props = Astro.props as Props;
+---
+
+<section class="account-orders" id="orders" aria-labelledby="account-orders-title">
+  <SectionHeading class="account-orders__header" eyebrow={props.eyebrow} title={props.title} headingId="account-orders-title" actionLabel={props.orders.length ? props.viewAllLabel : undefined} actionHref={props.orders.length ? props.viewAllHref : undefined} eyebrowEditAttributes={props.edit("account_orders_eyebrow")} titleEditAttributes={props.edit("account_orders_title")} actionEditAttributes={props.edit("account_collection_view_all_label")} />
+  {props.orders.length ? (
+    <AccountOrdersList {...props} orders={props.orders.slice(0, 4)} />
+  ) : (
+    <AccountCollectionEmptyState id="account-orders-empty" title={props.emptyTitle} description={props.emptyDescription} actionLabel={props.emptyActionLabel} actionHref={props.emptyActionHref} titleField="account_orders_empty_title" descriptionField="account_orders_empty_description" actionField="account_orders_empty_action_label" edit={props.edit} />
+  )}
+</section>

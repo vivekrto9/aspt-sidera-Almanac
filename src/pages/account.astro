@@ -1,0 +1,468 @@
+---
+import type { BuilderEditAttributes } from "../builder/builder.ts";
+import { loadPublicPageContent } from "../builder/public-page.ts";
+import AccountOverview from "../components/account/sections/AccountOverview.astro";
+import AccountPeople from "../components/account/sections/AccountPeople.astro";
+import AccountOrders from "../components/account/sections/AccountOrders.astro";
+import AccountSettings from "../components/account/sections/AccountSettings.astro";
+import AccountWallet from "../components/account/sections/AccountWallet.astro";
+import AccountSavedCharts from "../components/account/sections/AccountSavedCharts.astro";
+import AccountShellNavigation from "../components/account/sections/AccountShellNavigation.astro";
+import Footer from "../components/shared/Footer.astro";
+import Header from "../components/shared/Header.astro";
+import { prepareAccountShellProfile } from "../data/account/shell.ts";
+import {
+  prepareAccountOverview,
+  prepareAccountSkyOverview,
+} from "../data/account/overview.ts";
+import { prepareAccountPeople, prepareAccountPeopleFromProfiles } from "../data/account/people.ts";
+import { prepareAccountOrders, prepareAccountOrdersFromRuntime } from "../data/account/orders.ts";
+import { prepareAccountSavedCharts, prepareAccountSavedChartsFromRuntime } from "../data/account/saved-charts.ts";
+import {
+  activeLocales,
+  defaultLocale,
+  localizePath,
+  type SupportedLocale,
+} from "../data/localization-contract.ts";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { getCustomerSession } from "../server/aggregator/customer-auth.ts";
+import { listCustomerUserProfiles } from "../server/aggregator/customer-profiles.ts";
+import { listCommerceOrders } from "../server/aggregator/commerce-orders.ts";
+import { listBirthChartReadings } from "../server/aggregator/birth-chart-api.ts";
+import { getAccountOverviewStats } from "../server/aggregator/account-overview.ts";
+import { getSkyForDate } from "../server/aggregator/sky-api.ts";
+import { getRuntimeEnv } from "../server/generated-site/request.ts";
+import { getProviderUnavailableCopy } from "../data/provider-unavailable.ts";
+import { getCustomerWalletSummary, listWalletTransactionsPage } from "../server/aggregator/wallet-store.ts";
+import "../styles/account/account.css";
+
+export const prerender = false;
+
+// Astro's generated component signature drops this large server-only prop model.
+// Keep the shared component boundary while the runtime continues to receive the typed model.
+const AccountOverviewSection = AccountOverview as any;
+
+const {
+  content,
+  locale,
+  builder,
+  builderPage,
+  chromePage,
+  reviewTargets,
+  builderEdit,
+  chromeEdit,
+} = await loadPublicPageContent(Astro, "account");
+
+const runtimeEnv = await getRuntimeEnv(Astro);
+const customerSession = await getCustomerSession(runtimeEnv, Astro.request).catch(
+  () => null,
+);
+const accountHref = localizePath("/account", locale);
+const loginHref = localizePath("/login", locale);
+const loginRedirectHref = `${loginHref}${loginHref.includes("?") ? "&" : "?"}next=${encodeURIComponent(accountHref)}`;
+
+if (!customerSession && !builder.launcherEnabled) {
+  return Astro.redirect(loginRedirectHref, 302);
+}
+
+const seoContent = {
+  seo_title: content.seo_title,
+  seo_description: content.seo_description,
+  seo_canonical_path: content.seo_canonical_path,
+  seo_robots: content.seo_robots,
+  og_title: content.og_title,
+  og_description: content.og_description,
+  og_image: content.og_image,
+  og_image_alt: content.og_image_alt,
+  twitter_card: content.twitter_card,
+  twitter_title: content.twitter_title,
+  twitter_description: content.twitter_description,
+  twitter_image: content.twitter_image,
+};
+
+const componentEditAttributes = (
+  attributes: BuilderEditAttributes,
+): Record<string, string> =>
+  Object.fromEntries(
+    Object.entries(attributes)
+      .filter((entry): entry is [string, string | true] => entry[1] !== undefined)
+      .map(([key, value]) => [key, value === true ? "true" : value]),
+  );
+
+const localeHref = (targetLocale: SupportedLocale) => {
+  const url = new URL(Astro.request.url);
+  if (targetLocale === defaultLocale) {
+    if (locale === defaultLocale) {
+      url.searchParams.delete("locale");
+    } else {
+      url.searchParams.set("locale", defaultLocale);
+    }
+  } else {
+    url.searchParams.set("locale", targetLocale);
+  }
+  return `${url.pathname}${url.search}${url.hash}`;
+};
+
+const navigation = [
+  ["nav_todays_sky", "/todays-sky"],
+  ["nav_charts", "/birth-chart"],
+  ["nav_compatibility", "/synastry"],
+  ["nav_moon", "/moon-calendar"],
+  ["nav_horoscope", "/daily-horoscope"],
+  ["nav_astrologers", "/astrologers"],
+  ["nav_blog", "/blog"],
+].map(([field, path]) => ({
+  label: content[field],
+  href: localizePath(path, locale),
+  editAttributes: componentEditAttributes(chromeEdit(field)),
+}));
+
+const actions = [
+  {
+    id: "shop",
+    label: content.footer_link_shop,
+    href: localizePath("/shop", locale),
+    variant: "ghost" as const,
+    editAttributes: componentEditAttributes(chromeEdit("footer_link_shop")),
+  },
+  {
+    id: "get-chart",
+    label: content.action_get_chart,
+    href: localizePath("/birth-chart", locale),
+    variant: "primary" as const,
+    editAttributes: componentEditAttributes(chromeEdit("action_get_chart")),
+  },
+];
+
+const languageOptions = activeLocales.map((item) => {
+  const field = `language_option_${item.code}_label`;
+  return {
+    code: item.code,
+    label: content[field] || item.nativeName,
+    href: localeHref(item.code),
+    lang: item.code,
+    hreflang: item.hreflang,
+    editAttributes: componentEditAttributes(chromeEdit(field)),
+  };
+});
+
+const accountNavigation = [
+  ["overview", "account_nav_overview_label"],
+  ["wallet", "account_nav_wallet_label"],
+  ["charts", "account_nav_charts_label"],
+  ["people", "account_nav_people_label"],
+  ["orders", "account_nav_orders_label"],
+].map(([id, field]) => ({
+  id,
+  label: content[field],
+  href: localizePath(`/account#${id}`, locale),
+  editAttributes: componentEditAttributes(builderEdit(field)),
+}));
+accountNavigation.push({
+  id: "settings",
+  label: content.account_nav_settings_label,
+  href: localizePath("/account#settings", locale),
+  editAttributes: componentEditAttributes(builderEdit("account_nav_settings_label")),
+});
+
+const profile = prepareAccountShellProfile(locale, customerSession?.account);
+const customerProfiles = customerSession ? await listCustomerUserProfiles(runtimeEnv, customerSession.account.id) : [];
+const runtimeCharts = customerSession
+  ? await listBirthChartReadings({ env: runtimeEnv, accountId: customerSession.account.id, pageSize: 50 })
+  : null;
+const people = customerSession ? prepareAccountPeopleFromProfiles(customerProfiles, locale, runtimeCharts?.items) : prepareAccountPeople(locale);
+const runtimeOrders = customerSession ? await listCommerceOrders({ env: runtimeEnv, accountId: customerSession.account.id, pageSize: 50 }) : null;
+const orders = runtimeOrders ? prepareAccountOrdersFromRuntime(runtimeOrders.items, locale) : prepareAccountOrders(locale);
+const savedCharts = runtimeCharts
+  ? prepareAccountSavedChartsFromRuntime(runtimeCharts.items, locale)
+  : prepareAccountSavedCharts(locale);
+const accountWalletRecentTransactionLimit = 4;
+const accountWalletRuntime = customerSession
+  ? await Promise.all([
+      getCustomerWalletSummary(runtimeEnv, customerSession.account.id, locale),
+      listWalletTransactionsPage(runtimeEnv, customerSession.account.id, {
+        pageSize: accountWalletRecentTransactionLimit,
+        locale,
+      }),
+    ])
+  : null;
+const accountWalletSummary = accountWalletRuntime?.[0] ?? {
+  balance: new Intl.NumberFormat(locale, { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(0),
+  balanceCents: 0,
+};
+const accountWalletTransactions = accountWalletRuntime?.[1] ?? {
+  items: [], totalItems: 0, totalPages: 1, page: 1, pageSize: accountWalletRecentTransactionLimit, filter: "all" as const,
+};
+const overviewStats = customerSession
+  ? await getAccountOverviewStats(runtimeEnv, customerSession.account.id)
+  : undefined;
+const now = new Date();
+const skyResult = customerProfiles.length
+  ? await getSkyForDate({
+      env: runtimeEnv,
+      date: now.toISOString().slice(0, 10),
+      locale,
+    }).catch(() => null)
+  : null;
+const overviewSky = skyResult
+  ? prepareAccountSkyOverview(skyResult.positions)
+  : null;
+const overview = prepareAccountOverview(locale, profile.displayName, now, overviewStats);
+const providerUnavailable = getProviderUnavailableCopy(locale);
+const footerGroups = [
+  {
+    label: content.footer_group_charts,
+    labelEditAttributes: componentEditAttributes(chromeEdit("footer_group_charts")),
+    links: [
+      ["footer_link_birth_chart", "/birth-chart"],
+      ["footer_link_transit", "/transit"],
+      ["footer_link_synastry", "/synastry"],
+    ].map(([field, path]) => ({
+      label: content[field],
+      href: localizePath(path, locale),
+      editAttributes: componentEditAttributes(chromeEdit(field)),
+    })),
+  },
+  {
+    label: content.footer_group_tools,
+    labelEditAttributes: componentEditAttributes(chromeEdit("footer_group_tools")),
+    links: [
+      ["footer_link_todays_sky", "/todays-sky"],
+      ["footer_link_moon_calendar", "/moon-calendar"],
+      ["footer_link_retrogrades", "/retrogrades"],
+      ["footer_link_reports", "/reports"],
+    ].map(([field, path]) => ({
+      label: content[field],
+      href: localizePath(path, locale),
+      editAttributes: componentEditAttributes(chromeEdit(field)),
+    })),
+  },
+  {
+    label: content.footer_group_learn,
+    labelEditAttributes: componentEditAttributes(chromeEdit("footer_group_learn")),
+    links: [
+      ["footer_link_blog", "/blog"],
+      ["footer_link_daily_horoscope", "/daily-horoscope"],
+      ["footer_link_glossary", "/glossary"],
+      ["footer_link_faq", "/faq"],
+    ].map(([field, path]) => ({
+      label: content[field],
+      href: localizePath(path, locale),
+      editAttributes: componentEditAttributes(chromeEdit(field)),
+    })),
+  },
+  {
+    label: content.footer_group_company,
+    labelEditAttributes: componentEditAttributes(chromeEdit("footer_group_company")),
+    links: [
+      ["footer_link_about", "/about"],
+      ["footer_link_account", "/account"],
+      ["footer_link_shop", "/shop"],
+    ].map(([field, path]) => ({
+      label: content[field],
+      href: localizePath(path, locale),
+      editAttributes: componentEditAttributes(chromeEdit(field)),
+    })),
+  },
+];
+const footerLegalLinks = [
+  ["footer_link_privacy", "/privacy"],
+  ["footer_link_terms", "/terms"],
+].map(([field, path]) => ({
+  label: content[field],
+  href: localizePath(path, locale),
+  editAttributes: componentEditAttributes(chromeEdit(field)),
+}));
+---
+
+<BaseLayout
+  seo={seoContent}
+  bodyClass="sidera-account-body"
+  builderToolbar={{
+    launcherEnabled: builder.launcherEnabled,
+    studioModeEnabled: builder.studioModeEnabled,
+    collection: builder.collection,
+    entry: builder.entry,
+    locale: builder.locale,
+    csrfToken: builder.csrfToken,
+    canPublish: builder.canPublish,
+    seo: seoContent,
+    hasSavedDraft: builderPage.hasSavedDraft || chromePage.hasSavedDraft,
+    reviewTargets,
+  }}
+>
+  <Header
+    id="account-header"
+    brandLabel={content.brand_name}
+    brandHref={localizePath("/", locale)}
+    brandAriaLabel={content.brand_aria_label}
+    navigationLabel={content.primary_navigation_label}
+    chromeNavigation={{ content, edit: chromeEdit }}
+    navigation={navigation}
+    actions={actions}
+    language={{
+      activeLocale: locale,
+      options: languageOptions,
+      triggerLabel: content.language_trigger_label,
+      menuLabel: content.language_menu_label,
+    }}
+    mobileUtilityActionId="shop"
+    menuLabel={content.menu_open_label}
+    closeMenuLabel={content.menu_close_label}
+    brandEditAttributes={componentEditAttributes(chromeEdit("brand_name"))}
+  />
+
+  <main class="sidera-account">
+    <AccountShellNavigation
+      {profile}
+      navigationLabel={content.account_navigation_label}
+      navigation={accountNavigation}
+      signOutLabel={content.account_sign_out_label}
+      signOutHref={loginHref}
+      signOutEditAttributes={componentEditAttributes(
+        builderEdit("account_sign_out_label"),
+      )}
+    >
+      <AccountOverviewSection
+        dateLabel={overview.dateLabel}
+        greeting={content[overview.greetingKey]}
+        greetingField={overview.greetingKey}
+        firstName={overview.firstName}
+        newChartLabel={content.account_overview_new_chart_label}
+        newChartHref={localizePath("/birth-chart", locale)}
+        stats={overview.stats}
+        statLabels={[1, 2, 3, 4].map(
+          (index) => content[`account_overview_stat_${index}_label`],
+        )}
+        skyEyebrow={content.account_overview_sky_eyebrow}
+        positions={overviewSky}
+        positionLabels={[1, 2, 3].map(
+          (index) => content[`account_overview_position_${index}_label`],
+        )}
+        skyInsight={content.account_overview_sky_insight}
+        skyActionLabel={content.account_overview_sky_action_label}
+        skyActionHref={localizePath("/todays-sky", locale)}
+        skyEmptyTitle={content.account_overview_sky_empty_title}
+        skyEmptyDescription={content.account_overview_sky_empty_description}
+        skyEmptyActionLabel={content.account_overview_sky_empty_action_label}
+        skyEmptyActionHref={localizePath("/birth-chart", locale)}
+        skyUnavailableTitle={providerUnavailable.title}
+        skyUnavailableDescription={providerUnavailable.description}
+        hasBirthProfile={customerProfiles.length > 0}
+        edit={(field: string) => componentEditAttributes(builderEdit(field))}
+      />
+      <AccountWallet
+        wallet={accountWalletSummary}
+        transactions={accountWalletTransactions}
+        locale={locale}
+        eyebrow={content.account_wallet_eyebrow}
+        title={content.account_wallet_title}
+        description={content.account_wallet_description}
+        entriesLabel={content.account_wallet_entries_label}
+        availableLabel={content.account_wallet_available_label}
+        usage={content.account_wallet_usage}
+        addLabel={content.account_wallet_add_label}
+        browseLabel={content.account_wallet_browse_label}
+        historyLabel={content.account_wallet_history_label}
+        balanceAfterLabel={content.account_wallet_balance_after_label}
+        creditFallback={content.account_wallet_credit_fallback}
+        debitFallback={content.account_wallet_debit_fallback}
+        emptyTitle={content.account_wallet_empty_title}
+        emptyDescription={content.account_wallet_empty_description}
+        viewAllLabel={content.account_collection_view_all_label}
+        walletHref={localizePath("/wallet", locale)}
+        browseHref={localizePath("/astrologers", locale)}
+        historyHref={localizePath("/account/wallet-transactions", locale)}
+        edit={(field: string) => componentEditAttributes(builderEdit(field))}
+      />
+      <AccountSavedCharts
+        eyebrow={content.account_saved_charts_eyebrow}
+        title={content.account_saved_charts_title}
+        charts={savedCharts}
+        chartTypes={[1, 2, 3, 4].map(
+          (index) => content[`account_saved_charts_type_${index}`],
+        )}
+        openLabel={content.account_saved_charts_open_label}
+        reportLabel={content.account_saved_charts_report_label}
+        openHref={localizePath("/birth-chart", locale)}
+        reportHref={localizePath("/reports", locale)}
+        viewAllLabel={content.account_collection_view_all_label}
+        viewAllHref={localizePath("/account/charts", locale)}
+        emptyTitle={content.account_saved_charts_empty_title}
+        emptyDescription={content.account_saved_charts_empty_description}
+        emptyActionLabel={content.account_saved_charts_empty_action_label}
+        emptyActionHref={localizePath("/birth-chart", locale)}
+        edit={(field: string) => componentEditAttributes(builderEdit(field))}
+      />
+      <AccountPeople
+        eyebrow={content.account_people_eyebrow}
+        title={content.account_people_title}
+        people={people}
+        synastryLabel={content.account_people_synastry_label}
+        synastryHref={localizePath("/synastry", locale)}
+        ownProfileLabel={content.account_people_own_profile_label}
+        generateBirthChartLabel={content.account_people_generate_birth_chart_label}
+        openBirthChartLabel={content.account_saved_charts_open_label}
+        viewAllLabel={content.account_collection_view_all_label}
+        viewAllHref={localizePath("/account/people", locale)}
+        emptyTitle={content.account_people_empty_title}
+        emptyDescription={content.account_people_empty_description}
+        emptyActionLabel={content.account_people_empty_action_label}
+        emptyActionHref={localizePath("/birth-chart", locale)}
+        edit={(field: string) => componentEditAttributes(builderEdit(field))}
+      />
+      <AccountOrders
+        eyebrow={content.account_orders_eyebrow}
+        title={content.account_orders_title}
+        orders={orders}
+        deliveredLabel={content.account_orders_delivered_label}
+        shippedLabel={content.account_orders_shipped_label}
+        viewAllLabel={content.account_collection_view_all_label}
+        viewAllHref={localizePath("/account/orders", locale)}
+        emptyTitle={content.account_orders_empty_title}
+        emptyDescription={content.account_orders_empty_description}
+        emptyActionLabel={content.account_orders_empty_action_label}
+        emptyActionHref={localizePath("/shop", locale)}
+        edit={(field: string) => componentEditAttributes(builderEdit(field))}
+      />
+      <AccountSettings
+        eyebrow={content.account_settings_eyebrow}
+        title={content.account_settings_title}
+        fullNameLabel={content.account_settings_full_name_label}
+        emailLabel={content.account_settings_email_label}
+        displayName={profile.displayName}
+        email={customerSession?.account.email || "mara@email.com"}
+        houseSystemLabel={content.account_settings_house_system_label}
+        placidusLabel={content.account_settings_placidus_label}
+        wholeSignLabel={content.account_settings_whole_sign_label}
+        zodiacLabel={content.account_settings_zodiac_label}
+        tropicalLabel={content.account_settings_tropical_label}
+        siderealLabel={content.account_settings_sidereal_label}
+        saveLabel={content.account_settings_save_label}
+        savedMessage={content.account_settings_saved_message}
+        csrfToken={customerSession?.csrfToken || ""}
+        phone={customerSession?.account.phone || ""}
+        defaultLanguage={customerSession?.account.defaultLanguage || "English"}
+        houseSystem={customerSession?.account.houseSystem || "placidus"}
+        zodiacSystem={customerSession?.account.zodiacSystem || "tropical"}
+        dailyHoroscope={customerSession?.account.dailyHoroscope ?? true}
+        consentMarketing={customerSession?.account.consentMarketing ?? false}
+        edit={(field: string) => componentEditAttributes(builderEdit(field))}
+      />
+    </AccountShellNavigation>
+  </main>
+
+  <Footer
+    brandLabel={content.footer_brand_name}
+    brandHref={localizePath("/", locale)}
+    description={content.footer_about}
+    groups={footerGroups}
+    legalLinks={footerLegalLinks}
+    copyrightText={content.footer_copyright}
+    navigationLabel={content.footer_navigation_label}
+    legalNavigationLabel={content.footer_legal_navigation_label}
+    brandEditAttributes={componentEditAttributes(chromeEdit("footer_brand_name"))}
+    descriptionEditAttributes={componentEditAttributes(chromeEdit("footer_about"))}
+    copyrightEditAttributes={componentEditAttributes(chromeEdit("footer_copyright"))}
+  />
+</BaseLayout>

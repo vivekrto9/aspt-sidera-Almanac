@@ -1,0 +1,52 @@
+---
+import CardGrid from "../../shared/CardGrid.astro";
+import ReportCard from "../../shared/ReportCard.astro";
+import "../../../styles/reports/sections/catalog-grid.css";
+
+type EditAttributes = Record<string, string>;
+
+type ReportItem = {
+  title: string;
+  description: string;
+  pagesLabel: string;
+  price: string;
+  href: string;
+  actionLabel: string;
+  glyph: string;
+  coverSrc?: string;
+  coverAlt?: string;
+  coverWidth?: number;
+  coverHeight?: number;
+  coverTone: "terracotta" | "ochre" | "rose" | "olive" | "slate";
+  titleEditAttributes?: EditAttributes;
+  descriptionEditAttributes?: EditAttributes;
+  actionEditAttributes?: EditAttributes;
+};
+
+type Props = {
+  ariaLabel: string;
+  reports: ReportItem[];
+};
+
+const { ariaLabel, reports } = Astro.props as Props;
+---
+
+<section class="reports-catalog-grid-shell" aria-label={ariaLabel}>
+  <CardGrid
+    class="reports-catalog-grid"
+    columns={3}
+    tabletColumns={2}
+    mobileColumns={1}
+    align="stretch"
+  >
+    {
+      reports.map((report) => (
+        <ReportCard
+          {...report}
+          variant="featured"
+          headingLevel={2}
+        />
+      ))
+    }
+  </CardGrid>
+</section>

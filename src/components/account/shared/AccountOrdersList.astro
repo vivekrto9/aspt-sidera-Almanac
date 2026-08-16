@@ -1,0 +1,31 @@
+---
+import type { AccountOrderRecord } from "../../../data/account/orders.ts";
+import OrderLineItem from "../../shared/OrderLineItem.astro";
+import "../../../styles/account/sections/account-orders.css";
+
+type Props = {
+  orders: AccountOrderRecord[];
+  deliveredLabel: string;
+  shippedLabel: string;
+  edit?: (field: string) => Record<string, string>;
+};
+
+const props = Astro.props as Props;
+const edit = props.edit ?? (() => ({}));
+---
+
+<div class="account-orders__list">
+  {props.orders.map((order) => (
+    <OrderLineItem
+      id={order.id}
+      variant="history"
+      dateLabel={order.dateLabel}
+      title={order.title}
+      meta={order.meta}
+      statusLabel={order.statusLabel || (order.status === "shipped" ? props.shippedLabel : props.deliveredLabel)}
+      statusTone={order.status === "shipped" ? "warning" : "success"}
+      price={order.price}
+      statusEditAttributes={edit(order.status === "shipped" ? "account_orders_shipped_label" : "account_orders_delivered_label")}
+    />
+  ))}
+</div>

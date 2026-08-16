@@ -1,0 +1,31 @@
+---
+import EmptyState from "../../shared/EmptyState.astro";
+
+type Props = {
+  id: string;
+  title: string;
+  description: string;
+  actionLabel: string;
+  actionHref: string;
+  titleField: string;
+  descriptionField: string;
+  actionField: string;
+  edit: (field: string) => Record<string, string>;
+};
+
+const props = Astro.props as Props;
+---
+
+<EmptyState
+  id={props.id}
+  class="account-collection-empty-state"
+  variant="panel"
+  headingLevel={3}
+  title={props.title}
+  description={props.description}
+  actionLabel={props.actionLabel}
+  actionHref={props.actionHref}
+  titleEditAttributes={props.edit(props.titleField)}
+  descriptionEditAttributes={props.edit(props.descriptionField)}
+  actionEditAttributes={props.edit(props.actionField)}
+/>

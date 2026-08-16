@@ -1,0 +1,283 @@
+---
+import type { BuilderEditAttributes } from "../../builder/builder.ts";
+import { loadPublicPageContent } from "../../builder/public-page.ts";
+import BirthChartResults from "../../components/birth-chart/sections/BirthChartResults.astro";
+import Footer from "../../components/shared/Footer.astro";
+import Header from "../../components/shared/Header.astro";
+import type { BirthChartResultsCopy } from "../../data/locale/birth-chart/sections/results.ts";
+import {
+  activeLocales,
+  defaultLocale,
+  localizePath,
+  type SupportedLocale,
+} from "../../data/localization-contract.ts";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getBirthChartReading } from "../../server/aggregator/birth-chart-api.ts";
+import { getRuntimeEnv } from "../../server/generated-site/request.ts";
+
+export const prerender = false;
+
+const slug = Astro.params.slug;
+const {
+  content,
+  locale,
+  builder,
+  builderPage,
+  chromePage,
+  reviewTargets,
+  builderEdit,
+  chromeEdit,
+} = await loadPublicPageContent(Astro, "birth_chart");
+const runtimeEnv = await getRuntimeEnv(Astro);
+const reading = slug
+  ? await getBirthChartReading({ env: runtimeEnv, request: Astro.request, readingId: slug, locale })
+  : null;
+if (!reading) return Astro.redirect(localizePath("/birth-chart", locale), 302);
+const preparedResult = reading.chart;
+
+const seoContent = {
+  seo_title: `${preparedResult.chartName} · ${content.seo_title}`,
+  seo_description: content.seo_description,
+  seo_canonical_path: `/birth-chart/${slug}`,
+  seo_robots: "noindex,nofollow",
+  og_title: `${preparedResult.chartName} · ${content.og_title}`,
+  og_description: content.og_description,
+  og_image: content.og_image,
+  og_image_alt: content.og_image_alt,
+  twitter_card: content.twitter_card,
+  twitter_title: `${preparedResult.chartName} · ${content.twitter_title}`,
+  twitter_description: content.twitter_description,
+  twitter_image: content.twitter_image,
+};
+
+const componentEditAttributes = (
+  attributes: BuilderEditAttributes,
+): Record<string, string> =>
+  Object.fromEntries(
+    Object.entries(attributes)
+      .filter((entry): entry is [string, string | true] => entry[1] !== undefined)
+      .map(([key, value]) => [key, value === true ? "true" : value]),
+  );
+
+const localeHref = (targetLocale: SupportedLocale) => {
+  const url = new URL(Astro.request.url);
+  if (targetLocale === defaultLocale) {
+    if (locale === defaultLocale) {
+      url.searchParams.delete("locale");
+    } else {
+      url.searchParams.set("locale", defaultLocale);
+    }
+  } else {
+    url.searchParams.set("locale", targetLocale);
+  }
+  return `${url.pathname}${url.search}${url.hash}`;
+};
+
+const navigation = [
+  {
+    label: content.nav_todays_sky,
+    href: localizePath("/todays-sky", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_todays_sky")),
+  },
+  {
+    label: content.nav_charts,
+    href: localizePath("/birth-chart", locale),
+    current: true,
+    editAttributes: componentEditAttributes(chromeEdit("nav_charts")),
+  },
+  {
+    label: content.nav_compatibility,
+    href: localizePath("/synastry", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_compatibility")),
+  },
+  {
+    label: content.nav_moon,
+    href: localizePath("/moon-calendar", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_moon")),
+  },
+  {
+    label: content.nav_horoscope,
+    href: localizePath("/daily-horoscope", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_horoscope")),
+  },
+  {
+    label: content.nav_astrologers,
+    href: localizePath("/astrologers", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_astrologers")),
+  },
+  {
+    label: content.nav_blog,
+    href: localizePath("/blog", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_blog")),
+  },
+];
+
+const actions = [
+  {
+    id: "sign-in",
+    label: content.action_sign_in,
+    href: localizePath("/login", locale),
+    variant: "ghost" as const,
+    editAttributes: componentEditAttributes(chromeEdit("action_sign_in")),
+  },
+  {
+    id: "get-chart",
+    label: content.action_get_chart,
+    href: localizePath("/birth-chart", locale),
+    variant: "primary" as const,
+    editAttributes: componentEditAttributes(chromeEdit("action_get_chart")),
+  },
+];
+
+const languageOptions = activeLocales.map((item) => {
+  const field = `language_option_${item.code}_label`;
+  return {
+    code: item.code,
+    label: content[field] || item.nativeName,
+    href: localeHref(item.code),
+    lang: item.code,
+    hreflang: item.hreflang,
+    editAttributes: componentEditAttributes(chromeEdit(field)),
+  };
+});
+
+const footerGroups = [
+  {
+    label: content.footer_group_charts,
+    labelEditAttributes: componentEditAttributes(
+      chromeEdit("footer_group_charts"),
+    ),
+    links: [
+      ["footer_link_birth_chart", "/birth-chart"],
+      ["footer_link_transit", "/transit"],
+      ["footer_link_synastry", "/synastry"],
+    ].map(([field, path]) => ({
+      label: content[field],
+      href: localizePath(path, locale),
+      editAttributes: componentEditAttributes(chromeEdit(field)),
+    })),
+  },
+  {
+    label: content.footer_group_tools,
+    labelEditAttributes: componentEditAttributes(
+      chromeEdit("footer_group_tools"),
+    ),
+    links: [
+      ["footer_link_todays_sky", "/todays-sky"],
+      ["footer_link_moon_calendar", "/moon-calendar"],
+      ["footer_link_retrogrades", "/retrogrades"],
+      ["footer_link_reports", "/reports"],
+    ].map(([field, path]) => ({
+      label: content[field],
+      href: localizePath(path, locale),
+      editAttributes: componentEditAttributes(chromeEdit(field)),
+    })),
+  },
+  {
+    label: content.footer_group_learn,
+    labelEditAttributes: componentEditAttributes(
+      chromeEdit("footer_group_learn"),
+    ),
+    links: [
+      ["footer_link_blog", "/blog"],
+      ["footer_link_daily_horoscope", "/daily-horoscope"],
+      ["footer_link_glossary", "/glossary"],
+      ["footer_link_faq", "/faq"],
+    ].map(([field, path]) => ({
+      label: content[field],
+      href: localizePath(path, locale),
+      editAttributes: componentEditAttributes(chromeEdit(field)),
+    })),
+  },
+  {
+    label: content.footer_group_company,
+    labelEditAttributes: componentEditAttributes(
+      chromeEdit("footer_group_company"),
+    ),
+    links: [
+      ["footer_link_about", "/about"],
+      ["footer_link_account", "/account"],
+      ["footer_link_shop", "/shop"],
+    ].map(([field, path]) => ({
+      label: content[field],
+      href: localizePath(path, locale),
+      editAttributes: componentEditAttributes(chromeEdit(field)),
+    })),
+  },
+];
+
+const footerLegalLinks = [
+  ["footer_link_privacy", "/privacy"],
+  ["footer_link_terms", "/terms"],
+].map(([field, path]) => ({
+  label: content[field],
+  href: localizePath(path, locale),
+  editAttributes: componentEditAttributes(chromeEdit(field)),
+}));
+---
+
+<BaseLayout
+  seo={seoContent}
+  bodyClass="birth-chart-body"
+  builderToolbar={{
+    launcherEnabled: builder.launcherEnabled,
+    studioModeEnabled: builder.studioModeEnabled,
+    collection: builder.collection,
+    entry: builder.entry,
+    locale: builder.locale,
+    csrfToken: builder.csrfToken,
+    canPublish: builder.canPublish,
+    seo: seoContent,
+    hasSavedDraft: builderPage.hasSavedDraft || chromePage.hasSavedDraft,
+    reviewTargets,
+  }}
+>
+  <Header
+    id="birth-chart-results-header"
+    brandLabel={content.brand_name}
+    brandHref={localizePath("/", locale)}
+    brandAriaLabel={content.brand_aria_label}
+    navigationLabel={content.primary_navigation_label}
+    chromeNavigation={{ content, edit: chromeEdit }}
+    navigation={navigation}
+    actions={actions}
+    language={{
+      activeLocale: locale,
+      options: languageOptions,
+      triggerLabel: content.language_trigger_label,
+      menuLabel: content.language_menu_label,
+    }}
+    mobileUtilityActionId="sign-in"
+    menuLabel={content.menu_open_label}
+    closeMenuLabel={content.menu_close_label}
+    brandEditAttributes={componentEditAttributes(chromeEdit("brand_name"))}
+  />
+
+  <BirthChartResults
+    copy={content as BirthChartResultsCopy}
+    locale={locale}
+    result={preparedResult}
+    editAttributes={(field: keyof BirthChartResultsCopy) =>
+      componentEditAttributes(builderEdit(field))}
+  />
+
+  <Footer
+    brandLabel={content.footer_brand_name}
+    brandHref={localizePath("/", locale)}
+    description={content.footer_about}
+    groups={footerGroups}
+    legalLinks={footerLegalLinks}
+    copyrightText={content.footer_copyright}
+    navigationLabel={content.footer_navigation_label}
+    legalNavigationLabel={content.footer_legal_navigation_label}
+    brandEditAttributes={componentEditAttributes(
+      chromeEdit("footer_brand_name"),
+    )}
+    descriptionEditAttributes={componentEditAttributes(
+      chromeEdit("footer_about"),
+    )}
+    copyrightEditAttributes={componentEditAttributes(
+      chromeEdit("footer_copyright"),
+    )}
+  />
+</BaseLayout>

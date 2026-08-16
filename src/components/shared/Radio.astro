@@ -1,0 +1,65 @@
+---
+import "../../styles/shared/radio.css";
+
+type Props = {
+  label: string;
+  description?: string;
+  id?: string;
+  name: string;
+  value?: string;
+  checked?: boolean;
+  required?: boolean;
+  disabled?: boolean;
+  invalid?: boolean;
+  ariaDescribedby?: string;
+  class?: string;
+  labelEditAttributes?: Record<string, string>;
+  descriptionEditAttributes?: Record<string, string>;
+};
+
+const {
+  label,
+  description,
+  id,
+  name,
+  value,
+  checked = false,
+  required = false,
+  disabled = false,
+  invalid = false,
+  ariaDescribedby,
+  class: className,
+  labelEditAttributes = {},
+  descriptionEditAttributes = {},
+} = Astro.props as Props;
+
+const classes = [
+  "sidera-radio",
+  description && "sidera-radio--described",
+  invalid && "sidera-radio--invalid",
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+---
+
+<label class={classes}>
+  <input
+    class="sidera-radio__control"
+    type="radio"
+    id={id}
+    name={name}
+    value={value}
+    checked={checked}
+    required={required}
+    disabled={disabled}
+    aria-invalid={invalid ? "true" : undefined}
+    aria-describedby={ariaDescribedby}
+  />
+  <span class="sidera-radio__copy">
+    <span class="sidera-radio__label" {...labelEditAttributes}>{label}</span>
+    {description ? (
+      <span class="sidera-radio__description" {...descriptionEditAttributes}>{description}</span>
+    ) : null}
+  </span>
+</label>

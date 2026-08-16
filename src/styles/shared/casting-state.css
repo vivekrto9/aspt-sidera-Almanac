@@ -1,0 +1,207 @@
+.sidera-casting-state {
+  position: relative;
+  isolation: isolate;
+  inline-size: 100%;
+  min-inline-size: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  padding: clamp(3rem, 8vw, 6rem) 1.5rem;
+  background: var(--color-dark-strong);
+  color: var(--color-surface);
+  text-align: center;
+}
+
+.sidera-casting-state--embedded {
+  min-block-size: 32rem;
+  border-radius: 1.25rem;
+}
+
+.sidera-casting-state--viewport {
+  min-block-size: calc(100svh - 3.75rem);
+}
+
+.sidera-casting-state--ambient::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 14% 22%, rgba(240, 230, 214, 0.4) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 76% 18%, rgba(214, 154, 106, 0.46) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 84% 72%, rgba(240, 230, 214, 0.3) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 24% 78%, rgba(214, 154, 106, 0.34) 0 1px, transparent 1.5px);
+  background-size: 15rem 15rem, 19rem 19rem, 17rem 17rem, 21rem 21rem;
+  content: "";
+  opacity: 0.56;
+}
+
+.sidera-casting-state__content {
+  inline-size: min(100%, 42rem);
+  min-inline-size: 0;
+  display: grid;
+  justify-items: center;
+}
+
+.sidera-casting-state__visual {
+  inline-size: min(100%, 28.125rem);
+  color: var(--color-primary-soft);
+}
+
+.sidera-casting-state--single .sidera-casting-state__visual,
+.sidera-casting-state--transit .sidera-casting-state__visual {
+  inline-size: min(100%, 20.625rem);
+}
+
+.sidera-casting-state__visual svg {
+  inline-size: 100%;
+  block-size: auto;
+  display: block;
+  overflow: visible;
+}
+
+.sidera-casting-state__ring,
+.sidera-casting-state__synastry-ring {
+  transform-origin: center;
+  fill: none;
+  stroke: currentColor;
+}
+
+.sidera-casting-state__ring--outer {
+  animation: sidera-casting-spin 6s linear infinite;
+}
+
+.sidera-casting-state--transit .sidera-casting-state__ring--outer {
+  animation-duration: 4s;
+}
+
+.sidera-casting-state__ring--outer circle {
+  stroke: rgba(240, 230, 214, 0.2);
+}
+
+.sidera-casting-state__ring--outer text {
+  fill: rgba(214, 154, 106, 0.9);
+  stroke: none;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 0.9375rem;
+}
+
+.sidera-casting-state__ring--inner {
+  stroke: rgba(240, 230, 214, 0.14);
+}
+
+.sidera-casting-state__ring--reverse {
+  animation: sidera-casting-spin-reverse 7s linear infinite;
+}
+
+.sidera-casting-state__dashed {
+  stroke-dasharray: 1.5 8;
+}
+
+.sidera-casting-state__core {
+  fill: var(--color-dark);
+}
+
+.sidera-casting-state__core-glyph {
+  fill: var(--color-surface);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.375rem;
+}
+
+.sidera-casting-state__synastry-ring {
+  animation: sidera-casting-breathe 2.4s ease-in-out infinite alternate;
+  stroke-width: 1.4;
+}
+
+.sidera-casting-state__synastry-ring--first {
+  color: var(--color-primary-soft);
+  transform-origin: 150px 120px;
+}
+
+.sidera-casting-state__synastry-ring--second {
+  color: #78a092;
+  transform-origin: 190px 120px;
+  animation-direction: alternate-reverse;
+}
+
+.sidera-casting-state__title {
+  max-inline-size: 100%;
+  margin: clamp(1.75rem, 5vw, 2.375rem) 0 0;
+  color: var(--color-surface-soft);
+  font-family: var(--font-serif), Georgia, "Times New Roman", serif;
+  font-size: clamp(2rem, 6vw, 2.5rem);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  overflow-wrap: anywhere;
+}
+
+.sidera-casting-state__indicator {
+  margin-block-start: 0.875rem;
+}
+
+.sidera-casting-state__summary {
+  max-inline-size: 100%;
+  margin: 0.5rem 0 0;
+  color: #a68a76;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+@keyframes sidera-casting-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+@keyframes sidera-casting-spin-reverse {
+  to {
+    transform: rotate(-1turn);
+  }
+}
+
+@keyframes sidera-casting-breathe {
+  from {
+    opacity: 0.58;
+    transform: scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+}
+
+@media (max-width: 40rem) {
+  .sidera-casting-state {
+    padding-inline: 1rem;
+  }
+
+  .sidera-casting-state--embedded {
+    min-block-size: 27rem;
+  }
+
+  .sidera-casting-state__visual {
+    inline-size: min(100%, 30rem);
+  }
+
+  .sidera-casting-state--single .sidera-casting-state__visual,
+  .sidera-casting-state--transit .sidera-casting-state__visual {
+    inline-size: min(100%, 23rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidera-casting-state__ring,
+  .sidera-casting-state__synastry-ring {
+    animation: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .sidera-casting-state__ring,
+  .sidera-casting-state__synastry-ring {
+    stroke: CanvasText;
+  }
+}

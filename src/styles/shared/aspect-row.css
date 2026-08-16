@@ -1,0 +1,265 @@
+.sidera-aspect-row {
+  --aspect-row-glyph-background: #e8ded0;
+  --aspect-row-glyph-color: var(--color-muted);
+  --aspect-row-border: rgba(var(--color-text-rgb), 0.1);
+  --aspect-row-selected: rgba(var(--color-primary-rgb), 0.08);
+
+  inline-size: 100%;
+  min-inline-size: 0;
+  display: grid;
+  gap: 0.625rem;
+  border: 1px solid transparent;
+  border-radius: 0.75rem;
+  padding: 0.5rem;
+  background: transparent;
+  color: var(--color-text);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  text-align: start;
+  text-decoration: none;
+}
+
+.sidera-aspect-row--conjunction {
+  --aspect-row-glyph-background: rgba(176, 122, 60, 0.14);
+  --aspect-row-glyph-color: #9b672c;
+}
+
+.sidera-aspect-row--harmonious {
+  --aspect-row-glyph-background: rgba(47, 74, 65, 0.13);
+  --aspect-row-glyph-color: var(--color-dark);
+}
+
+.sidera-aspect-row--challenging {
+  --aspect-row-glyph-background: rgba(var(--color-primary-rgb), 0.13);
+  --aspect-row-glyph-color: var(--color-primary);
+}
+
+.sidera-aspect-row--compact {
+  padding: 0.375rem;
+  font-size: 0.8125rem;
+}
+
+.sidera-aspect-row__main {
+  min-inline-size: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.sidera-aspect-row__aspect-glyph {
+  inline-size: 1.875rem;
+  block-size: 1.875rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5625rem;
+  background: var(--aspect-row-glyph-background);
+  color: var(--aspect-row-glyph-color);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.sidera-aspect-row--compact .sidera-aspect-row__aspect-glyph {
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+}
+
+.sidera-aspect-row__participants {
+  min-inline-size: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.5rem;
+}
+
+.sidera-aspect-row__participant {
+  min-inline-size: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.sidera-aspect-row__participant strong {
+  min-inline-size: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.sidera-aspect-row__planet-glyph {
+  flex: none;
+  color: var(--color-muted);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.0625rem;
+}
+
+.sidera-aspect-row__type,
+.sidera-aspect-row__orb {
+  color: var(--color-muted-soft);
+  font-size: 0.8125rem;
+}
+
+.sidera-aspect-row__type {
+  overflow-wrap: anywhere;
+}
+
+.sidera-aspect-row__trailing {
+  min-inline-size: 0;
+  display: inline-flex;
+  align-items: flex-end;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.sidera-aspect-row__orb {
+  white-space: nowrap;
+}
+
+.sidera-aspect-row__interpretation {
+  min-inline-size: 0;
+  display: block;
+  border-block-start: 1px solid var(--aspect-row-border);
+  padding: 0.625rem 0.375rem 0.125rem 2.625rem;
+  color: var(--color-muted);
+  font-family: var(--font-serif), Georgia, "Times New Roman", serif;
+  font-size: 1rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.sidera-aspect-row--sky {
+  gap: 0;
+  padding: 0.75rem 0.875rem;
+}
+
+.sidera-aspect-row--sky .sidera-aspect-row__main {
+  grid-template-columns: 2.125rem auto minmax(0, 1fr);
+  align-items: start;
+  gap: 0.75rem;
+}
+
+.sidera-aspect-row--sky .sidera-aspect-row__aspect-glyph {
+  inline-size: 2.125rem;
+  block-size: 2.125rem;
+  border-radius: 0.625rem;
+  font-size: 1.0625rem;
+}
+
+.sidera-aspect-row--sky .sidera-aspect-row__participants {
+  gap: 0.25rem;
+  padding-block-start: 0.0625rem;
+}
+
+.sidera-aspect-row--sky .sidera-aspect-row__participant strong,
+.sidera-aspect-row--sky .sidera-aspect-row__type {
+  color: var(--color-text);
+  font-size: 0.90625rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.sidera-aspect-row--sky .sidera-aspect-row__trailing {
+  align-items: center;
+  flex-direction: row;
+  gap: 0.25rem;
+  padding-block-start: 0.125rem;
+  color: var(--color-muted-soft);
+  font-size: 0.6875rem;
+  line-height: 1.35;
+}
+
+.sidera-aspect-row--sky .sidera-aspect-row__orb,
+.sidera-aspect-row--sky .sidera-aspect-row__phase {
+  color: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  white-space: nowrap;
+}
+
+.sidera-aspect-row--sky .sidera-aspect-row__interpretation {
+  margin-block-start: -0.8125rem;
+  margin-inline-start: 2.875rem;
+  border-block-start: 0;
+  padding: 0 0 0.0625rem;
+  color: var(--color-muted);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.sidera-aspect-row--clickable {
+  appearance: none;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.sidera-aspect-row--clickable:hover:not(.sidera-aspect-row--disabled) {
+  border-color: var(--aspect-row-border);
+  background: rgba(var(--color-text-rgb), 0.035);
+  transform: translateY(-0.0625rem);
+}
+
+.sidera-aspect-row--clickable:focus-visible {
+  border-color: rgba(var(--color-primary-rgb), 0.42);
+  box-shadow: 0 0 0 0.1875rem rgba(var(--color-primary-rgb), 0.16);
+  outline: none;
+}
+
+.sidera-aspect-row--selected {
+  border-color: rgba(var(--color-primary-rgb), 0.18);
+  background: var(--aspect-row-selected);
+}
+
+.sidera-aspect-row--disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+@media (max-width: 40rem) {
+  .sidera-aspect-row__main {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .sidera-aspect-row__trailing {
+    grid-column: 2;
+    align-items: flex-start;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .sidera-aspect-row__interpretation {
+    padding-inline-start: 0.375rem;
+  }
+
+  .sidera-aspect-row--sky .sidera-aspect-row__main {
+    grid-template-columns: 2.125rem minmax(0, 1fr);
+  }
+
+  .sidera-aspect-row--sky .sidera-aspect-row__participants {
+    grid-column: 2;
+  }
+
+  .sidera-aspect-row--sky .sidera-aspect-row__trailing {
+    grid-column: 2;
+    padding-block-start: 0;
+  }
+
+  .sidera-aspect-row--sky .sidera-aspect-row__interpretation {
+    margin-block-start: 0.25rem;
+    margin-inline-start: 2.875rem;
+    padding: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidera-aspect-row--clickable {
+    transition: none;
+  }
+}

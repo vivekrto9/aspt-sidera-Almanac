@@ -1,0 +1,36 @@
+---
+import type { BuilderEditAttributes } from "../builder/builder.ts";
+import { loadPublicPageContent } from "../builder/public-page.ts";
+import WalletWorkspace from "../components/wallet/sections/WalletWorkspace.astro";
+import Header from "../components/shared/Header.astro";
+import Footer from "../components/shared/Footer.astro";
+import { activeLocales, defaultLocale, localizePath, type SupportedLocale } from "../data/localization-contract.ts";
+import { createSharedFooterProps } from "../data/shared-footer-navigation.ts";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { getAccountLoginRedirect } from "../server/aggregator/account-access.ts";
+import { getCustomerSession } from "../server/aggregator/customer-auth.ts";
+import { getCustomerWalletSummary, listWalletTransactions, walletOffers, walletRecentTransactionLimit } from "../server/aggregator/wallet-store.ts";
+import { getRuntimeEnv } from "../server/generated-site/request.ts";
+import "../styles/wallet/wallet.css";
+export const prerender = false;
+const loaded = await loadPublicPageContent(Astro, "wallet");
+const { content, locale, chromeEdit } = loaded;
+const copy = content;
+const env = await getRuntimeEnv(Astro);
+const session = await getCustomerSession(env, Astro.request).catch(() => null);
+if (!session) return Astro.redirect(getAccountLoginRedirect(Astro.url));
+const [wallet, transactions] = await Promise.all([getCustomerWalletSummary(env, session.account.id, locale), listWalletTransactions(env, session.account.id, { limit: walletRecentTransactionLimit, locale })]);
+const edit = (attributes: BuilderEditAttributes): Record<string, string> => Object.fromEntries(Object.entries(attributes).filter((entry): entry is [string, string | true] => entry[1] !== undefined).map(([key,value]) => [key, value === true ? "true" : value]));
+const localeHref = (target: SupportedLocale) => { const url = new URL(Astro.request.url); target === defaultLocale ? url.searchParams.delete("locale") : url.searchParams.set("locale", target); return `${url.pathname}${url.search}`; };
+const navigation = [["nav_todays_sky","/todays-sky"],["nav_charts","/birth-chart"],["nav_compatibility","/synastry"],["nav_moon","/moon-calendar"],["nav_horoscope","/daily-horoscope"],["nav_astrologers","/astrologers"],["nav_blog","/blog"]].map(([field,path]) => ({ label: content[field], href: localizePath(path,locale), editAttributes: edit(chromeEdit(field)) }));
+const actions = [{ id:"sign-in", label:"My Account", href:localizePath("/account",locale), variant:"ghost" as const },{ id:"get-chart", label:content.action_get_chart, href:localizePath("/birth-chart",locale), variant:"primary" as const }];
+const languageOptions = activeLocales.map((item) => ({ code:item.code,label:content[`language_option_${item.code}_label`]||item.nativeName,href:localeHref(item.code),lang:item.code,hreflang:item.hreflang,editAttributes:edit(chromeEdit(`language_option_${item.code}_label`)) }));
+const footerProps = createSharedFooterProps({ content, locale, editAttributes:(field)=>edit(chromeEdit(field)) });
+const url = new URL(Astro.request.url);
+const seo = { seo_title:copy.seo_title,seo_description:copy.seo_description,seo_canonical_path:"/wallet",seo_robots:"noindex,follow",og_title:copy.seo_title,og_description:copy.seo_description,og_image:"/_assets/aliases/logo/logo.svg",og_image_alt:"Sidera wallet",twitter_card:"summary",twitter_title:copy.seo_title,twitter_description:copy.seo_description,twitter_image:"/_assets/aliases/logo/logo.svg" };
+---
+<BaseLayout seo={seo} bodyClass="sidera-wallet-body">
+  <Header id="wallet-header" brandLabel={content.brand_name} brandHref={localizePath("/",locale)} brandAriaLabel={content.brand_aria_label} navigationLabel={content.primary_navigation_label} chromeNavigation={{content,edit:chromeEdit}} navigation={navigation} actions={actions} language={{activeLocale:locale,options:languageOptions,triggerLabel:content.language_trigger_label,menuLabel:content.language_menu_label}} mobileUtilityActionId="sign-in" menuLabel={content.menu_open_label} closeMenuLabel={content.menu_close_label} brandEditAttributes={edit(chromeEdit("brand_name"))}/>
+  <WalletWorkspace copy={copy} wallet={wallet} transactions={transactions} offers={walletOffers} recentLimit={walletRecentTransactionLimit} csrfToken={session.csrfToken} locale={locale} browseHref={localizePath("/astrologers",locale)} transactionsHref={localizePath("/account/wallet-transactions",locale)} paymentState={url.searchParams.get("payment")||""} rechargeId={url.searchParams.get("rechargeId")||""} attemptId={url.searchParams.get("attemptId")||""} sessionId={url.searchParams.get("session_id")||""}/>
+  <Footer {...footerProps}/>
+</BaseLayout>

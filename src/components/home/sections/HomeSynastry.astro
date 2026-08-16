@@ -1,0 +1,101 @@
+---
+import Button from "../../shared/Button.astro";
+import ProfileSummary from "../../shared/ProfileSummary.astro";
+import SectionHeading from "../../shared/SectionHeading.astro";
+import personAImage from "../../../assets/home/synastry-person-a.png";
+import personBImage from "../../../assets/home/synastry-person-b.png";
+import type { HomeSynastryCopy } from "../../../data/locale/home/sections/synastry.ts";
+import "../../../styles/home/sections/home-synastry.css";
+
+type EditAttributes = Record<string, string>;
+
+type Props = {
+  copy: HomeSynastryCopy;
+  actionHref: string;
+  editAttributes?: (field: string) => EditAttributes;
+};
+
+const {
+  copy,
+  actionHref,
+  editAttributes = () => ({}),
+} = Astro.props as Props;
+---
+
+<section class="home-synastry" id="synastry" aria-labelledby="home-synastry-title">
+  <div class="home-synastry__inner">
+    <div class="home-synastry__introduction">
+      <SectionHeading
+        title={`${copy.titleAccent} ${copy.titleRest}`}
+        eyebrow={copy.eyebrow}
+        description={copy.description}
+        headingId="home-synastry-title"
+        class="home-synastry__heading"
+        eyebrowEditAttributes={editAttributes("eyebrow")}
+        descriptionEditAttributes={editAttributes("description")}
+      >
+        <Fragment slot="title">
+          <em {...editAttributes("title_accent")}>{copy.titleAccent}</em>{" "}<span
+            {...editAttributes("title_rest")}>{copy.titleRest}</span
+          >
+        </Fragment>
+      </SectionHeading>
+
+      <div class="home-synastry__actions">
+        <Button
+          href={actionHref}
+          editAttributes={editAttributes("primary_cta")}
+        >
+          {copy.primaryCta}
+        </Button>
+      </div>
+    </div>
+
+    <figure
+      class="home-synastry__visual"
+      aria-label={`${copy.personAName}, ${copy.resonance}, ${copy.personBName}`}
+    >
+      <ProfileSummary
+        name={copy.personAName}
+        subtitle={copy.personADetail}
+        avatarSrc={personAImage.src}
+        avatarAlt={copy.personAName}
+        layout="stacked"
+        avatarSize="large"
+        class="home-synastry__profile home-synastry__profile--first"
+        nameEditAttributes={editAttributes("person_a_name")}
+        subtitleEditAttributes={editAttributes("person_a_detail")}
+      />
+
+      <div class="home-synastry__connection">
+        <svg
+          class="home-synastry__rings"
+          viewBox="0 0 172 172"
+          role="img"
+          aria-label={copy.resonance}
+        >
+          <circle class="home-synastry__ring home-synastry__ring--first" cx="68" cy="86" r="60" />
+          <circle class="home-synastry__ring home-synastry__ring--second" cx="104" cy="86" r="60" />
+        </svg>
+        <figcaption
+          class="home-synastry__resonance"
+          {...editAttributes("resonance")}
+        >
+          {copy.resonance}
+        </figcaption>
+      </div>
+
+      <ProfileSummary
+        name={copy.personBName}
+        subtitle={copy.personBDetail}
+        avatarSrc={personBImage.src}
+        avatarAlt={copy.personBName}
+        layout="stacked"
+        avatarSize="large"
+        class="home-synastry__profile home-synastry__profile--second"
+        nameEditAttributes={editAttributes("person_b_name")}
+        subtitleEditAttributes={editAttributes("person_b_detail")}
+      />
+    </figure>
+  </div>
+</section>

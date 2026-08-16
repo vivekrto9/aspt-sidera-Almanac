@@ -1,0 +1,283 @@
+---
+import Button from "./Button.astro";
+import IconButton from "./IconButton.astro";
+import "../../styles/shared/dialog.css";
+
+type DialogWidth = "compact" | "standard";
+type DialogActionVariant = "primary" | "danger";
+
+type Props = {
+  id: string;
+  title: string;
+  eyebrow?: string;
+  description?: string;
+  closeLabel: string;
+  primaryLabel?: string;
+  primaryValue?: string;
+  primaryVariant?: DialogActionVariant;
+  primaryDisabled?: boolean;
+  secondaryLabel?: string;
+  secondaryValue?: string;
+  width?: DialogWidth;
+  dismissible?: boolean;
+  open?: boolean;
+  builderToolbarAbove?: boolean;
+  class?: string;
+  eyebrowEditAttributes?: Record<string, string>;
+  titleEditAttributes?: Record<string, string>;
+  descriptionEditAttributes?: Record<string, string>;
+  primaryEditAttributes?: Record<string, string>;
+  secondaryEditAttributes?: Record<string, string>;
+};
+
+const {
+  id,
+  title,
+  eyebrow,
+  description,
+  closeLabel,
+  primaryLabel,
+  primaryValue = "confirm",
+  primaryVariant = "primary",
+  primaryDisabled = false,
+  secondaryLabel,
+  secondaryValue = "cancel",
+  width = "standard",
+  dismissible = true,
+  open = false,
+  builderToolbarAbove = false,
+  class: className,
+  eyebrowEditAttributes = {},
+  titleEditAttributes = {},
+  descriptionEditAttributes = {},
+  primaryEditAttributes = {},
+  secondaryEditAttributes = {},
+} = Astro.props as Props;
+
+const titleId = `${id}-title`;
+const descriptionId = description ? `${id}-description` : undefined;
+const closeFormId = `${id}-close-form`;
+const actionFormId = `${id}-action-form`;
+const hasBodySlot = Astro.slots.has("default");
+const hasActionsSlot = Astro.slots.has("actions");
+const hasActions = hasActionsSlot || Boolean(primaryLabel || secondaryLabel);
+const classes = [
+  "sidera-dialog",
+  `sidera-dialog--${width}`,
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+---
+
+<dialog
+  id={id}
+  class={classes}
+  aria-labelledby={titleId}
+  aria-describedby={descriptionId}
+  data-sidera-dialog
+  data-dismissible={dismissible ? "true" : "false"}
+  data-builder-toolbar-above={builderToolbarAbove ? "true" : undefined}
+  open={open}
+>
+  <article class="sidera-dialog__panel">
+    <header class="sidera-dialog__header">
+      <div class="sidera-dialog__heading">
+        {
+          eyebrow ? (
+            <p class="sidera-dialog__eyebrow" {...eyebrowEditAttributes}>
+              {eyebrow}
+            </p>
+          ) : null
+        }
+        <h2 id={titleId} class="sidera-dialog__title" {...titleEditAttributes}>
+          {title}
+        </h2>
+        {
+          description ? (
+            <p
+              id={descriptionId}
+              class="sidera-dialog__description"
+              {...descriptionEditAttributes}
+            >
+              {description}
+            </p>
+          ) : null
+        }
+      </div>
+
+      <IconButton
+        ariaLabel={closeLabel}
+        variant="ghost"
+        size="standard"
+        shape="circle"
+        type="submit"
+        form={closeFormId}
+        value="close"
+        class="sidera-dialog__close"
+        data-dialog-close
+      >
+        <span aria-hidden="true">×</span>
+      </IconButton>
+    </header>
+
+    {
+      hasBodySlot ? (
+        <div class="sidera-dialog__body">
+          <slot />
+        </div>
+      ) : null
+    }
+
+    {
+      hasActions ? (
+        <footer class="sidera-dialog__footer">
+          {hasActionsSlot ? (
+            <slot name="actions" />
+          ) : (
+            <form id={actionFormId} method="dialog" class="sidera-dialog__actions">
+              {secondaryLabel ? (
+                <Button
+                  type="submit"
+                  variant="outline"
+                  value={secondaryValue}
+                  editAttributes={secondaryEditAttributes}
+                >
+                  {secondaryLabel}
+                </Button>
+              ) : null}
+              {primaryLabel ? (
+                <Button
+                  type="submit"
+                  variant={primaryVariant}
+                  value={primaryValue}
+                  disabled={primaryDisabled}
+                  editAttributes={primaryEditAttributes}
+                >
+                  {primaryLabel}
+                </Button>
+              ) : null}
+            </form>
+          )}
+        </footer>
+      ) : null
+    }
+  </article>
+
+  <form id={closeFormId} method="dialog" class="sidera-dialog__close-form"></form>
+</dialog>
+
+<script>
+  const formControlSelector = [
+    "input:not([disabled])",
+    "select:not([disabled])",
+    "textarea:not([disabled])",
+  ].join(",");
+  const fallbackFocusableSelector = [
+    "button:not([disabled])",
+    "a[href]",
+    "[tabindex]:not([tabindex='-1'])",
+  ].join(",");
+
+  const updateScrollLock = () => {
+    document.documentElement.classList.toggle(
+      "sidera-dialog-open",
+      Boolean(document.querySelector("dialog[data-sidera-dialog][open]")),
+    );
+  };
+
+  document.querySelectorAll<HTMLDialogElement>("dialog[data-sidera-dialog]").forEach((dialog) => {
+    if (dialog.dataset.dialogReady === "true") return;
+    dialog.dataset.dialogReady = "true";
+
+    let returnFocus: HTMLElement | null = null;
+    const dialogId = dialog.id;
+    const dismissible = dialog.dataset.dismissible === "true";
+
+    const focusFirstControl = () => {
+      const target =
+        dialog.querySelector<HTMLElement>("[autofocus]") ??
+        dialog.querySelector<HTMLElement>(formControlSelector) ??
+        dialog.querySelector<HTMLElement>(fallbackFocusableSelector);
+      target?.focus();
+    };
+
+    const openDialog = (trigger?: HTMLElement | null) => {
+      if (dialog.open) return;
+      returnFocus = trigger ?? (document.activeElement as HTMLElement | null);
+      const keepBuilderToolbarAbove =
+        dialog.dataset.builderToolbarAbove === "true" &&
+        Boolean(document.querySelector("[data-builder-toolbar]"));
+      if (keepBuilderToolbarAbove) {
+        dialog.dataset.modelessOverlay = "true";
+        dialog.show();
+      } else {
+        delete dialog.dataset.modelessOverlay;
+        dialog.showModal();
+      }
+      updateScrollLock();
+      window.requestAnimationFrame(focusFirstControl);
+    };
+
+    document
+      .querySelectorAll<HTMLElement>(`[data-dialog-open="${CSS.escape(dialogId)}"]`)
+      .forEach((trigger) => {
+        trigger.addEventListener("click", () => openDialog(trigger));
+      });
+
+    dialog
+      .querySelectorAll<HTMLElement>("[data-dialog-close]")
+      .forEach((control) => {
+        control.addEventListener("click", (event) => {
+          event.preventDefault();
+          if (dismissible && dialog.open) dialog.close("dismiss");
+        });
+      });
+
+    dialog.addEventListener("cancel", (event) => {
+      if (!dismissible) event.preventDefault();
+    });
+
+    dialog.addEventListener("keydown", (event) => {
+      if (
+        event.key === "Escape" &&
+        dialog.dataset.modelessOverlay === "true"
+      ) {
+        event.preventDefault();
+        if (dismissible) dialog.close("dismiss");
+      }
+    });
+
+    dialog.addEventListener("click", (event) => {
+      if (dismissible && event.target === dialog) dialog.close("dismiss");
+    });
+
+    dialog.addEventListener("close", () => {
+      updateScrollLock();
+      returnFocus?.focus();
+      dialog.dispatchEvent(
+        new CustomEvent("sidera:dialog-close", {
+          bubbles: true,
+          detail: { returnValue: dialog.returnValue },
+        }),
+      );
+    });
+
+    if (dialog.open) {
+      dialog.close();
+      openDialog();
+    }
+  });
+
+  const closeRestoredDialogs = () => {
+    document
+      .querySelectorAll<HTMLDialogElement>("dialog[data-sidera-dialog][open]")
+      .forEach((dialog) => dialog.close("navigation"));
+    updateScrollLock();
+  };
+
+  window.addEventListener("pagehide", closeRestoredDialogs);
+  window.addEventListener("pageshow", (event) => {
+    if (event.persisted) closeRestoredDialogs();
+  });
+</script>

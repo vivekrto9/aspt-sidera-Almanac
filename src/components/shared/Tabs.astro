@@ -1,0 +1,217 @@
+---
+import "../../styles/shared/tabs.css";
+
+type TabAppearance = "pill" | "underline";
+type TabTone = "default" | "inverse";
+type TabDensity = "compact" | "standard";
+type TabActivation = "automatic" | "manual";
+
+type TabItem = {
+  id: string;
+  label: string;
+  disabled?: boolean;
+  labelEditAttributes?: Record<string, string>;
+};
+
+type Props = {
+  id: string;
+  label: string;
+  tabs: TabItem[];
+  activeId?: string;
+  appearance?: TabAppearance;
+  tone?: TabTone;
+  density?: TabDensity;
+  activation?: TabActivation;
+  class?: string;
+};
+
+const {
+  id,
+  label,
+  tabs,
+  activeId,
+  appearance = "pill",
+  tone = "default",
+  density = "standard",
+  activation = "automatic",
+  class: className,
+} = Astro.props as Props;
+
+const enabledTabs = tabs.filter((tab) => !tab.disabled);
+const selectedId =
+  enabledTabs.find((tab) => tab.id === activeId)?.id ?? enabledTabs[0]?.id;
+const classes = [
+  "sidera-tabs",
+  `sidera-tabs--${appearance}`,
+  `sidera-tabs--${density}`,
+  `sidera-tabs--tone-${tone}`,
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+const panelContent = new Map(
+  await Promise.all(
+    tabs.map(
+      async (tab) =>
+        [
+          tab.id,
+          await Astro.slots.render(`panel-${tab.id}`),
+        ] as const,
+    ),
+  ),
+);
+---
+
+<div class={classes} id={id} data-sidera-tabs data-activation={activation}>
+  <div class="sidera-tabs__scroller">
+    <div class="sidera-tabs__list" role="tablist" aria-label={label}>
+      {
+        tabs.map((tab) => {
+          const selected = tab.id === selectedId;
+          const tabId = `${id}-tab-${tab.id}`;
+          const panelId = `${id}-panel-${tab.id}`;
+
+          return (
+            <button
+              class="sidera-tabs__tab"
+              id={tabId}
+              type="button"
+              role="tab"
+              aria-controls={panelId}
+              aria-selected={selected ? "true" : "false"}
+              tabindex={selected ? 0 : -1}
+              disabled={tab.disabled}
+              data-tab-id={tab.id}
+            >
+              <span {...tab.labelEditAttributes}>{tab.label}</span>
+            </button>
+          );
+        })
+      }
+    </div>
+  </div>
+
+  <div class="sidera-tabs__panels">
+    {
+      tabs.map((tab) => {
+        const selected = tab.id === selectedId;
+        const tabId = `${id}-tab-${tab.id}`;
+        const panelId = `${id}-panel-${tab.id}`;
+
+        return (
+          <section
+            class="sidera-tabs__panel"
+            id={panelId}
+            role="tabpanel"
+            aria-labelledby={tabId}
+            tabindex="0"
+            hidden={!selected}
+            data-tab-panel={tab.id}
+          >
+            <Fragment set:html={panelContent.get(tab.id) ?? ""} />
+          </section>
+        );
+      })
+    }
+  </div>
+</div>
+
+<script>
+  const initializeTabs = (root: HTMLElement) => {
+    if (root.dataset.tabsReady === "true") return;
+    root.dataset.tabsReady = "true";
+
+    const tabs = Array.from(
+      root.querySelectorAll<HTMLButtonElement>('[role="tab"][data-tab-id]'),
+    );
+    const panels = Array.from(
+      root.querySelectorAll<HTMLElement>('[role="tabpanel"][data-tab-panel]'),
+    );
+    const activation = root.dataset.activation ?? "automatic";
+
+    const enabledTabs = () => tabs.filter((tab) => !tab.disabled);
+
+    const activate = (nextTab: HTMLButtonElement, emit = true) => {
+      if (nextTab.disabled) return;
+
+      const previousTab = tabs.find(
+        (tab) => tab.getAttribute("aria-selected") === "true",
+      );
+      const nextId = nextTab.dataset.tabId;
+      if (!nextId) return;
+
+      tabs.forEach((tab) => {
+        const selected = tab === nextTab;
+        tab.setAttribute("aria-selected", String(selected));
+        tab.tabIndex = selected ? 0 : -1;
+      });
+
+      panels.forEach((panel) => {
+        panel.hidden = panel.dataset.tabPanel !== nextId;
+      });
+
+      nextTab.scrollIntoView({
+        behavior: matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "auto"
+          : "smooth",
+        block: "nearest",
+        inline: "nearest",
+      });
+
+      if (emit && previousTab !== nextTab) {
+        root.dispatchEvent(
+          new CustomEvent("sidera:tab-change", {
+            bubbles: true,
+            detail: {
+              id: nextId,
+              previousId: previousTab?.dataset.tabId,
+            },
+          }),
+        );
+      }
+    };
+
+    tabs.forEach((tab) => {
+      tab.addEventListener("click", () => activate(tab));
+
+      tab.addEventListener("keydown", (event) => {
+        const availableTabs = enabledTabs();
+        const currentIndex = availableTabs.indexOf(tab);
+        if (currentIndex < 0) return;
+
+        const isRtl = getComputedStyle(root).direction === "rtl";
+        const previousKey = isRtl ? "ArrowRight" : "ArrowLeft";
+        const nextKey = isRtl ? "ArrowLeft" : "ArrowRight";
+        let nextTab: HTMLButtonElement | undefined;
+
+        if (event.key === previousKey) {
+          nextTab =
+            availableTabs[
+              (currentIndex - 1 + availableTabs.length) % availableTabs.length
+            ];
+        } else if (event.key === nextKey) {
+          nextTab = availableTabs[(currentIndex + 1) % availableTabs.length];
+        } else if (event.key === "Home") {
+          nextTab = availableTabs[0];
+        } else if (event.key === "End") {
+          nextTab = availableTabs.at(-1);
+        }
+
+        if (!nextTab) return;
+
+        event.preventDefault();
+        nextTab.focus();
+        if (activation === "automatic") activate(nextTab);
+      });
+    });
+  };
+
+  const initializeAllTabs = () => {
+    document
+      .querySelectorAll<HTMLElement>("[data-sidera-tabs]")
+      .forEach(initializeTabs);
+  };
+
+  initializeAllTabs();
+  document.addEventListener("astro:page-load", initializeAllTabs);
+</script>

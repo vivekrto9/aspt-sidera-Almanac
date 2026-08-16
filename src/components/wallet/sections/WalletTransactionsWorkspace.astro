@@ -1,0 +1,98 @@
+---
+import Button from "../../shared/Button.astro";
+
+type Transaction = {
+  id: string;
+  amountCents: number;
+  signedAmount: string;
+  balanceAfter: string;
+  description: string;
+  createdAt: string;
+};
+
+type Props = {
+  copy: Record<string, string>;
+  locale: string;
+  transactions: {
+    items: Transaction[];
+    totalItems: number;
+    totalPages: number;
+    page: number;
+    filter: "all" | "credit" | "debit";
+  };
+  walletHref: string;
+  browseHref: string;
+  filterHrefs: Record<"all" | "credit" | "debit", string>;
+  previousHref?: string;
+  nextHref?: string;
+};
+
+const { copy, locale, transactions, walletHref, browseHref, filterHrefs, previousHref, nextHref } = Astro.props as Props;
+const formatDate = (value: string) => value
+  ? new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value))
+  : "";
+const balanceAfter = (value: string) => copy.tx_balance_after.replace("{amount}", value);
+const filterLabel = {
+  all: copy.tx_filter_all,
+  credit: copy.tx_filter_credits,
+  debit: copy.tx_filter_debits,
+}[transactions.filter];
+---
+
+<main class="wallet-transactions-page">
+  <section class="wallet-transactions-hero" aria-labelledby="wallet-transactions-title">
+    <div class="wallet-transactions-hero__copy">
+      <p>{copy.tx_kicker}</p>
+      <h1 id="wallet-transactions-title">{copy.tx_title}</h1>
+      <span>{copy.tx_body}</span>
+      <div class="wallet-transactions-hero__actions">
+        <Button href={walletHref} variant="primary" size="large" shape="rounded">{copy.tx_recharge}</Button>
+        <Button href={browseHref} variant="secondary" size="large" shape="rounded">{copy.browse}</Button>
+      </div>
+    </div>
+    <aside class="wallet-transactions-total" aria-label={copy.tx_total_records}>
+      <span>{copy.tx_total_records}</span>
+      <strong>{transactions.totalItems}</strong>
+    </aside>
+  </section>
+
+  <section class="wallet-transactions-history" aria-labelledby="wallet-activity-title">
+    <div class="wallet-transactions-history__heading">
+      <div>
+        <p>{filterLabel}</p>
+        <h2 id="wallet-activity-title">{copy.tx_activity_title}</h2>
+      </div>
+      <nav class="wallet-transactions-filters" aria-label={copy.tx_activity_title}>
+        <a href={filterHrefs.all} aria-current={transactions.filter === "all" ? "page" : undefined}>{copy.tx_filter_all}</a>
+        <a href={filterHrefs.credit} aria-current={transactions.filter === "credit" ? "page" : undefined}>{copy.tx_filter_credits}</a>
+        <a href={filterHrefs.debit} aria-current={transactions.filter === "debit" ? "page" : undefined}>{copy.tx_filter_debits}</a>
+      </nav>
+    </div>
+
+    <div class="wallet-transactions-list">
+      {transactions.items.length ? transactions.items.map((item) => {
+        const credit = item.amountCents >= 0;
+        return (
+          <article class:list={["wallet-history-row", credit ? "is-credit" : "is-debit"]}>
+            <div class="wallet-history-row__details">
+              <span class="wallet-history-row__icon" aria-hidden="true">{credit ? "+" : "−"}</span>
+              <div>
+                <strong>{item.description || (credit ? copy.tx_credit_fallback : copy.tx_debit_fallback)}</strong>
+                <small>{formatDate(item.createdAt)} · {balanceAfter(item.balanceAfter)}</small>
+              </div>
+            </div>
+            <b>{item.signedAmount}</b>
+          </article>
+        );
+      }) : <p class="wallet-transactions-empty">{copy.tx_empty}</p>}
+    </div>
+
+    {transactions.totalPages > 1 ? (
+      <nav class="wallet-transactions-pagination" aria-label={`${copy.tx_activity_title} pages`}>
+        <Button href={previousHref} disabled={!previousHref} variant="secondary" size="standard" shape="rounded">{copy.tx_previous}</Button>
+        <span>{transactions.page} / {transactions.totalPages}</span>
+        <Button href={nextHref} disabled={!nextHref} variant="secondary" size="standard" shape="rounded">{copy.tx_next}</Button>
+      </nav>
+    ) : null}
+  </section>
+</main>

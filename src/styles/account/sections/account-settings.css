@@ -1,0 +1,50 @@
+.account-settings {
+  min-inline-size: 0;
+  margin-block-start: 4rem;
+  scroll-margin-block-start: 6rem;
+}
+.account-settings > .sidera-section-heading {
+  --sidera-section-heading-title-size: 2.125rem;
+  margin-block-end: 1.125rem;
+}
+.account-settings__form {
+  min-inline-size: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+  padding: 1.625rem;
+  border: 1px solid rgba(var(--color-text-rgb), 0.1);
+  border-radius: 1rem;
+  background: var(--color-panel);
+}
+.account-settings__form .sidera-form-field__error {
+  display: none;
+}
+.account-settings__actions {
+  grid-column: 1/-1;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.account-settings__status {
+  margin: 0;
+  color: var(--color-dark);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+@media (max-width: 40rem) {
+  .account-settings {
+    margin-block-start: 3rem;
+  }
+  .account-settings__form {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 1.125rem;
+  }
+  .account-settings__actions {
+    grid-column: 1;
+  }
+  .account-settings__actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

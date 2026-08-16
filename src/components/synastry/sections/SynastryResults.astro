@@ -1,0 +1,299 @@
+---
+import type { SynastryResultsCopy } from "../../../data/locale/synastry/sections/results.ts";
+import type { PreparedSynastryResult } from "../../../data/synastry/results.ts";
+import AspectRow from "../../shared/AspectRow.astro";
+import ResultsShell from "../../shared/ResultsShell.astro";
+import "../../../styles/synastry/sections/results.css";
+
+type Props = {
+  copy: SynastryResultsCopy;
+  result: PreparedSynastryResult;
+  editAttributes?: (
+    field: keyof SynastryResultsCopy,
+  ) => Record<string, string>;
+};
+
+const { copy, result, editAttributes = () => ({}) } = Astro.props as Props;
+const score = Math.max(0, Math.min(100, result.score));
+const scoreCircumference = 2 * Math.PI * 76;
+const scoreDash = `${((score / 100) * scoreCircumference).toFixed(2)} ${scoreCircumference.toFixed(2)}`;
+const selectedAspect = result.aspects[0];
+const chartPlanets = result.planets.map((planet, index) => ({
+  glyph: planet.glyph,
+  longitude: planet.longitude,
+  label: planet.label,
+  color: planet.color,
+  ring: planet.ring,
+  selected:
+    index === selectedAspect?.firstIndex || index === selectedAspect?.secondIndex,
+}));
+const chartAspects = result.aspects.map((aspect) => ({
+  from: aspect.firstIndex,
+  to: aspect.secondIndex,
+  color: aspect.color,
+  weight: aspect.weight,
+  dashed: aspect.dashed,
+}));
+---
+
+<ResultsShell
+  id="synastry-results"
+  class="synastry-results"
+  title={`${result.personA.name} & ${result.personB.name}`}
+  eyebrow={result.relationshipContext}
+  chartTitle={copy.results_chart_title}
+  chartDescription={copy.results_chart_description}
+  chartMode="synastry"
+  chartSize="large"
+  chartRotation={result.chartRotation}
+  chartPlanets={chartPlanets}
+  chartAspects={chartAspects}
+  chartShowHouses={false}
+  chartInteractive
+  chartCenterGlyph="✦"
+  layout="split"
+  chartSurface="panel"
+  data-synastry-results
+>
+  <div slot="summary" class="synastry-results__pair-summary" aria-label="Pair context">
+    <p><i class="synastry-results__person-dot synastry-results__person-dot--a"></i>{result.personA.summary}</p>
+    <p><i class="synastry-results__person-dot synastry-results__person-dot--b"></i>{result.personB.summary}</p>
+  </div>
+
+  <section
+    slot="orientation"
+    class="synastry-results__resonance"
+    aria-labelledby="synastry-results-verdict"
+  >
+    <div class="synastry-results__score">
+      <svg viewBox="0 0 180 180" role="img" aria-label={`${score} ${copy.results_resonance_label}`}>
+        <circle class="synastry-results__score-track" cx="90" cy="90" r="76" />
+        <circle
+          class="synastry-results__score-value"
+          cx="90"
+          cy="90"
+          r="76"
+          stroke-dasharray={scoreDash}
+          transform="rotate(-90 90 90)"
+        />
+        <text class="synastry-results__score-number" x="90" y="82">{score}</text>
+        <text
+          class="synastry-results__score-label"
+          x="90"
+          y="116"
+          {...editAttributes("results_resonance_label")}
+        >
+          {copy.results_resonance_label}
+        </text>
+      </svg>
+    </div>
+    <div class="synastry-results__verdict">
+      <p
+        class="synastry-results__verdict-label"
+        {...editAttributes("results_verdict_label")}
+      >
+        {copy.results_verdict_label}
+      </p>
+      <h3 id="synastry-results-verdict">{result.verdict}</h3>
+      <p
+        class="synastry-results__score-note"
+        {...editAttributes("results_score_note")}
+      >
+        {copy.results_score_note}
+      </p>
+      <div class="synastry-results__categories">
+        {
+          result.categories.map((category) => (
+            <div class="synastry-results__category">
+              <p><span>{category.label}</span><strong>{category.value}</strong></p>
+              <span class="synastry-results__category-track">
+                <i style={{ "--synastry-category-score": `${category.value}%` }}></i>
+              </span>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <div slot="inspector" class="synastry-results__inspector" aria-live="polite">
+    <p
+      class="synastry-results__aspect-kicker"
+      {...editAttributes("results_aspect_kicker")}
+    >
+      {copy.results_aspect_kicker}
+    </p>
+    {
+      result.aspects.map((aspect, index) => {
+        const first = result.planets[aspect.firstIndex];
+        const second = result.planets[aspect.secondIndex];
+        if (!first || !second) return null;
+        return (
+          <section
+            class="synastry-results__aspect-detail"
+            data-synastry-aspect-panel={index}
+            hidden={index !== 0}
+            aria-label={aspect.title}
+          >
+            <div class="synastry-results__aspect-identity">
+              <span class="synastry-results__planet-tile synastry-results__planet-tile--a" aria-hidden="true">
+                {first.glyph}
+              </span>
+              <span class="synastry-results__aspect-glyph" aria-hidden="true">{aspect.aspectGlyph}</span>
+              <span class="synastry-results__planet-tile synastry-results__planet-tile--b" aria-hidden="true">
+                {second.glyph}
+              </span>
+              <div>
+                <h3>{aspect.title}</h3>
+                <p>{aspect.subtitle}</p>
+              </div>
+            </div>
+            <p class="synastry-results__aspect-reading">{aspect.interpretation}</p>
+            <dl class="synastry-results__aspect-facts">
+              <div>
+                <dt {...editAttributes("results_aspect_label")}>{copy.results_aspect_label}</dt>
+                <dd>{aspect.type}</dd>
+              </div>
+              <div>
+                <dt {...editAttributes("results_theme_label")}>{copy.results_theme_label}</dt>
+                <dd>{aspect.theme}</dd>
+              </div>
+              <div>
+                <dt {...editAttributes("results_orb_label")}>{copy.results_orb_label}</dt>
+                <dd>{aspect.orb}</dd>
+              </div>
+            </dl>
+          </section>
+        );
+      })
+    }
+  </div>
+
+  <div class="synastry-results__lower-grid">
+    <section class="synastry-results__contacts" aria-labelledby="synastry-results-contacts-title">
+      <h3
+        id="synastry-results-contacts-title"
+        {...editAttributes("results_contacts_title")}
+      >
+        {copy.results_contacts_title}
+      </h3>
+      <div class="synastry-results__contact-list">
+        {
+          result.aspects.map((aspect, index) => {
+            const first = result.planets[aspect.firstIndex];
+            const second = result.planets[aspect.secondIndex];
+            if (!first || !second) return null;
+            return (
+              <AspectRow
+                firstLabel={first.name}
+                firstGlyph={first.glyph}
+                secondLabel={second.name}
+                secondGlyph={second.glyph}
+                aspectLabel={aspect.aspectLabel}
+                aspectGlyph={aspect.aspectGlyph}
+                orb={aspect.orb}
+                tone={aspect.tone}
+                size="compact"
+                interactive
+                selected={index === 0}
+                data-synastry-aspect-row={index}
+                data-first-index={aspect.firstIndex}
+                data-second-index={aspect.secondIndex}
+              />
+            );
+          })
+        }
+      </div>
+      <p class="synastry-results__legend">
+        <span><i class="synastry-results__legend-dot synastry-results__legend-dot--conjunction"></i><b {...editAttributes("results_conjunction_label")}>{copy.results_conjunction_label}</b></span>
+        <span><i class="synastry-results__legend-dot synastry-results__legend-dot--harmonious"></i><b {...editAttributes("results_harmonious_label")}>{copy.results_harmonious_label}</b></span>
+        <span><i class="synastry-results__legend-dot synastry-results__legend-dot--challenging"></i><b {...editAttributes("results_challenging_label")}>{copy.results_challenging_label}</b></span>
+      </p>
+    </section>
+
+    <div class="synastry-results__narratives">
+      {
+        result.narratives.map((narrative) => (
+          <article class:list={[
+            "synastry-results__narrative",
+            `synastry-results__narrative--${narrative.tone}`,
+          ]}>
+            <p>{narrative.tag}</p>
+            <h3>{narrative.title}</h3>
+            <div>{narrative.body}</div>
+          </article>
+        ))
+      }
+    </div>
+  </div>
+</ResultsShell>
+
+<script>
+  const initializeSynastryResults = () => {
+    document
+      .querySelectorAll<HTMLElement>("[data-synastry-results]")
+      .forEach((results) => {
+        if (results.dataset.synastryResultsReady === "true") return;
+
+        const selectAspect = (index: number) => {
+          const selectedRow = results.querySelector<HTMLElement>(
+            `[data-synastry-aspect-row="${index}"]`,
+          );
+          if (!selectedRow) return;
+
+          results
+            .querySelectorAll<HTMLElement>("[data-synastry-aspect-panel]")
+            .forEach((panel) => {
+              panel.hidden = Number(panel.dataset.synastryAspectPanel) !== index;
+            });
+          results
+            .querySelectorAll<HTMLButtonElement>("[data-synastry-aspect-row]")
+            .forEach((row) => {
+              const selected = Number(row.dataset.synastryAspectRow) === index;
+              row.classList.toggle("sidera-aspect-row--selected", selected);
+              row.setAttribute("aria-pressed", String(selected));
+            });
+
+          const firstIndex = Number(selectedRow.dataset.firstIndex);
+          const secondIndex = Number(selectedRow.dataset.secondIndex);
+          results
+            .querySelectorAll<SVGGElement>("[data-planet-index]")
+            .forEach((planet) => {
+              const planetIndex = Number(planet.dataset.planetIndex);
+              planet.classList.toggle(
+                "chart-wheel__planet--selected",
+                planetIndex === firstIndex || planetIndex === secondIndex,
+              );
+            });
+        };
+
+        results
+          .querySelectorAll<HTMLButtonElement>("[data-synastry-aspect-row]")
+          .forEach((row) => {
+            row.addEventListener("click", () => {
+              selectAspect(Number(row.dataset.synastryAspectRow));
+            });
+          });
+        results.addEventListener("planetselect", (event) => {
+          const planetIndex = Number(
+            (event as CustomEvent<{ index: number }>).detail?.index,
+          );
+          const matchingRow = Array.from(
+            results.querySelectorAll<HTMLElement>("[data-synastry-aspect-row]"),
+          ).find(
+            (row) =>
+              Number(row.dataset.firstIndex) === planetIndex ||
+              Number(row.dataset.secondIndex) === planetIndex,
+          );
+          if (matchingRow) {
+            selectAspect(Number(matchingRow.dataset.synastryAspectRow));
+          }
+        });
+
+        results.dataset.synastryResultsReady = "true";
+      });
+  };
+
+  initializeSynastryResults();
+  document.addEventListener("astro:page-load", initializeSynastryResults);
+</script>

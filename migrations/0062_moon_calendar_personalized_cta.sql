@@ -1,0 +1,7 @@
+ALTER TABLE ec_site_moon_calendar ADD COLUMN personalized_cta_eyebrow TEXT;
+ALTER TABLE ec_site_moon_calendar ADD COLUMN personalized_cta_title_prefix TEXT;
+ALTER TABLE ec_site_moon_calendar ADD COLUMN personalized_cta_title_accent TEXT;
+ALTER TABLE ec_site_moon_calendar ADD COLUMN personalized_cta_title_suffix TEXT;
+ALTER TABLE ec_site_moon_calendar ADD COLUMN personalized_cta_description TEXT;
+ALTER TABLE ec_site_moon_calendar ADD COLUMN personalized_cta_primary_label TEXT;
+ALTER TABLE ec_site_moon_calendar ADD COLUMN personalized_cta_secondary_label TEXT;

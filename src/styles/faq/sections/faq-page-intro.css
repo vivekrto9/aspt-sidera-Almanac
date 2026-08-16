@@ -1,0 +1,30 @@
+.faq-page-intro {
+  --sidera-page-intro-background: var(--color-surface);
+
+  overflow: clip;
+}
+
+.faq-page-intro__title-line {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+@media (min-width: 64.001rem) {
+  .faq-page-intro__title-line {
+    position: relative;
+    inset-inline-start: 50%;
+    transform: translateX(-50%);
+  }
+}
+
+@media (max-width: 64rem) {
+  .faq-page-intro__title-line {
+    white-space: normal;
+  }
+}
+
+@media (forced-colors: active) {
+  .faq-page-intro {
+    border-block-end-color: CanvasText;
+  }
+}

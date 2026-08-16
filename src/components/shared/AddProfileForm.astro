@@ -1,0 +1,210 @@
+---
+import AstrologyProfileForm, {
+  type AstrologyProfile,
+} from "./AstrologyProfileForm.astro";
+import Button from "./Button.astro";
+import "../../styles/shared/add-profile-form.css";
+
+type Props = {
+  id: string;
+  profile: AstrologyProfile;
+  saveLabel: string;
+  savingLabel: string;
+  errorMessage: string;
+  csrfToken: string;
+  endpoint?: string;
+  class?: string;
+  saveEditAttributes?: Record<string, string>;
+};
+
+const {
+  id,
+  profile,
+  saveLabel,
+  savingLabel,
+  errorMessage,
+  csrfToken,
+  endpoint = "/api/astropages/generated-site/customer/user-profiles",
+  class: className,
+  saveEditAttributes = {},
+} = Astro.props as Props;
+
+const classes = ["sidera-add-profile-form", className].filter(Boolean).join(" ");
+const formId = `${id}-form`;
+---
+
+<div
+  id={id}
+  class={classes}
+  data-add-profile-form
+  data-endpoint={endpoint}
+  data-csrf-token={csrfToken}
+  data-profile-prefix={profile.id}
+  data-error-message={errorMessage}
+>
+  <AstrologyProfileForm
+    id={formId}
+    profiles={[profile]}
+    method="post"
+    layout="single"
+    surface="plain"
+    density="compact"
+    class="sidera-add-profile-form__form"
+  >
+    <div slot="actions" class="sidera-add-profile-form__actions">
+      <Button
+        type="submit"
+        form={formId}
+        fullWidth
+        loading={false}
+        loadingLabel={savingLabel}
+        data-add-profile-submit
+        editAttributes={saveEditAttributes}
+      >
+        {saveLabel}
+      </Button>
+    </div>
+  </AstrologyProfileForm>
+
+  <p
+    class="sidera-add-profile-form__status"
+    data-add-profile-status
+    role="status"
+    aria-live="polite"
+  ></p>
+</div>
+
+<script>
+  type CreatedProfile = {
+    id: string;
+    profileName: string;
+    birthDate: string;
+    birthTime: string;
+    birthPlace: string;
+    placeId: string;
+    placeLat: number;
+    placeLon: number;
+    placeTimezone: string;
+    timezoneOffset: string;
+    isDefault: boolean;
+  };
+
+  const initializeAddProfileForm = (root: HTMLElement) => {
+    if (root.dataset.addProfileReady === "true") return;
+
+    const form = root.querySelector<HTMLFormElement>("form[data-astrology-profile-form]");
+    const submit = root.querySelector<HTMLButtonElement>("[data-add-profile-submit]");
+    const status = root.querySelector<HTMLElement>("[data-add-profile-status]");
+    if (!form || !submit || !status) return;
+
+    const prefix = root.dataset.profilePrefix || "profile";
+    const value = (data: FormData, name: string) => String(data.get(name) || "").trim();
+    const setLoading = (loading: boolean) => {
+      submit.disabled = loading;
+      submit.dataset.loading = String(loading);
+      submit.setAttribute("aria-busy", String(loading));
+      form.toggleAttribute("inert", loading);
+    };
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (submit.dataset.loading === "true") return;
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+      }
+
+      const data = new FormData(form);
+      const locationName = `${prefix}[location]`;
+      const locationInput = form.querySelector<HTMLInputElement>(
+        `[name="${CSS.escape(locationName)}"]`,
+      );
+      const placeId = value(data, `${locationName}Id`);
+      const placeLat = Number(value(data, `${locationName}Latitude`));
+      const placeLon = Number(value(data, `${locationName}Longitude`));
+      const placeTimezone = value(data, `${locationName}Timezone`);
+      const timezoneOffset = value(data, `${locationName}TimezoneOffset`);
+      const hasValidPlace = Boolean(placeId && placeTimezone && timezoneOffset)
+        && Number.isFinite(placeLat)
+        && Number.isFinite(placeLon);
+      if (!hasValidPlace) {
+        locationInput?.setCustomValidity(root.dataset.errorMessage || "Select a valid birth place.");
+        locationInput?.reportValidity();
+        return;
+      }
+      locationInput?.setCustomValidity("");
+
+      const hour12 = Number(value(data, `${prefix}[hour]`));
+      const period = value(data, `${prefix}[period]`);
+      const hour24 = period === "PM" ? (hour12 % 12) + 12 : hour12 % 12;
+      const birthTime = data.has(`${prefix}[timeUnknown]`)
+        ? "12:00"
+        : `${String(hour24).padStart(2, "0")}:${value(data, `${prefix}[minute]`).padStart(2, "0")}`;
+      const payload = {
+        profileName: value(data, `${prefix}[name]`),
+        relation: "",
+        gender: "",
+        birthDate: [
+          value(data, `${prefix}[year]`),
+          value(data, `${prefix}[month]`).padStart(2, "0"),
+          value(data, `${prefix}[day]`).padStart(2, "0"),
+        ].join("-"),
+        birthTime,
+        birthPlace: value(data, locationName),
+        placeId,
+        placeLat,
+        placeLon,
+        placeTimezone,
+        timezoneOffset,
+        notes: "",
+        isDefault: false,
+      };
+
+      setLoading(true);
+      status.textContent = "";
+      try {
+        const response = await fetch(root.dataset.endpoint || "", {
+          method: "POST",
+          headers: {
+            accept: "application/json",
+            "content-type": "application/json",
+            "x-astropages-customer-csrf": root.dataset.csrfToken || "",
+            "x-idempotency-key": window.crypto?.randomUUID?.()
+              || `profile-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          },
+          body: JSON.stringify(payload),
+        });
+        const body = await response.json().catch(() => ({})) as {
+          message?: string;
+          data?: { profile?: CreatedProfile };
+        };
+        const createdProfile = body.data?.profile;
+        if (!response.ok || !createdProfile) {
+          throw new Error(body.message || root.dataset.errorMessage || "Profile could not be saved.");
+        }
+        root.dispatchEvent(new CustomEvent("sidera:profile-created", {
+          bubbles: true,
+          detail: { profile: createdProfile },
+        }));
+        form.reset();
+      } catch (error) {
+        status.textContent = error instanceof Error
+          ? error.message
+          : root.dataset.errorMessage || "Profile could not be saved.";
+      } finally {
+        setLoading(false);
+      }
+    });
+
+    root.dataset.addProfileReady = "true";
+  };
+
+  const initializeAddProfileForms = () => {
+    document
+      .querySelectorAll<HTMLElement>("[data-add-profile-form]")
+      .forEach(initializeAddProfileForm);
+  };
+
+  initializeAddProfileForms();
+  document.addEventListener("astro:page-load", initializeAddProfileForms);
+</script>

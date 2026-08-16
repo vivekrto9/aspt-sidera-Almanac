@@ -1,0 +1,22 @@
+---
+import "../../../styles/about/sections/about-story-statement.css";
+
+type Props = {
+  statement: string;
+  statementEditAttributes?: Record<string, string>;
+};
+
+const {
+  statement,
+  statementEditAttributes = {},
+} = Astro.props as Props;
+---
+
+<section
+  class="about-story-statement"
+  data-screen-label="About · Story"
+>
+  <p class="about-story-statement__copy" {...statementEditAttributes}>
+    {statement}
+  </p>
+</section>

@@ -1,0 +1,324 @@
+---
+import "../../../styles/shared/header/language-dropdown.css";
+
+type LanguageOption = {
+  code: string;
+  label: string;
+  href?: string;
+  lang?: string;
+  hreflang?: string;
+  disabled?: boolean;
+  editAttributes: Record<string, string>;
+};
+
+type Props = {
+  id: string;
+  activeLocale: string;
+  options: LanguageOption[];
+  triggerLabel: string;
+  menuLabel: string;
+  defaultOpen?: boolean;
+  disabled?: boolean;
+  class?: string;
+  triggerEditAttributes?: Record<string, string>;
+};
+
+const {
+  id,
+  activeLocale,
+  options,
+  triggerLabel,
+  menuLabel,
+  defaultOpen = false,
+  disabled = false,
+  class: className,
+  triggerEditAttributes = {},
+} = Astro.props as Props;
+
+const triggerId = `${id}-trigger`;
+const menuId = `${id}-menu`;
+const activeOption = options.find((option) => option.code === activeLocale);
+const activeLabel = activeOption?.label ?? activeLocale;
+const classes = [
+  "sidera-language-dropdown",
+  defaultOpen && "sidera-language-dropdown--open",
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+---
+
+<div
+  id={id}
+  class={classes}
+  data-language-dropdown
+  data-default-open={defaultOpen ? "true" : "false"}
+>
+  <button
+    id={triggerId}
+    class="sidera-language-dropdown__trigger"
+    type="button"
+    aria-label={`${triggerLabel}: ${activeLabel}`}
+    aria-haspopup="listbox"
+    aria-expanded={defaultOpen ? "true" : "false"}
+    aria-controls={menuId}
+    disabled={disabled}
+    data-language-trigger
+  >
+    <span class="sidera-language-dropdown__code" {...triggerEditAttributes}>
+      {activeLocale}
+    </span>
+    <svg
+      class="sidera-language-dropdown__chevron"
+      viewBox="0 0 12 8"
+      aria-hidden="true"
+    >
+      <path d="m1.5 1.5 4.5 4 4.5-4" />
+    </svg>
+  </button>
+
+  <div
+    id={menuId}
+    class="sidera-language-dropdown__menu"
+    role="listbox"
+    aria-label={menuLabel}
+    hidden={!defaultOpen}
+    data-language-menu
+  >
+    {
+      options.map((option) => {
+        const selected = option.code === activeLocale;
+        const optionClass = [
+          "sidera-language-dropdown__option",
+          selected && "sidera-language-dropdown__option--selected",
+        ]
+          .filter(Boolean)
+          .join(" ");
+        const optionAttributes = {
+          class: optionClass,
+          role: "option" as const,
+          "aria-selected": selected,
+          "aria-disabled": option.disabled || undefined,
+          tabindex: selected && !option.disabled ? 0 : -1,
+          "data-language-option": "",
+          "data-locale": option.code,
+        };
+
+        return option.href ? (
+          <a
+            {...optionAttributes}
+            href={option.disabled ? undefined : option.href}
+            lang={option.lang}
+            hreflang={option.hreflang}
+          >
+            <span
+              class="sidera-language-dropdown__label"
+              {...option.editAttributes}
+            >
+              {option.label}
+            </span>
+            <span class="sidera-language-dropdown__check" aria-hidden="true">✓</span>
+          </a>
+        ) : (
+          <button {...optionAttributes} type="button" disabled={option.disabled}>
+            <span
+              class="sidera-language-dropdown__label"
+              {...option.editAttributes}
+            >
+              {option.label}
+            </span>
+            <span class="sidera-language-dropdown__check" aria-hidden="true">✓</span>
+          </button>
+        );
+      })
+    }
+  </div>
+</div>
+
+<script>
+  const initializeLanguageDropdown = (root: HTMLElement) => {
+    if (root.dataset.languageDropdownReady === "true") return;
+    root.dataset.languageDropdownReady = "true";
+
+    const localeStorageKey = "sidera-almanac:selected-locale";
+    const trigger = root.querySelector<HTMLButtonElement>("[data-language-trigger]");
+    const menu = root.querySelector<HTMLElement>("[data-language-menu]");
+    if (!trigger || !menu) return;
+
+    const options = () =>
+      Array.from(
+        menu.querySelectorAll<HTMLElement>(
+          '[data-language-option]:not([aria-disabled="true"])',
+        ),
+      );
+
+    const positionMenu = () => {
+      root.classList.remove("sidera-language-dropdown--drop-up");
+      root.style.removeProperty("--sidera-language-menu-shift");
+
+      const rootRect = root.getBoundingClientRect();
+      const below = window.innerHeight - rootRect.bottom - 8;
+      const above = rootRect.top - 8;
+      const useDropUp = below < Math.min(240, menu.scrollHeight) && above > below;
+      const availableHeight = Math.max(80, useDropUp ? above : below);
+
+      root.classList.toggle("sidera-language-dropdown--drop-up", useDropUp);
+      root.style.setProperty(
+        "--sidera-language-menu-max-height",
+        `${availableHeight}px`,
+      );
+
+      const menuRect = menu.getBoundingClientRect();
+      const edgeGap = 8;
+      const shift =
+        menuRect.left < edgeGap
+          ? edgeGap - menuRect.left
+          : menuRect.right > window.innerWidth - edgeGap
+            ? window.innerWidth - edgeGap - menuRect.right
+            : 0;
+      root.style.setProperty("--sidera-language-menu-shift", `${shift}px`);
+    };
+
+    const focusOption = (index: number) => {
+      const enabledOptions = options();
+      if (enabledOptions.length === 0) return;
+      const nextIndex = (index + enabledOptions.length) % enabledOptions.length;
+      enabledOptions[nextIndex]?.focus();
+    };
+
+    const setOpen = (
+      open: boolean,
+      focusTarget: "selected" | "first" | "last" | "trigger" | null = null,
+    ) => {
+      root.classList.toggle("sidera-language-dropdown--open", open);
+      trigger.setAttribute("aria-expanded", open ? "true" : "false");
+      menu.hidden = !open;
+
+      if (open) {
+        positionMenu();
+        const enabledOptions = options();
+        const selectedIndex = enabledOptions.findIndex(
+          (option) => option.getAttribute("aria-selected") === "true",
+        );
+        if (focusTarget === "first") focusOption(0);
+        if (focusTarget === "last") focusOption(enabledOptions.length - 1);
+        if (focusTarget === "selected") {
+          focusOption(selectedIndex >= 0 ? selectedIndex : 0);
+        }
+      } else {
+        root.classList.remove("sidera-language-dropdown--drop-up");
+        root.style.removeProperty("--sidera-language-menu-max-height");
+        root.style.removeProperty("--sidera-language-menu-shift");
+        if (focusTarget === "trigger") trigger.focus();
+      }
+    };
+
+    trigger.addEventListener("click", () => {
+      const open = trigger.getAttribute("aria-expanded") === "true";
+      setOpen(!open, open ? null : "selected");
+    });
+
+    trigger.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        setOpen(true, "selected");
+      }
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        setOpen(true, "first");
+      }
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
+        setOpen(true, "last");
+      }
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setOpen(false);
+      }
+    });
+
+    menu.addEventListener("keydown", (event) => {
+      const enabledOptions = options();
+      const currentIndex = enabledOptions.indexOf(
+        document.activeElement as HTMLElement,
+      );
+
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        focusOption(currentIndex + 1);
+      }
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
+        focusOption(currentIndex - 1);
+      }
+      if (event.key === "Home") {
+        event.preventDefault();
+        focusOption(0);
+      }
+      if (event.key === "End") {
+        event.preventDefault();
+        focusOption(enabledOptions.length - 1);
+      }
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setOpen(false, "trigger");
+      }
+      if (event.key === "Tab") {
+        setOpen(false);
+      }
+      if ((event.key === "Enter" || event.key === " ") && currentIndex >= 0) {
+        event.preventDefault();
+        enabledOptions[currentIndex]?.click();
+      }
+    });
+
+    menu.addEventListener("click", (event) => {
+      const editTarget = (event.target as Element).closest("[data-builder-edit]");
+      if (
+        document.body.hasAttribute("data-builder-edit-mode") &&
+        editTarget
+      ) {
+        return;
+      }
+
+      const target = (event.target as Element).closest<HTMLElement>(
+        "[data-language-option]",
+      );
+      if (!target || target.getAttribute("aria-disabled") === "true") return;
+
+      const nextLocale = target.dataset.locale;
+      if (nextLocale) {
+        try {
+          window.localStorage.setItem(localeStorageKey, nextLocale);
+        } catch {
+          // The explicit locale URL remains authoritative when storage is unavailable.
+        }
+      }
+
+      root.dispatchEvent(
+        new CustomEvent("localechange", {
+          bubbles: true,
+          detail: {
+            locale: nextLocale,
+            href: target.getAttribute("href"),
+          },
+        }),
+      );
+      setOpen(false);
+    });
+
+    document.addEventListener("pointerdown", (event) => {
+      if (!root.contains(event.target as Node)) setOpen(false);
+    });
+
+    window.addEventListener("resize", () => {
+      if (trigger.getAttribute("aria-expanded") === "true") positionMenu();
+    });
+
+    if (root.dataset.defaultOpen === "true") positionMenu();
+  };
+
+  document
+    .querySelectorAll<HTMLElement>("[data-language-dropdown]")
+    .forEach(initializeLanguageDropdown);
+</script>

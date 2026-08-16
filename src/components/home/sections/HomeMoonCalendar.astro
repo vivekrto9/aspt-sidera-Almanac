@@ -1,0 +1,125 @@
+---
+import Button from "../../shared/Button.astro";
+import MoonPhaseItem from "../../shared/MoonPhaseItem.astro";
+import SectionHeading from "../../shared/SectionHeading.astro";
+import type { HomeMoonCalendarCopy } from "../../../data/locale/home/sections/moon-calendar.ts";
+import "../../../styles/home/sections/home-moon-calendar.css";
+
+type EditAttributes = Record<string, string>;
+
+type Props = {
+  copy: HomeMoonCalendarCopy;
+  actionHref: string;
+  moonPath: string;
+  currentMilestoneIndex: number;
+  available: boolean;
+  unavailableTitle: string;
+  unavailableDescription: string;
+  editAttributes?: (field: string) => EditAttributes;
+};
+
+const {
+  copy,
+  actionHref,
+  moonPath,
+  currentMilestoneIndex,
+  available,
+  unavailableTitle,
+  unavailableDescription,
+  editAttributes = () => ({}),
+} = Astro.props as Props;
+---
+
+<section class="home-moon-calendar" id="moon" aria-labelledby="home-moon-calendar-title">
+  <div class="home-moon-calendar__stars" aria-hidden="true">
+    <span></span><span></span><span></span><span></span><span></span><span></span>
+  </div>
+
+  <div class="home-moon-calendar__inner">
+    <div class="home-moon-calendar__current">
+      <SectionHeading
+        title={`${copy.titleAccent} ${copy.titleRest}`}
+        eyebrow={copy.eyebrow}
+        headingId="home-moon-calendar-title"
+        tone="inverse"
+        class="home-moon-calendar__heading"
+        eyebrowEditAttributes={editAttributes("eyebrow")}
+      >
+        <Fragment slot="title">
+          <em {...editAttributes("title_accent")}>{copy.titleAccent}</em>{" "}<span
+            {...editAttributes("title_rest")}>{copy.titleRest}</span
+          >
+        </Fragment>
+      </SectionHeading>
+
+      {available ? <div class="home-moon-calendar__current-phase">
+        <svg class="home-moon-calendar__moon" viewBox="0 0 132 132" aria-hidden="true">
+          <defs>
+            <radialGradient id="home-moon-light" cx="38%" cy="34%" r="70%">
+              <stop offset="0%" stop-color="#f8f0df" />
+              <stop offset="60%" stop-color="#eadabc" />
+              <stop offset="100%" stop-color="#dcc9a8" />
+            </radialGradient>
+          </defs>
+          <circle class="home-moon-calendar__moon-disc" cx="66" cy="66" r="62" />
+          {moonPath ? <path class="home-moon-calendar__moon-light" d={moonPath} /> : null}
+        </svg>
+        <div class="home-moon-calendar__current-copy">
+          <h3>{copy.currentPhaseName}</h3>
+          <p class="home-moon-calendar__meta">
+            {copy.currentPhaseMeta}
+          </p>
+          <p class="home-moon-calendar__description">
+            {copy.currentPhaseDescription}
+          </p>
+          <Button
+            href={actionHref}
+            variant="secondary"
+            size="compact"
+            class="home-moon-calendar__cta"
+            editAttributes={editAttributes("cta")}
+          >
+            {copy.ctaLabel}
+            <span slot="trailing-icon">→</span>
+          </Button>
+        </div>
+      </div> : <div class="home-moon-calendar__unavailable" role="status">
+        <h3>{unavailableTitle}</h3>
+        <p>{unavailableDescription}</p>
+        <Button href={actionHref} variant="secondary" size="compact" class="home-moon-calendar__cta" editAttributes={editAttributes("cta")}>
+          {copy.ctaLabel}
+          <span slot="trailing-icon">→</span>
+        </Button>
+      </div>}
+    </div>
+
+    {available ? <div class="home-moon-calendar__timeline">
+      <div class="home-moon-calendar__phases" role="list">
+        {
+          copy.phases.map((phase, index) => (
+            <MoonPhaseItem
+              phase={phase.phase}
+              name={phase.name}
+              date={phase.date}
+              tone="inverse"
+              layout="compact"
+              current={index === currentMilestoneIndex}
+              class="home-moon-calendar__phase"
+            />
+          ))
+        }
+      </div>
+
+      <div class="home-moon-calendar__events">
+        <article>
+          <p {...editAttributes("next_full_label")}>{copy.nextFullLabel}</p>
+          <h3>{copy.nextFullValue}</h3>
+        </article>
+        <article>
+          <p {...editAttributes("next_new_label")}>{copy.nextNewLabel}</p>
+          <h3>{copy.nextNewValue}</h3>
+        </article>
+      </div>
+    </div> : null}
+  </div>
+</section>

@@ -1,0 +1,69 @@
+name: Deploy Template Preview
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  deploy-template-preview:
+    name: Deploy template preview Worker
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_DEV_WORKERS_SUBDOMAIN: ${{ secrets.CLOUDFLARE_DEV_WORKERS_SUBDOMAIN }}
+      EMDASH_ENCRYPTION_KEY: ${{ secrets.EMDASH_ENCRYPTION_KEY }}
+      BUILDER_MCP_TOKEN: ${{ secrets.BUILDER_MCP_TOKEN }}
+      BUILDER_MCP_PROVISION_SECRET: ${{ secrets.BUILDER_MCP_PROVISION_SECRET }}
+      GH_REPOSITORY_VARIABLES_TOKEN: ${{ secrets.GH_REPOSITORY_VARIABLES_TOKEN }}
+      PREVIEW_SITE_D1_DATABASE_ID: ${{ vars.PREVIEW_SITE_D1_DATABASE_ID }}
+      PREVIEW_SITE_SESSION_KV_NAMESPACE_ID: ${{ vars.PREVIEW_SITE_SESSION_KV_NAMESPACE_ID }}
+      PREVIEW_SITE_URL: ${{ vars.PREVIEW_SITE_URL }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run test
+      - run: pnpm run scan:safety
+      - run: pnpm run d1:schema:check
+      - run: pnpm run typecheck
+      - run: pnpm run build
+      - run: node scripts/ensure-cloudflare-resources.mjs preview
+      - run: node scripts/render-wrangler-config.mjs preview
+      - run: node scripts/write-worker-secrets-file.mjs
+      - run: pnpm exec wrangler d1 migrations apply sidera-almanac-preview-site --env preview --remote --config .wrangler/generated/wrangler.preview.jsonc
+      - run: node scripts/seed-template-project-assets.mjs preview
+      - run: pnpm exec wrangler deploy --env preview --config .wrangler/generated/wrangler.preview.jsonc --secrets-file "$RUNNER_TEMP/sidera-almanac-worker-secrets.json"
+      - run: node scripts/prepare-deployed-emdash.mjs preview
+      - name: Smoke template preview routes
+        run: |
+          set -euo pipefail
+          smoke() {
+            path="$1"
+            expected="$2"
+            deadline=$((SECONDS + 180))
+            last_status=""
+            while [ "$SECONDS" -le "$deadline" ]; do
+              status="$(curl -sS --max-time 30 -o /dev/null -w '%{http_code}' "${PREVIEW_SITE_URL}${path}" || true)"
+              last_status="$status"
+              case ",${expected}," in
+                *,"${status}",*) echo "${path} -> ${status}"; return 0 ;;
+              esac
+              sleep 5
+            done
+            echo "${path} returned ${last_status}, expected ${expected}" >&2
+            exit 1
+          }
+          smoke "/" "200,301,302"
+          smoke "/api/astropages/generated-site/health" "200"
+          smoke "/api/astropages/generated-site/edit-readiness" "200"
+          smoke "/_assets/aliases/logo/logo.svg" "200,301,302"
+          smoke "/_emdash/admin" "200,302"
+          smoke "/_emdash/api/setup/status" "200"

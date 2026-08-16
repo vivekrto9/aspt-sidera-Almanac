@@ -1,0 +1,621 @@
+---
+import BrandLogo from "./BrandLogo.astro";
+import Button from "./Button.astro";
+import IconButton from "./IconButton.astro";
+import LanguageDropdown from "./header/LanguageDropdown.astro";
+import { getLocaleFromUrl, localizePath } from "../../data/localization-contract.ts";
+import { getSharedHeaderCopy } from "../../data/locale/shared/header.ts";
+import { getSharedFooterCopy } from "../../data/locale/shared/footer.ts";
+import { getCustomerSession } from "../../server/aggregator/customer-auth.ts";
+import { getCustomerWalletSummary } from "../../server/aggregator/wallet-store.ts";
+import type { RuntimeEnv } from "../../server/aggregator/runtime.ts";
+import { getRuntimeEnv } from "../../server/generated-site/request.ts";
+import "../../styles/shared/header.css";
+
+type NavigationItem = {
+  label: string;
+  href: string;
+  current?: boolean;
+  editAttributes?: Record<string, string>;
+};
+
+type HeaderAction = {
+  id: string;
+  label: string;
+  href?: string;
+  ariaLabel?: string;
+  variant?: "primary" | "outline" | "ghost" | "link";
+  disabled?: boolean;
+  badge?: string;
+  target?: "_self" | "_blank" | "_parent" | "_top";
+  rel?: string;
+  editAttributes?: Record<string, string>;
+};
+
+type LanguageOption = {
+  code: string;
+  label: string;
+  href?: string;
+  lang?: string;
+  hreflang?: string;
+  disabled?: boolean;
+  editAttributes: Record<string, string>;
+};
+
+type LanguageConfig = {
+  activeLocale: string;
+  options: LanguageOption[];
+  triggerLabel: string;
+  menuLabel: string;
+};
+
+type ChromeNavigationConfig = {
+  content: Record<string, string>;
+  edit: (field: string) => Record<string, string | boolean | undefined>;
+};
+
+type Props = {
+  id?: string;
+  brandLabel: string;
+  brandHref: string;
+  brandAriaLabel?: string;
+  navigationLabel: string;
+  navigation: NavigationItem[];
+  chromeNavigation?: ChromeNavigationConfig;
+  actions?: HeaderAction[];
+  language?: LanguageConfig;
+  mobileUtilityActionId?: string;
+  menuLabel: string;
+  closeMenuLabel: string;
+  sticky?: boolean;
+  class?: string;
+  brandEditAttributes?: Record<string, string>;
+};
+
+const {
+  id = "site-header",
+  brandLabel,
+  brandHref,
+  brandAriaLabel,
+  navigationLabel,
+  navigation,
+  chromeNavigation,
+  actions = [],
+  language,
+  mobileUtilityActionId,
+  menuLabel,
+  closeMenuLabel,
+  sticky = true,
+  class: className,
+  brandEditAttributes = {},
+} = Astro.props as Props;
+
+const panelId = `${id}-mobile-panel`;
+const locale = getLocaleFromUrl(Astro.request.url);
+const sharedHeaderCopy = getSharedHeaderCopy(locale);
+const sharedFooterCopy = getSharedFooterCopy(locale);
+const chromeNavigationEditAttributes = (field: string) =>
+  chromeNavigation
+    ? Object.fromEntries(
+        Object.entries(chromeNavigation.edit(field))
+          .filter((entry): entry is [string, string | boolean] => entry[1] !== undefined)
+          .map(([key, value]) => [key, value === true ? "true" : String(value)]),
+      )
+    : undefined;
+const blogLabel = chromeNavigation?.content.nav_blog || sharedHeaderCopy.blogLabel;
+const shopLabel = chromeNavigation?.content.nav_shop || sharedHeaderCopy.shopLabel;
+const moreLabel = chromeNavigation?.content.nav_more || sharedHeaderCopy.moreLabel;
+const walletLabel =
+  chromeNavigation?.content.header_wallet_label || sharedHeaderCopy.walletLabel;
+const walletEditAttributes = chromeNavigationEditAttributes("header_wallet_label");
+const isBlogHref = (href: string) =>
+  href === "#blog" || /^\/blog(?:[/?#]|$)/.test(href);
+const isShopHref = (href: string) => /^\/shop(?:[/?#]|$)/.test(href);
+const existingShopItem = navigation.find((item) => isShopHref(item.href));
+const resolvedNavigation: NavigationItem[] = navigation
+  .filter((item) => !isShopHref(item.href))
+  .map((item) =>
+    isBlogHref(item.href)
+      ? {
+          ...item,
+          label: blogLabel,
+          editAttributes: chromeNavigationEditAttributes("nav_blog") ?? item.editAttributes,
+        }
+      : item,
+  );
+let blogIndex = resolvedNavigation.findIndex((item) => isBlogHref(item.href));
+if (blogIndex === -1) {
+  resolvedNavigation.push({
+    label: blogLabel,
+    href: localizePath("/blog", locale),
+    current: Astro.url.pathname === "/blog" || Astro.url.pathname.startsWith("/blog/"),
+    editAttributes: chromeNavigationEditAttributes("nav_blog"),
+  });
+  blogIndex = resolvedNavigation.length - 1;
+}
+resolvedNavigation.splice(blogIndex + 1, 0, {
+  ...(existingShopItem ?? {
+    href: localizePath("/shop", locale),
+    current: Astro.url.pathname === "/shop" || Astro.url.pathname.startsWith("/shop/"),
+  }),
+  label: shopLabel,
+  editAttributes:
+    chromeNavigationEditAttributes("nav_shop") ?? existingShopItem?.editAttributes,
+});
+const moreNavigationItems = resolvedNavigation.filter(
+  (item) => isBlogHref(item.href) || isShopHref(item.href),
+);
+const primaryNavigationItems = resolvedNavigation.filter(
+  (item) => !isBlogHref(item.href) && !isShopHref(item.href),
+);
+const moreIsCurrent = moreNavigationItems.some((item) => item.current);
+const moreEditAttributes = chromeNavigationEditAttributes("nav_more");
+const moreMenuId = `${id}-more-menu`;
+const runtimeEnv = (await getRuntimeEnv(Astro)) as RuntimeEnv;
+const customerSession = await getCustomerSession(runtimeEnv, Astro.request).catch(
+  () => null,
+);
+const customerWallet = customerSession
+  ? await getCustomerWalletSummary(runtimeEnv, customerSession.account.id, locale).catch(() => null)
+  : null;
+const walletBalanceLabel = customerWallet?.balance ?? "$0";
+const walletHref = localizePath("/wallet", locale);
+const resolvedActions = actions.map((action) =>
+  customerSession && action.id === "sign-in"
+    ? {
+        ...action,
+        id: "account",
+        label: sharedFooterCopy.accountLabel,
+        href: localizePath("/account", locale),
+        editAttributes: undefined,
+      }
+    : action,
+);
+const resolvedMobileUtilityActionId =
+  customerSession && mobileUtilityActionId === "sign-in"
+    ? "account"
+    : mobileUtilityActionId;
+const mobileUtilityAction =
+  resolvedActions.find((action) => action.id === resolvedMobileUtilityActionId) ??
+  resolvedActions.find(
+    (action) => action.variant === "ghost" || action.variant === "link",
+  );
+const mobilePanelActions = resolvedActions.filter(
+  (action) => action.id !== mobileUtilityAction?.id,
+);
+const classes = [
+  "sidera-header",
+  sticky && "sidera-header--sticky",
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+---
+
+<header
+  id={id}
+  class={classes}
+  data-sidera-header
+  data-close-menu-label={closeMenuLabel}
+>
+  <div class="sidera-header__inner">
+    <div class="sidera-header__mobile-trigger">
+      <IconButton
+        id={`${id}-menu-trigger`}
+        ariaLabel={menuLabel}
+        variant="ghost"
+        expanded={false}
+        controls={panelId}
+        class="sidera-header__menu-button"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path class="sidera-header__menu-line sidera-header__menu-line--top" d="M4 7h16" />
+          <path class="sidera-header__menu-line sidera-header__menu-line--middle" d="M4 12h16" />
+          <path class="sidera-header__menu-line sidera-header__menu-line--bottom" d="M4 17h16" />
+        </svg>
+      </IconButton>
+    </div>
+
+    <BrandLogo
+      label={brandLabel}
+      href={brandHref}
+      ariaLabel={brandAriaLabel}
+      editAttributes={brandEditAttributes}
+      class="sidera-header__brand"
+    />
+
+    <nav class="sidera-header__desktop-nav" aria-label={navigationLabel}>
+      <ul class="sidera-header__nav-list">
+        {
+          primaryNavigationItems.map((item) => (
+            <li>
+              <a
+                class="sidera-header__nav-link"
+                href={item.href}
+                aria-current={item.current ? "page" : undefined}
+                {...item.editAttributes}
+              >
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+        <li class="sidera-header__more" data-header-more>
+          <button
+            class="sidera-header__nav-link sidera-header__more-trigger"
+            type="button"
+            aria-haspopup="menu"
+            aria-expanded="false"
+            aria-controls={moreMenuId}
+            aria-current={moreIsCurrent ? "page" : undefined}
+            data-header-more-trigger
+          >
+            <span {...moreEditAttributes}>{moreLabel}</span>
+            <svg viewBox="0 0 12 8" aria-hidden="true">
+              <path d="m1.5 1.5 4.5 4 4.5-4" />
+            </svg>
+          </button>
+          <div
+            id={moreMenuId}
+            class="sidera-header__more-menu"
+            role="menu"
+            hidden
+            data-header-more-menu
+          >
+            {
+              moreNavigationItems.map((item) => (
+                <a
+                  class="sidera-header__more-link"
+                  href={item.href}
+                  aria-current={item.current ? "page" : undefined}
+                  role="menuitem"
+                  tabindex="-1"
+                  {...item.editAttributes}
+                >
+                  {item.label}
+                </a>
+              ))
+            }
+          </div>
+        </li>
+      </ul>
+    </nav>
+
+    <div class="sidera-header__desktop-utilities">
+      {
+        customerSession ? (
+          <a
+            class="sidera-header__wallet"
+            href={walletHref}
+            data-header-wallet
+            aria-label={`${walletLabel}: ${walletBalanceLabel}`}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4.75 7.5h12.5a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H6.75a2 2 0 0 1-2-2v-9Z" />
+              <path d="M6 7.5V6.25A1.75 1.75 0 0 1 7.75 4.5h8.5" />
+              <path d="M15.25 11.25h4v3.5h-4a1.75 1.75 0 1 1 0-3.5Z" />
+            </svg>
+            <span class="sidera-header__wallet-label" {...walletEditAttributes}>{walletLabel}</span>
+            <strong data-wallet-balance aria-live="polite">{walletBalanceLabel}</strong>
+          </a>
+        ) : null
+      }
+
+      {
+        language ? (
+          <LanguageDropdown
+            id={`${id}-desktop-language`}
+            activeLocale={language.activeLocale}
+            options={language.options}
+            triggerLabel={language.triggerLabel}
+            menuLabel={language.menuLabel}
+          />
+        ) : null
+      }
+
+      <div class="sidera-header__actions">
+        {
+          resolvedActions.map((action) => (
+            <span
+              class="sidera-header__action"
+              data-header-action={action.id}
+            >
+              <Button
+                href={action.href}
+                variant={action.variant ?? (action.href ? "ghost" : "primary")}
+                size="compact"
+                ariaLabel={action.ariaLabel}
+                disabled={action.disabled}
+                target={action.target}
+                rel={action.rel}
+                editAttributes={action.editAttributes}
+              >
+                {action.label}
+                {action.badge ? (
+                  <span class="sidera-header__action-badge" aria-hidden="true">
+                    {action.badge}
+                  </span>
+                ) : null}
+              </Button>
+            </span>
+          ))
+        }
+      </div>
+    </div>
+
+    <div class="sidera-header__mobile-quick-utilities">
+      {
+        customerSession ? (
+          <a
+            class="sidera-header__wallet sidera-header__wallet--mobile"
+            href={walletHref}
+            data-header-wallet
+            aria-label={`${walletLabel}: ${walletBalanceLabel}`}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4.75 7.5h12.5a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H6.75a2 2 0 0 1-2-2v-9Z" />
+              <path d="M6 7.5V6.25A1.75 1.75 0 0 1 7.75 4.5h8.5" />
+              <path d="M15.25 11.25h4v3.5h-4a1.75 1.75 0 1 1 0-3.5Z" />
+            </svg>
+            <span class="sidera-header__wallet-label" {...walletEditAttributes}>{walletLabel}</span>
+            <strong data-wallet-balance aria-live="polite">{walletBalanceLabel}</strong>
+          </a>
+        ) : null
+      }
+
+      {
+        language ? (
+          <LanguageDropdown
+            id={`${id}-mobile-language`}
+            activeLocale={language.activeLocale}
+            options={language.options}
+            triggerLabel={language.triggerLabel}
+            menuLabel={language.menuLabel}
+          />
+        ) : null
+      }
+
+      {
+        mobileUtilityAction ? (
+          <span
+            class="sidera-header__action sidera-header__mobile-utility-action"
+            data-header-action={mobileUtilityAction.id}
+          >
+            <Button
+              href={mobileUtilityAction.href}
+              variant={mobileUtilityAction.variant ?? "ghost"}
+              size="compact"
+              ariaLabel={mobileUtilityAction.ariaLabel}
+              disabled={mobileUtilityAction.disabled}
+              target={mobileUtilityAction.target}
+              rel={mobileUtilityAction.rel}
+              editAttributes={mobileUtilityAction.editAttributes}
+            >
+              {mobileUtilityAction.label}
+              {mobileUtilityAction.badge ? (
+                <span class="sidera-header__action-badge" aria-hidden="true">
+                  {mobileUtilityAction.badge}
+                </span>
+              ) : null}
+            </Button>
+          </span>
+        ) : null
+      }
+    </div>
+  </div>
+
+  <div id={panelId} class="sidera-header__mobile-panel" hidden data-header-panel>
+    <nav class="sidera-header__mobile-nav" aria-label={navigationLabel}>
+      <ul class="sidera-header__mobile-list">
+        {
+          primaryNavigationItems.map((item) => (
+            <li>
+              <a
+                class="sidera-header__mobile-link"
+                href={item.href}
+                aria-current={item.current ? "page" : undefined}
+                {...item.editAttributes}
+              >
+                {item.label}
+                <span aria-hidden="true">↗</span>
+              </a>
+            </li>
+          ))
+        }
+        <li>
+          <details class="sidera-header__mobile-more">
+            <summary class="sidera-header__mobile-link">
+              <span {...moreEditAttributes}>{moreLabel}</span>
+              <svg viewBox="0 0 12 8" aria-hidden="true">
+                <path d="m1.5 1.5 4.5 4 4.5-4" />
+              </svg>
+            </summary>
+            <div class="sidera-header__mobile-more-menu">
+              {
+                moreNavigationItems.map((item) => (
+                  <a
+                    class="sidera-header__mobile-more-link"
+                    href={item.href}
+                    aria-current={item.current ? "page" : undefined}
+                    {...item.editAttributes}
+                  >
+                    {item.label}
+                  </a>
+                ))
+              }
+            </div>
+          </details>
+        </li>
+      </ul>
+    </nav>
+
+    {
+      mobilePanelActions.length > 0 ? (
+      <div class="sidera-header__mobile-actions">
+        {
+          mobilePanelActions.map((action) => (
+            <span
+              class="sidera-header__action"
+              data-header-action={action.id}
+            >
+              <Button
+                href={action.href}
+                variant={action.variant ?? (action.href ? "ghost" : "primary")}
+                size="standard"
+                ariaLabel={action.ariaLabel}
+                disabled={action.disabled}
+                fullWidth
+                target={action.target}
+                rel={action.rel}
+                editAttributes={action.editAttributes}
+              >
+                {action.label}
+                {action.badge ? (
+                  <span class="sidera-header__action-badge" aria-hidden="true">
+                    {action.badge}
+                  </span>
+                ) : null}
+              </Button>
+            </span>
+          ))
+        }
+      </div>
+      ) : null
+    }
+  </div>
+</header>
+
+<script>
+  const initializeHeader = (header: HTMLElement) => {
+    if (header.dataset.sideraHeaderReady === "true") return;
+    header.dataset.sideraHeaderReady = "true";
+
+    const trigger = header.querySelector<HTMLButtonElement>(
+      ".sidera-header__menu-button",
+    );
+    const panel = header.querySelector<HTMLElement>("[data-header-panel]");
+    if (!trigger || !panel) return;
+
+    const menuLabel = trigger.getAttribute("aria-label") ?? "";
+    const closeMenuLabel =
+      header.getAttribute("data-close-menu-label") ?? menuLabel;
+
+    const initializeMoreMenu = (root: HTMLElement) => {
+      const moreTrigger = root.querySelector<HTMLButtonElement>(
+        "[data-header-more-trigger]",
+      );
+      const moreMenu = root.querySelector<HTMLElement>("[data-header-more-menu]");
+      if (!moreTrigger || !moreMenu) return;
+
+      const items = () =>
+        Array.from(moreMenu.querySelectorAll<HTMLAnchorElement>('[role="menuitem"]'));
+      const setMoreOpen = (open: boolean, focusIndex?: number) => {
+        root.classList.toggle("sidera-header__more--open", open);
+        moreTrigger.setAttribute("aria-expanded", open ? "true" : "false");
+        moreMenu.hidden = !open;
+        if (open && focusIndex !== undefined) items()[focusIndex]?.focus();
+      };
+
+      root.addEventListener("mouseenter", () => setMoreOpen(true));
+      root.addEventListener("mouseleave", () => {
+        if (!root.matches(":focus-within")) setMoreOpen(false);
+      });
+      root.addEventListener("focusin", () => setMoreOpen(true));
+      root.addEventListener("focusout", (event) => {
+        if (!root.contains(event.relatedTarget as Node | null)) setMoreOpen(false);
+      });
+      moreTrigger.addEventListener("click", () => {
+        setMoreOpen(moreTrigger.getAttribute("aria-expanded") !== "true");
+      });
+      moreTrigger.addEventListener("keydown", (event) => {
+        if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+          event.preventDefault();
+          const moreItems = items();
+          setMoreOpen(true, event.key === "ArrowDown" ? 0 : moreItems.length - 1);
+        }
+        if (event.key === "Escape") {
+          event.preventDefault();
+          setMoreOpen(false);
+        }
+      });
+      moreMenu.addEventListener("keydown", (event) => {
+        const moreItems = items();
+        const currentIndex = moreItems.indexOf(document.activeElement as HTMLAnchorElement);
+        if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+          event.preventDefault();
+          const direction = event.key === "ArrowDown" ? 1 : -1;
+          moreItems[(currentIndex + direction + moreItems.length) % moreItems.length]?.focus();
+        }
+        if (event.key === "Home" || event.key === "End") {
+          event.preventDefault();
+          moreItems[event.key === "Home" ? 0 : moreItems.length - 1]?.focus();
+        }
+        if (event.key === "Escape") {
+          event.preventDefault();
+          setMoreOpen(false);
+          moreTrigger.focus();
+        }
+      });
+      document.addEventListener("pointerdown", (event) => {
+        if (!root.contains(event.target as Node)) setMoreOpen(false);
+      });
+    };
+
+    header.querySelectorAll<HTMLElement>("[data-header-more]").forEach(initializeMoreMenu);
+
+    const setOpen = (open: boolean, returnFocus = false) => {
+      header.classList.toggle("sidera-header--menu-open", open);
+      trigger.setAttribute("aria-expanded", open ? "true" : "false");
+      trigger.setAttribute("aria-label", open ? closeMenuLabel : menuLabel);
+      panel.hidden = !open;
+      if (!open && returnFocus) trigger.focus();
+    };
+
+    trigger.addEventListener("click", () => {
+      setOpen(trigger.getAttribute("aria-expanded") !== "true");
+    });
+
+    header.addEventListener("keydown", (event) => {
+      if (
+        event.key === "Escape" &&
+        (event.target as Element).closest(".sidera-language-dropdown__menu")
+      ) {
+        return;
+      }
+      if (event.key === "Escape" && trigger.getAttribute("aria-expanded") === "true") {
+        event.preventDefault();
+        setOpen(false, true);
+      }
+    });
+
+    panel.addEventListener("click", (event) => {
+      if ((event.target as Element).closest("a")) setOpen(false);
+    });
+
+    document.addEventListener("pointerdown", (event) => {
+      if (!header.contains(event.target as Node)) setOpen(false);
+    });
+
+    window.addEventListener("resize", () => {
+      if (window.matchMedia("(min-width: 64rem)").matches) setOpen(false);
+    });
+
+    header.querySelectorAll<HTMLElement>("[data-header-action]").forEach((wrapper) => {
+      wrapper.addEventListener("click", (event) => {
+        const control = (event.target as Element).closest("button");
+        if (!control) return;
+        header.dispatchEvent(
+          new CustomEvent("headeraction", {
+            bubbles: true,
+            detail: { id: wrapper.dataset.headerAction },
+          }),
+        );
+        setOpen(false);
+      });
+    });
+  };
+
+  document
+    .querySelectorAll<HTMLElement>("[data-sidera-header]")
+    .forEach(initializeHeader);
+</script>

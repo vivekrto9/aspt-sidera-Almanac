@@ -1,0 +1,109 @@
+---
+import "../../styles/shared/rating-stars.css";
+
+type RatingStarsSize = "compact" | "standard" | "large";
+type RatingStarsTone = "gold" | "inverse";
+
+type Props = {
+  value?: number;
+  max?: number;
+  interactive?: boolean;
+  name?: string;
+  required?: boolean;
+  disabled?: boolean;
+  form?: string;
+  size?: RatingStarsSize;
+  tone?: RatingStarsTone;
+  ariaLabel?: string;
+  ariaDescribedby?: string;
+  valueLabels?: readonly string[];
+  class?: string;
+  [attribute: string]: unknown;
+};
+
+const {
+  value = 0,
+  max = 5,
+  interactive = false,
+  name = "rating",
+  required = false,
+  disabled = false,
+  form,
+  size = "standard",
+  tone = "gold",
+  ariaLabel,
+  ariaDescribedby,
+  valueLabels,
+  class: className,
+  ...ratingAttributes
+} = Astro.props as Props;
+
+const safeMax = Math.max(1, Math.floor(max));
+const safeValue = Math.min(safeMax, Math.max(0, value));
+const roundedValue = Math.round(safeValue);
+const stars = Array.from({ length: safeMax }, (_, index) => index + 1);
+const classes = [
+  "sidera-rating-stars",
+  `sidera-rating-stars--${size}`,
+  `sidera-rating-stars--${tone}`,
+  interactive && "sidera-rating-stars--interactive",
+  disabled && "sidera-rating-stars--disabled",
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+
+const readOnlyLabel = ariaLabel ?? `${safeValue} out of ${safeMax} stars`;
+const interactiveLabel = ariaLabel ?? "Choose a rating";
+---
+
+{
+  interactive ? (
+    <div
+      {...ratingAttributes}
+      class={classes}
+      role="radiogroup"
+      aria-label={interactiveLabel}
+      aria-describedby={ariaDescribedby}
+    >
+      {stars.map((star) => (
+        <label class="sidera-rating-stars__choice">
+          <input
+            class="sidera-rating-stars__input"
+            type="radio"
+            name={name}
+            value={star}
+            checked={roundedValue === star}
+            required={required}
+            disabled={disabled}
+            form={form}
+            aria-label={valueLabels?.[star - 1] ?? `${star} out of ${safeMax} stars`}
+          />
+          <span class="sidera-rating-stars__symbol" aria-hidden="true">★</span>
+        </label>
+      ))}
+    </div>
+  ) : (
+    <span
+      {...ratingAttributes}
+      class={classes}
+      role="img"
+      aria-label={readOnlyLabel}
+      aria-describedby={ariaDescribedby}
+    >
+      {stars.map((star) => (
+        <span
+          class:list={[
+            "sidera-rating-stars__symbol",
+            star <= roundedValue
+              ? "sidera-rating-stars__symbol--filled"
+              : "sidera-rating-stars__symbol--empty",
+          ]}
+          aria-hidden="true"
+        >
+          {star <= roundedValue ? "★" : "☆"}
+        </span>
+      ))}
+    </span>
+  )
+}

@@ -1,0 +1,88 @@
+---
+import SectionHeading from "../../shared/SectionHeading.astro";
+import "../../../styles/glossary/sections/glossary-definitions.css";
+
+type GlossaryTerm = {
+  key: string;
+  name: string;
+  definition: string;
+  nameEditAttributes?: Record<string, string>;
+  definitionEditAttributes?: Record<string, string>;
+};
+
+type GlossaryGroup = {
+  id: string;
+  letter: string;
+  terms: GlossaryTerm[];
+};
+
+type Props = {
+  groups: GlossaryGroup[];
+  emptyTitle: string;
+  emptyTitleEditAttributes?: Record<string, string>;
+};
+
+const { groups, emptyTitle, emptyTitleEditAttributes = {} } = Astro.props as Props;
+---
+
+<section
+  id="glossary-definitions"
+  class="sidera-glossary-definitions"
+  data-screen-label="Glossary definitions"
+>
+  <div class="sidera-glossary-definitions__inner">
+    {
+      groups.map((group) => {
+        const headingId = `g-${group.letter}-heading`;
+
+        return (
+          <section
+            id={group.id}
+            class="sidera-glossary-definitions__group"
+            aria-labelledby={headingId}
+            data-glossary-group={group.id}
+          >
+            <SectionHeading
+              class="sidera-glossary-definitions__heading"
+              title={group.letter}
+              headingId={headingId}
+              headingLevel={2}
+              size="section"
+              measure="full"
+            />
+
+            <div class="sidera-glossary-definitions__terms">
+              {group.terms.map((term) => (
+                <article
+                  class="sidera-glossary-definitions__term"
+                  data-glossary-term={term.key}
+                >
+                  <h3
+                    class="sidera-glossary-definitions__term-name"
+                    {...term.nameEditAttributes}
+                  >
+                    {term.name}
+                  </h3>
+                  <p
+                    class="sidera-glossary-definitions__term-description"
+                    {...term.definitionEditAttributes}
+                  >
+                    {term.definition}
+                  </p>
+                </article>
+              ))}
+            </div>
+          </section>
+        );
+      })
+    }
+    <p
+      class="sidera-glossary-definitions__empty"
+      data-glossary-empty
+      hidden
+      {...emptyTitleEditAttributes}
+    >
+      {emptyTitle}
+    </p>
+  </div>
+</section>

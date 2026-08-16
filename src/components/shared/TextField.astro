@@ -1,0 +1,88 @@
+---
+import "../../styles/shared/text-field.css";
+
+type TextFieldType = "text" | "email" | "password" | "tel" | "search";
+type TextFieldInputMode =
+  | "none"
+  | "text"
+  | "decimal"
+  | "numeric"
+  | "tel"
+  | "search"
+  | "email"
+  | "url";
+
+type Props = {
+  type?: TextFieldType;
+  id?: string;
+  name?: string;
+  value?: string | number;
+  placeholder?: string;
+  autocomplete?: string;
+  inputmode?: TextFieldInputMode;
+  pattern?: string;
+  minlength?: number;
+  maxlength?: number;
+  required?: boolean;
+  disabled?: boolean;
+  readonly?: boolean;
+  autofocus?: boolean;
+  spellcheck?: boolean;
+  form?: string;
+  ariaLabel?: string;
+  ariaDescribedby?: string;
+  invalid?: boolean;
+  class?: string;
+  [attribute: string]: unknown;
+};
+
+const {
+  type = "text",
+  id,
+  name,
+  value,
+  placeholder,
+  autocomplete,
+  inputmode,
+  pattern,
+  minlength,
+  maxlength,
+  required = false,
+  disabled = false,
+  readonly: readOnly = false,
+  autofocus = false,
+  spellcheck,
+  form,
+  ariaLabel,
+  ariaDescribedby,
+  invalid = false,
+  class: className,
+  ...inputAttributes
+} = Astro.props as Props;
+
+const classes = ["sidera-text-field", className].filter(Boolean).join(" ");
+---
+
+<input
+  {...inputAttributes}
+  class={classes}
+  type={type}
+  id={id}
+  name={name}
+  value={value}
+  placeholder={placeholder}
+  autocomplete={autocomplete}
+  inputmode={inputmode}
+  pattern={pattern}
+  minlength={minlength}
+  maxlength={maxlength}
+  required={required}
+  disabled={disabled}
+  readonly={readOnly}
+  autofocus={autofocus}
+  spellcheck={spellcheck}
+  form={form}
+  aria-label={ariaLabel}
+  aria-describedby={ariaDescribedby}
+  aria-invalid={invalid ? "true" : undefined}
+/>

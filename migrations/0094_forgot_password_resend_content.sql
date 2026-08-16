@@ -1,0 +1,5 @@
+ALTER TABLE ec_site_forgot_password ADD COLUMN forgot_password_resent_success_label TEXT;
+ALTER TABLE ec_site_forgot_password ADD COLUMN forgot_password_resend_prompt TEXT;
+ALTER TABLE ec_site_forgot_password ADD COLUMN forgot_password_resend_label TEXT;
+ALTER TABLE ec_site_forgot_password ADD COLUMN forgot_password_resend_countdown_label TEXT;
+ALTER TABLE ec_site_forgot_password ADD COLUMN forgot_password_resend_ready_label TEXT;

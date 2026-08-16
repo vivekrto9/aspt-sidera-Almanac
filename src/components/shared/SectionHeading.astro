@@ -1,0 +1,122 @@
+---
+import Button from "./Button.astro";
+import "../../styles/shared/section-heading.css";
+
+type HeadingLevel = 1 | 2 | 3;
+type HeadingAlignment = "left" | "center" | "right";
+type HeadingTone = "default" | "inverse";
+type HeadingSize = "section" | "page";
+type HeadingMeasure = "default" | "full";
+
+type Props = {
+  title: string;
+  eyebrow?: string;
+  description?: string;
+  headingLevel?: HeadingLevel;
+  alignment?: HeadingAlignment;
+  tone?: HeadingTone;
+  size?: HeadingSize;
+  measure?: HeadingMeasure;
+  actionLabel?: string;
+  actionHref?: string;
+  actionAriaLabel?: string;
+  actionTarget?: "_self" | "_blank" | "_parent" | "_top";
+  actionRel?: string;
+  id?: string;
+  headingId?: string;
+  class?: string;
+  eyebrowEditAttributes?: Record<string, string>;
+  titleEditAttributes?: Record<string, string>;
+  descriptionEditAttributes?: Record<string, string>;
+  actionEditAttributes?: Record<string, string>;
+};
+
+const {
+  title,
+  eyebrow,
+  description,
+  headingLevel = 2,
+  alignment = "left",
+  tone = "default",
+  size = "section",
+  measure = "default",
+  actionLabel,
+  actionHref,
+  actionAriaLabel,
+  actionTarget,
+  actionRel,
+  id,
+  headingId,
+  class: className,
+  eyebrowEditAttributes = {},
+  titleEditAttributes = {},
+  descriptionEditAttributes = {},
+  actionEditAttributes = {},
+} = Astro.props as Props;
+
+const HeadingTag = `h${headingLevel}` as const;
+const hasTitleSlot = Astro.slots.has("title");
+const hasActionSlot = Astro.slots.has("action");
+const hasAction = hasActionSlot || Boolean(actionLabel && actionHref);
+const classes = [
+  "sidera-section-heading",
+  `sidera-section-heading--${alignment}`,
+  `sidera-section-heading--${tone}`,
+  `sidera-section-heading--${size}`,
+  `sidera-section-heading--measure-${measure}`,
+  hasAction && "sidera-section-heading--with-action",
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+---
+
+<header id={id} class={classes}>
+  <div class="sidera-section-heading__content">
+    {
+      eyebrow ? (
+        <p class="sidera-section-heading__eyebrow" {...eyebrowEditAttributes}>
+          {eyebrow}
+        </p>
+      ) : null
+    }
+
+    <HeadingTag
+      id={headingId}
+      class="sidera-section-heading__title"
+      {...titleEditAttributes}
+    >
+      {hasTitleSlot ? <slot name="title" /> : title}
+    </HeadingTag>
+
+    {
+      description ? (
+        <p class="sidera-section-heading__description" {...descriptionEditAttributes}>
+          {description}
+        </p>
+      ) : null
+    }
+  </div>
+
+  {
+    hasAction ? (
+      <div class="sidera-section-heading__action">
+        {hasActionSlot ? (
+          <slot name="action" />
+        ) : (
+          <Button
+            href={actionHref}
+            variant="link"
+            size="compact"
+            ariaLabel={actionAriaLabel}
+            target={actionTarget}
+            rel={actionRel}
+            editAttributes={actionEditAttributes}
+          >
+            {actionLabel}
+          </Button>
+        )}
+      </div>
+    ) : null
+  }
+</header>

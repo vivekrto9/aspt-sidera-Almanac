@@ -1,0 +1,11 @@
+.shop-body,
+.shop-page {
+  background: var(--color-surface);
+}
+
+.shop-page {
+  inline-size: 100%;
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0 0 5.625rem;
+}

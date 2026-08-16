@@ -1,0 +1,135 @@
+.daily-horoscope-sign-picker {
+  inline-size: 100%;
+  min-inline-size: 0;
+  padding-block-end: 6rem;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+.daily-horoscope-sign-picker__intro {
+  --sidera-section-heading-title-size: clamp(2.625rem, 5.6vw, 4.5rem);
+  --sidera-section-heading-description-size: 1rem;
+
+  padding: 3.75rem 2.125rem 0;
+}
+
+.daily-horoscope-sign-picker__inner {
+  inline-size: min(calc(100% - 4.25rem), 70rem);
+  min-inline-size: 0;
+  margin-inline: auto;
+}
+
+.daily-horoscope-sign-picker__description {
+  max-inline-size: 31.25rem;
+  margin: 1.125rem auto 0;
+  color: var(--color-muted);
+  font-size: 1rem;
+  line-height: 1.6;
+  text-align: center;
+  text-wrap: pretty;
+  overflow-wrap: anywhere;
+}
+
+.daily-horoscope-sign-picker__grid {
+  min-inline-size: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.875rem;
+  margin: 2.875rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.daily-horoscope-sign-picker__grid > li {
+  min-inline-size: 0;
+}
+
+.daily-horoscope-sign-picker__sign {
+  max-inline-size: none;
+}
+
+.daily-horoscope-sign-picker .daily-horoscope-sign-picker__sign:hover {
+  border-color: rgba(var(--color-primary-rgb), 0.45);
+}
+
+.daily-horoscope-sign-picker__helper {
+  margin: 2.125rem 0 0;
+  color: var(--color-muted);
+  font-size: 0.84375rem;
+  line-height: 1.5;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.daily-horoscope-sign-picker__helper a {
+  color: var(--color-primary);
+  font-weight: 600;
+  text-decoration: none;
+  text-underline-offset: 0.2em;
+  transition: color 160ms ease;
+}
+
+.daily-horoscope-sign-picker__helper a:hover {
+  color: var(--color-dark);
+  text-decoration: underline;
+}
+
+.daily-horoscope-sign-picker__helper a:focus-visible {
+  border-radius: 0.2rem;
+  outline: 0.1875rem solid rgba(var(--color-primary-rgb), 0.45);
+  outline-offset: 0.1875rem;
+}
+
+@media (max-width: 58rem) {
+  .daily-horoscope-sign-picker__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 40rem) {
+  .daily-horoscope-sign-picker {
+    padding-block-end: 4rem;
+  }
+
+  .daily-horoscope-sign-picker__intro {
+    padding: 3.25rem 1.25rem 0;
+  }
+
+  .daily-horoscope-sign-picker__inner {
+    inline-size: min(calc(100% - 2.5rem), 70rem);
+  }
+
+  .daily-horoscope-sign-picker__description {
+    margin-block-start: 1rem;
+    font-size: 0.9375rem;
+  }
+
+  .daily-horoscope-sign-picker__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-block-start: 2rem;
+  }
+
+  .daily-horoscope-sign-picker__helper {
+    margin-block-start: 1.75rem;
+  }
+}
+
+@media (max-width: 22rem) {
+  .daily-horoscope-sign-picker__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .daily-horoscope-sign-picker__helper a {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .daily-horoscope-sign-picker__helper a {
+    color: LinkText;
+  }
+}

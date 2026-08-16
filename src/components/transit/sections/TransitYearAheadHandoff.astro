@@ -1,0 +1,38 @@
+---
+import type { SupportedLocale } from "../../../data/localization-contract.ts";
+import type { TransitResultsCopy } from "../../../data/locale/transit/sections/results.ts";
+import FinalCtaSection from "../../shared/FinalCtaSection.astro";
+import "../../../styles/transit/sections/year-ahead-handoff.css";
+
+type Props = {
+  copy: TransitResultsCopy;
+  locale: SupportedLocale;
+  editAttributes?: (
+    field: keyof TransitResultsCopy,
+  ) => Record<string, string>;
+};
+
+const { copy, locale, editAttributes = () => ({}) } = Astro.props as Props;
+---
+
+<FinalCtaSection
+  id="transit-year-ahead-handoff"
+  class="transit-year-ahead-handoff"
+  eyebrow={copy.year_ahead_eyebrow}
+  title={copy.year_ahead_title}
+  description={copy.year_ahead_description}
+  primaryLabel={copy.year_ahead_primary_label}
+  primaryHref="/reports"
+  secondaryLabel={copy.year_ahead_secondary_label}
+  secondaryHref="/transit"
+  locale={locale}
+  tone="dark"
+  layout="split"
+  surface="panel"
+  ambience
+  eyebrowEditAttributes={editAttributes("year_ahead_eyebrow")}
+  titleEditAttributes={editAttributes("year_ahead_title")}
+  descriptionEditAttributes={editAttributes("year_ahead_description")}
+  primaryEditAttributes={editAttributes("year_ahead_primary_label")}
+  secondaryEditAttributes={editAttributes("year_ahead_secondary_label")}
+/>

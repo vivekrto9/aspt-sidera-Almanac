@@ -1,0 +1,40 @@
+.blog-index-featured {
+  inline-size: 100%;
+  padding: 4.375rem 2.125rem 2.125rem;
+  background: var(--color-surface);
+}
+
+.blog-index-featured__inner {
+  inline-size: min(100%, 70rem);
+  margin-inline: auto;
+}
+
+.blog-index-featured__intro.sidera-page-intro {
+  max-inline-size: 52rem;
+  padding: 0;
+  background: transparent;
+}
+
+.blog-index-featured__intro .sidera-section-heading__title {
+  text-wrap: wrap;
+}
+
+.blog-index-featured__card {
+  margin-block-start: 2.375rem;
+}
+
+@media (max-width: 40rem) {
+  .blog-index-featured {
+    padding: 3.5rem 1.25rem 1.75rem;
+  }
+
+  .blog-index-featured__card {
+    margin-block-start: 2rem;
+  }
+}
+
+@media (forced-colors: active) {
+  .blog-index-featured {
+    border-block-end: 1px solid CanvasText;
+  }
+}

@@ -1,0 +1,278 @@
+---
+import "../../../styles/moon-calendar/sections/moon-calendar-tonight-banner.css";
+import type { MoonCalendarRuntimeCopy } from "../../../data/moon-calendar/calendar-model.ts";
+
+type EditAttributes = Record<string, string>;
+
+type Props = {
+  eyebrow: string;
+  phaseName: string;
+  phaseDetail: string;
+  meaning: string;
+  illumination?: number;
+  waxing?: boolean;
+  nextFullLabel: string;
+  nextFullDate: string;
+  nextFullCountdown: string;
+  nextNewLabel: string;
+  nextNewDate: string;
+  nextNewCountdown: string;
+  apiHref: string;
+  runtime: MoonCalendarRuntimeCopy;
+  eyebrowEditAttributes?: EditAttributes;
+  phaseNameEditAttributes?: EditAttributes;
+  phaseDetailEditAttributes?: EditAttributes;
+  meaningEditAttributes?: EditAttributes;
+  nextFullLabelEditAttributes?: EditAttributes;
+  nextFullDateEditAttributes?: EditAttributes;
+  nextFullCountdownEditAttributes?: EditAttributes;
+  nextNewLabelEditAttributes?: EditAttributes;
+  nextNewDateEditAttributes?: EditAttributes;
+  nextNewCountdownEditAttributes?: EditAttributes;
+};
+
+const {
+  eyebrow,
+  phaseName,
+  phaseDetail,
+  meaning,
+  illumination = 0,
+  waxing = true,
+  nextFullLabel,
+  nextFullDate,
+  nextFullCountdown,
+  nextNewLabel,
+  nextNewDate,
+  nextNewCountdown,
+  apiHref,
+  runtime,
+  eyebrowEditAttributes = {},
+  phaseNameEditAttributes = {},
+  phaseDetailEditAttributes = {},
+  meaningEditAttributes = {},
+  nextFullLabelEditAttributes = {},
+  nextFullDateEditAttributes = {},
+  nextFullCountdownEditAttributes = {},
+  nextNewLabelEditAttributes = {},
+  nextNewDateEditAttributes = {},
+  nextNewCountdownEditAttributes = {},
+} = Astro.props as Props;
+
+const illuminationRatio = Math.max(0, Math.min(100, illumination)) / 100;
+const radius = 70;
+const terminatorRadius = radius * Math.abs(2 * illuminationRatio - 1);
+const limbSweep = waxing ? 1 : 0;
+const terminatorSweep = waxing ? (illuminationRatio > 0.5 ? 1 : 0) : illuminationRatio > 0.5 ? 0 : 1;
+const phasePath = illuminationRatio <= 0.01 ? "" : illuminationRatio >= 0.99
+  ? "M 75 5 A 70 70 0 1 1 75 145 A 70 70 0 1 1 75 5 Z"
+  : `M 75 5 A 70 70 0 0 ${limbSweep} 75 145 A ${terminatorRadius.toFixed(
+  2,
+)} 70 0 0 ${terminatorSweep} 75 5 Z`;
+---
+
+<section
+  class="moon-calendar-tonight"
+  aria-labelledby="moon-calendar-tonight-heading"
+  data-moon-calendar-tonight
+  data-api-href={apiHref}
+>
+  <script is:inline type="application/json" data-tonight-runtime set:html={JSON.stringify(runtime)}></script>
+  <div class="moon-calendar-tonight__panel">
+    <div class="moon-calendar-tonight__stars" aria-hidden="true">
+      {Array.from({ length: 8 }).map(() => <span></span>)}
+    </div>
+
+    <div class="moon-calendar-tonight__layout">
+      <div class="moon-calendar-tonight__identity">
+        <svg
+          class="moon-calendar-tonight__moon"
+          viewBox="0 0 150 150"
+          focusable="false"
+          aria-hidden="true"
+        >
+          <circle cx="75" cy="75" r="70" class="moon-calendar-tonight__disc"></circle>
+          <path d={phasePath} class="moon-calendar-tonight__light" data-tonight-path></path>
+          <circle cx="75" cy="75" r="70" class="moon-calendar-tonight__rim"></circle>
+        </svg>
+
+        <div class="moon-calendar-tonight__phase-copy">
+          <p class="moon-calendar-tonight__eyebrow" {...eyebrowEditAttributes}>
+            {eyebrow}
+          </p>
+          <h2
+            id="moon-calendar-tonight-heading"
+            class="moon-calendar-tonight__phase"
+            data-tonight-phase
+            {...phaseNameEditAttributes}
+          >
+            {phaseName}
+          </h2>
+          <p class="moon-calendar-tonight__detail" data-tonight-detail {...phaseDetailEditAttributes}>
+            {phaseDetail}
+          </p>
+        </div>
+      </div>
+
+      <p class="moon-calendar-tonight__meaning" data-tonight-meaning {...meaningEditAttributes}>
+        {meaning}
+      </p>
+
+      <div class="moon-calendar-tonight__events">
+        <div class="moon-calendar-tonight__event">
+          <p
+            class="moon-calendar-tonight__event-label"
+            {...nextFullLabelEditAttributes}
+          >
+            {nextFullLabel}
+          </p>
+          <p
+            class="moon-calendar-tonight__event-date"
+            data-tonight-full-date
+            {...nextFullDateEditAttributes}
+          >
+            {nextFullDate}
+          </p>
+          <p
+            class="moon-calendar-tonight__event-countdown"
+            data-tonight-full-countdown
+            {...nextFullCountdownEditAttributes}
+          >
+            {nextFullCountdown}
+          </p>
+        </div>
+
+        <div class="moon-calendar-tonight__event">
+          <p
+            class="moon-calendar-tonight__event-label"
+            {...nextNewLabelEditAttributes}
+          >
+            {nextNewLabel}
+          </p>
+          <p
+            class="moon-calendar-tonight__event-date"
+            data-tonight-new-date
+            {...nextNewDateEditAttributes}
+          >
+            {nextNewDate}
+          </p>
+          <p
+            class="moon-calendar-tonight__event-countdown"
+            data-tonight-new-countdown
+            {...nextNewCountdownEditAttributes}
+          >
+            {nextNewCountdown}
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  import {
+    moonCalendarPath,
+    type MoonCalendarPhase,
+    type MoonCalendarRuntimeCopy,
+  } from "../../../data/moon-calendar/calendar-model.ts";
+
+  const phaseOrder: MoonCalendarPhase[] = [
+    "new", "waxing-crescent", "first-quarter", "waxing-gibbous",
+    "full", "waning-gibbous", "last-quarter", "waning-crescent",
+  ];
+
+  const enhanceTonight = (root: HTMLElement) => {
+    if (root.dataset.tonightBound === "true") return;
+    root.dataset.tonightBound = "true";
+    const runtime = JSON.parse(
+      root.querySelector<HTMLScriptElement>("[data-tonight-runtime]")?.textContent ?? "{}",
+    ) as MoonCalendarRuntimeCopy;
+    const timezoneOffset = -new Date().getTimezoneOffset() / 60;
+    const destination = new URL(
+      root.dataset.apiHref || "/api/astropages/generated-site/moon-guide",
+      window.location.origin,
+    );
+    destination.searchParams.set("scope", "current");
+    destination.searchParams.set("timezoneOffset", String(timezoneOffset));
+    destination.searchParams.set("locale", runtime.locale);
+
+    const formatMoment = (moment?: string) => {
+      if (!moment) return "—";
+      const date = new Date(moment);
+      if (Number.isNaN(date.getTime())) return "—";
+      return new Intl.DateTimeFormat(runtime.locale, {
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      }).format(date);
+    };
+    const formatCountdown = (moment?: string) => {
+      if (!moment) return "";
+      const difference = new Date(moment).getTime() - Date.now();
+      if (!Number.isFinite(difference) || difference <= 0) return "";
+      const hours = Math.ceil(difference / 3_600_000);
+      if (hours < 48) return new Intl.RelativeTimeFormat(runtime.locale, { numeric: "auto" }).format(hours, "hour");
+      return new Intl.RelativeTimeFormat(runtime.locale, { numeric: "auto" }).format(Math.ceil(hours / 24), "day");
+    };
+    const setText = (selector: string, value: string) => {
+      const target = root.querySelector<HTMLElement>(selector);
+      if (target) target.textContent = value;
+    };
+
+    void fetch(destination)
+      .then(async (response) => {
+        const payload = await response.json();
+        if (!response.ok || !payload.ok || !payload.current?.phase) throw new Error("Moon data unavailable");
+        return payload.current as {
+          phase: {
+            key: MoonCalendarPhase;
+            illumination: number;
+            waxing: boolean;
+            moonSignIndex?: number;
+            moonSign?: string;
+            moonDegree: number;
+          };
+          nextFull?: string;
+          nextNew?: string;
+        };
+      })
+      .then((current) => {
+        const index = Math.max(0, phaseOrder.indexOf(current.phase.key));
+        const sign = current.phase.moonSignIndex === undefined
+          ? current.phase.moonSign || ""
+          : runtime.zodiacNames[current.phase.moonSignIndex];
+        setText("[data-tonight-phase]", runtime.phaseNames[current.phase.key]);
+        document.querySelectorAll<HTMLElement>("[data-moon-phase-select]").forEach((button) => {
+          if (button.dataset.moonPhaseSelect === current.phase.key) {
+            button.setAttribute("aria-current", "true");
+          } else {
+            button.removeAttribute("aria-current");
+          }
+        });
+        setText(
+          "[data-tonight-detail]",
+          `${runtime.illuminationTemplate
+            .replace("{percent}", String(Math.round(current.phase.illumination)))
+            .replace("{direction}", current.phase.waxing ? runtime.waxingLabel : runtime.waningLabel)} · ${runtime.moonInTemplate
+            .replace("{sign}", sign)
+            .replace("{degree}", `${current.phase.moonDegree}°`)}`,
+        );
+        setText("[data-tonight-meaning]", runtime.rituals[index]);
+        setText("[data-tonight-full-date]", formatMoment(current.nextFull));
+        setText("[data-tonight-full-countdown]", formatCountdown(current.nextFull));
+        setText("[data-tonight-new-date]", formatMoment(current.nextNew));
+        setText("[data-tonight-new-countdown]", formatCountdown(current.nextNew));
+        root.querySelector<SVGPathElement>("[data-tonight-path]")?.setAttribute(
+          "d",
+          moonCalendarPath(current.phase.illumination / 100, current.phase.waxing, 75, 70),
+        );
+      })
+      .catch(() => undefined);
+  };
+
+  const enhanceTonightBanners = () => {
+    document.querySelectorAll<HTMLElement>("[data-moon-calendar-tonight]").forEach(enhanceTonight);
+  };
+  enhanceTonightBanners();
+  document.addEventListener("astro:page-load", enhanceTonightBanners);
+</script>

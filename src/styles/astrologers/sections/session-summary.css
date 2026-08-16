@@ -1,0 +1,185 @@
+.astrologer-summary {
+  position: relative;
+  min-block-size: calc(100svh - 4.25rem);
+  overflow: hidden;
+  padding: clamp(3.5rem, 7vw, 4.375rem) clamp(1rem, 4vw, 2.125rem);
+  background: var(--color-dark-strong);
+  color: var(--color-surface);
+}
+
+.astrologer-summary__stars {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.52;
+  background-image:
+    radial-gradient(circle at 9% 18%, var(--color-surface) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 21% 71%, var(--color-surface) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 38% 11%, var(--color-surface) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 56% 83%, var(--color-surface) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 72% 27%, var(--color-surface) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 88% 64%, var(--color-surface) 0 1px, transparent 1.5px);
+  background-size: 17rem 15rem;
+  animation: astrologer-summary-stars 5s ease-in-out infinite alternate;
+}
+
+.astrologer-summary__inner {
+  position: relative;
+  inline-size: min(100%, 41.25rem);
+  margin-inline: auto;
+}
+
+.astrologer-summary__intro {
+  text-align: center;
+}
+
+.astrologer-summary__icon {
+  inline-size: 4rem;
+  block-size: 4rem;
+  margin-inline: auto;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(214, 154, 106, 0.4);
+  border-radius: 50%;
+  background: rgba(214, 154, 106, 0.16);
+  color: var(--color-primary-soft);
+  font-size: 1.75rem;
+}
+
+.astrologer-summary__overline {
+  margin: 1.25rem 0 0;
+  color: var(--color-primary-soft);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+
+.astrologer-summary h1 {
+  max-inline-size: none;
+  margin: 0.75rem 0 0;
+  color: var(--color-surface-soft);
+  font-family: var(--font-serif);
+  font-size: clamp(2.125rem, 4.6vw, 3.25rem);
+  font-weight: 400;
+  letter-spacing: -0.015em;
+  line-height: 1.04;
+}
+
+.astrologer-summary__lede {
+  max-inline-size: 27.5rem;
+  margin: 0.875rem auto 0;
+  color: var(--color-line);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+.astrologer-summary__receipt {
+  margin-block-start: 2.125rem;
+}
+
+.astrologer-summary__rating {
+  margin-block-start: 1rem;
+  padding: 1.625rem 1.75rem;
+  display: grid;
+  justify-items: center;
+  gap: 1rem;
+  border: 1px solid rgba(240, 230, 214, 0.16);
+  border-radius: 1.375rem;
+  background: rgba(240, 230, 214, 0.06);
+  text-align: center;
+}
+
+.astrologer-summary__rating h2 {
+  margin: 0;
+  color: var(--color-surface-soft);
+  font-family: var(--font-serif);
+  font-size: 1.375rem;
+  font-weight: 400;
+}
+
+.astrologer-summary__note {
+  margin-block-start: 0.125rem;
+}
+
+.astrologer-summary__actions {
+  margin-block-start: 1.375rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.astrologer-summary__primary,
+.astrologer-summary__secondary {
+  inline-size: 100%;
+}
+
+.astrologer-summary__primary {
+  --button-background: var(--color-surface);
+  --button-color: var(--color-dark);
+  --button-border: var(--color-surface);
+  --button-hover-background: #fff;
+  --button-hover-border: #fff;
+}
+
+.astrologer-summary__secondary {
+  --button-background: transparent;
+  --button-color: var(--color-surface);
+  --button-border: rgba(240, 230, 214, 0.4);
+  --button-hover-background: rgba(240, 230, 214, 0.08);
+  --button-hover-border: rgba(240, 230, 214, 0.6);
+}
+
+.astrologer-summary__home {
+  inline-size: max-content;
+  max-inline-size: 100%;
+  margin: 1.25rem auto 0;
+  display: block;
+  border-block-end: 1px solid rgba(205, 178, 158, 0.4);
+  color: var(--color-line);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  text-decoration: none;
+}
+
+.astrologer-summary__home:hover {
+  color: var(--color-surface-soft);
+}
+
+@keyframes astrologer-summary-stars {
+  from {
+    opacity: 0.35;
+  }
+  to {
+    opacity: 0.65;
+  }
+}
+
+@media (max-width: 40rem) {
+  .astrologer-summary {
+    min-block-size: auto;
+    padding-block: 3rem;
+  }
+
+  .astrologer-summary__actions {
+    grid-template-columns: 1fr;
+  }
+
+  .astrologer-summary__rating {
+    padding-inline: 1.25rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .astrologer-summary__stars {
+    animation: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .astrologer-summary,
+  .astrologer-summary__rating {
+    border-color: CanvasText;
+  }
+}

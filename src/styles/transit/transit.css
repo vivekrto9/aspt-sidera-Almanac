@@ -1,0 +1,15 @@
+.transit-body {
+  overflow-x: hidden;
+  background: var(--color-surface);
+}
+
+.transit-body > [data-transit-experience] {
+  display: block;
+  inline-size: 100%;
+  min-inline-size: 0;
+}
+
+.transit-results-body > main {
+  inline-size: 100%;
+  margin: 0;
+}

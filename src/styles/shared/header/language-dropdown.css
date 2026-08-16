@@ -1,0 +1,186 @@
+.sidera-language-dropdown {
+  --sidera-language-ink: var(--color-text);
+  --sidera-language-muted: var(--color-muted);
+  --sidera-language-accent: var(--color-primary);
+  --sidera-language-surface: var(--color-panel);
+
+  position: relative;
+  z-index: 30;
+  inline-size: max-content;
+  max-inline-size: 100%;
+  color: var(--sidera-language-ink);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+.sidera-language-dropdown--open {
+  z-index: 40;
+}
+
+.sidera-language-dropdown__trigger {
+  min-block-size: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4375rem;
+  border: 1px solid rgba(var(--color-text-rgb), 0.18);
+  border-radius: 999px;
+  padding: 0.625rem 0.875rem;
+  background: transparent;
+  color: var(--sidera-language-ink);
+  cursor: pointer;
+  font: 600 0.8125rem / 1 var(--font-sans), system-ui, sans-serif;
+  text-transform: lowercase;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sidera-language-dropdown__trigger:hover,
+.sidera-language-dropdown--open .sidera-language-dropdown__trigger {
+  border-color: rgba(var(--color-primary-rgb), 0.48);
+  background: rgba(var(--color-primary-rgb), 0.07);
+  color: var(--sidera-language-accent);
+}
+
+.sidera-language-dropdown__trigger:focus-visible,
+.sidera-language-dropdown__option:focus-visible {
+  outline: 0.1875rem solid rgba(var(--color-primary-rgb), 0.48);
+  outline-offset: 0.1875rem;
+}
+
+.sidera-language-dropdown__trigger:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.sidera-language-dropdown__code {
+  min-inline-size: 1.25rem;
+  text-align: center;
+}
+
+.sidera-language-dropdown__chevron {
+  inline-size: 0.75rem;
+  block-size: 0.5rem;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+  transition: transform 160ms ease;
+}
+
+.sidera-language-dropdown--open .sidera-language-dropdown__chevron {
+  transform: rotate(180deg);
+}
+
+.sidera-language-dropdown__menu {
+  position: absolute;
+  inset-block-start: calc(100% + 0.5rem);
+  inset-inline-end: 0;
+  translate: var(--sidera-language-menu-shift, 0) 0;
+  inline-size: max-content;
+  min-inline-size: 12.5rem;
+  max-inline-size: calc(100vw - 1rem);
+  max-block-size: min(
+    21rem,
+    var(--sidera-language-menu-max-height, calc(100dvh - 5rem))
+  );
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid rgba(var(--color-text-rgb), 0.12);
+  border-radius: 0.875rem;
+  padding: 0.375rem;
+  background: var(--sidera-language-surface);
+  box-shadow: 0 1.25rem 2.75rem -1.5rem rgba(var(--color-text-rgb), 0.48);
+  scrollbar-width: thin;
+}
+
+.sidera-language-dropdown__menu[hidden] {
+  display: none;
+}
+
+.sidera-language-dropdown--drop-up .sidera-language-dropdown__menu {
+  inset-block-start: auto;
+  inset-block-end: calc(100% + 0.5rem);
+}
+
+.sidera-language-dropdown__option {
+  inline-size: 100%;
+  min-block-size: 2.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border: 0;
+  border-radius: 0.625rem;
+  padding: 0.6875rem 0.75rem;
+  background: transparent;
+  color: var(--sidera-language-muted);
+  cursor: pointer;
+  font: 500 0.875rem / 1.25 var(--font-sans), system-ui, sans-serif;
+  text-align: start;
+  text-decoration: none;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease;
+}
+
+.sidera-language-dropdown__option:hover {
+  background: rgba(var(--color-text-rgb), 0.06);
+  color: var(--sidera-language-ink);
+}
+
+.sidera-language-dropdown__option--selected {
+  background: var(--color-surface);
+  color: var(--sidera-language-ink);
+  font-weight: 700;
+}
+
+.sidera-language-dropdown__option[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.sidera-language-dropdown__check {
+  color: var(--sidera-language-accent);
+  opacity: 0;
+}
+
+.sidera-language-dropdown__option--selected
+  .sidera-language-dropdown__check {
+  opacity: 1;
+}
+
+@media (max-width: 40rem) {
+  .sidera-language-dropdown__menu {
+    max-inline-size: calc(100vw - 1rem);
+  }
+
+  .sidera-language-dropdown__option {
+    min-block-size: 3rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidera-language-dropdown__trigger,
+  .sidera-language-dropdown__chevron,
+  .sidera-language-dropdown__option {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .sidera-language-dropdown__menu,
+  .sidera-language-dropdown__trigger,
+  .sidera-language-dropdown__option {
+    border: 1px solid CanvasText;
+  }
+
+  .sidera-language-dropdown__option--selected {
+    background: Highlight;
+    color: HighlightText;
+  }
+}

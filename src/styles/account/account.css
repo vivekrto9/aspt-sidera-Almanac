@@ -1,0 +1,11 @@
+.sidera-account-body,
+.sidera-account {
+  min-inline-size: 0;
+  margin: 0;
+  background: var(--color-surface);
+}
+
+.sidera-account {
+  inline-size: 100%;
+  min-block-size: calc(100svh - 4.625rem);
+}

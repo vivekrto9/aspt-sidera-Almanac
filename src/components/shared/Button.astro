@@ -1,0 +1,145 @@
+---
+import LoadingIndicator from "./LoadingIndicator.astro";
+import "../../styles/shared/button.css";
+
+type ButtonVariant = "primary" | "secondary" | "outline" | "ghost" | "link" | "danger";
+type ButtonSize = "compact" | "standard" | "large";
+type ButtonShape = "pill" | "rounded";
+type ButtonType = "button" | "submit" | "reset";
+
+type Props = {
+  href?: string;
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  shape?: ButtonShape;
+  type?: ButtonType;
+  disabled?: boolean;
+  loading?: boolean;
+  loadingLabel?: string;
+  fullWidth?: boolean;
+  ariaLabel?: string;
+  class?: string;
+  id?: string;
+  name?: string;
+  value?: string;
+  form?: string;
+  target?: "_self" | "_blank" | "_parent" | "_top";
+  rel?: string;
+  download?: string | boolean;
+  editAttributes?: Record<string, string>;
+};
+
+const {
+  href,
+  variant = "primary",
+  size = "standard",
+  shape = "pill",
+  type = "button",
+  disabled = false,
+  loading,
+  loadingLabel,
+  fullWidth = false,
+  ariaLabel,
+  class: className,
+  id,
+  name,
+  value,
+  form,
+  target,
+  rel,
+  download,
+  editAttributes = {},
+  ...restAttributes
+} = Astro.props as Props;
+
+const hasLeadingIcon = Astro.slots.has("leading-icon");
+const hasTrailingIcon = Astro.slots.has("trailing-icon");
+const hasLoadingState = loading !== undefined;
+const isDisabled = disabled || loading === true;
+const resolvedAriaLabel = loading === true ? (loadingLabel ?? ariaLabel) : ariaLabel;
+const classes = [
+  "sidera-button",
+  `sidera-button--${variant}`,
+  `sidera-button--${size}`,
+  `sidera-button--${shape}`,
+  fullWidth && "sidera-button--full-width",
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+---
+
+{
+  href ? (
+    <a
+      {...restAttributes}
+      class={classes}
+      href={isDisabled ? undefined : href}
+      id={id}
+      target={target}
+      rel={rel}
+      download={download}
+      aria-label={resolvedAriaLabel}
+      aria-disabled={isDisabled ? "true" : undefined}
+      aria-busy={hasLoadingState ? loading === true : undefined}
+      data-loading={hasLoadingState ? String(loading === true) : undefined}
+      tabindex={isDisabled ? -1 : undefined}
+    >
+      {hasLeadingIcon ? (
+        <span class="sidera-button__icon" aria-hidden="true">
+          <slot name="leading-icon" />
+        </span>
+      ) : null}
+      <span class="sidera-button__label" {...editAttributes}><slot /></span>
+      {hasLoadingState ? (
+        <LoadingIndicator
+          class="sidera-button__loading-indicator"
+          label={loadingLabel ?? ariaLabel ?? "Loading"}
+          size="compact"
+          tone="inverse"
+          ariaLive="off"
+        />
+      ) : null}
+      {hasTrailingIcon ? (
+        <span class="sidera-button__icon" aria-hidden="true">
+          <slot name="trailing-icon" />
+        </span>
+      ) : null}
+    </a>
+  ) : (
+    <button
+      {...restAttributes}
+      class={classes}
+      type={type}
+      id={id}
+      name={name}
+      value={value}
+      form={form}
+      disabled={isDisabled}
+      aria-label={resolvedAriaLabel}
+      aria-busy={hasLoadingState ? loading === true : undefined}
+      data-loading={hasLoadingState ? String(loading === true) : undefined}
+    >
+      {hasLeadingIcon ? (
+        <span class="sidera-button__icon" aria-hidden="true">
+          <slot name="leading-icon" />
+        </span>
+      ) : null}
+      <span class="sidera-button__label" {...editAttributes}><slot /></span>
+      {hasLoadingState ? (
+        <LoadingIndicator
+          class="sidera-button__loading-indicator"
+          label={loadingLabel ?? ariaLabel ?? "Loading"}
+          size="compact"
+          tone="inverse"
+          ariaLive="off"
+        />
+      ) : null}
+      {hasTrailingIcon ? (
+        <span class="sidera-button__icon" aria-hidden="true">
+          <slot name="trailing-icon" />
+        </span>
+      ) : null}
+    </button>
+  )
+}

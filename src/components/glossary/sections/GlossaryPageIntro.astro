@@ -1,0 +1,50 @@
+---
+import PageIntro from "../../shared/PageIntro.astro";
+import "../../../styles/glossary/sections/glossary-page-intro.css";
+
+type EditAttributes = Record<string, string>;
+
+type Props = {
+  eyebrow: string;
+  titleLead: string;
+  titleEmphasis: string;
+  description: string;
+  eyebrowEditAttributes?: EditAttributes;
+  titleLeadEditAttributes?: EditAttributes;
+  titleEmphasisEditAttributes?: EditAttributes;
+  descriptionEditAttributes?: EditAttributes;
+};
+
+const {
+  eyebrow,
+  titleLead,
+  titleEmphasis,
+  description,
+  eyebrowEditAttributes = {},
+  titleLeadEditAttributes = {},
+  titleEmphasisEditAttributes = {},
+  descriptionEditAttributes = {},
+} = Astro.props as Props;
+
+const titleJoiner = /[-‐‑–—]$/.test(titleLead.trim()) ? "" : " ";
+---
+
+<section class="glossary-page-intro-shell">
+  <PageIntro
+    id="glossary-page-intro"
+    class="glossary-page-intro"
+    title={`${titleLead}${titleJoiner}${titleEmphasis}`}
+    {eyebrow}
+    {description}
+    alignment="center"
+    density="standard"
+    eyebrowEditAttributes={eyebrowEditAttributes}
+    descriptionEditAttributes={descriptionEditAttributes}
+  >
+    <Fragment slot="title">
+      <span {...titleLeadEditAttributes}>{titleLead}</span>{titleJoiner}<em
+        {...titleEmphasisEditAttributes}>{titleEmphasis}</em
+      >
+    </Fragment>
+  </PageIntro>
+</section>

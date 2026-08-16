@@ -1,0 +1,91 @@
+.brand-logo {
+  --brand-logo-name-color: var(--color-text);
+  --brand-logo-mark-color: var(--color-primary);
+  --brand-logo-hover-color: var(--color-primary);
+  --brand-logo-font-size: 1.6875rem;
+  --brand-logo-mark-size: 1.0625rem;
+
+  min-block-size: 2.75rem;
+  max-inline-size: 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5625rem;
+  color: var(--brand-logo-name-color);
+  line-height: 1;
+  text-decoration: none;
+}
+
+.brand-logo--inverse {
+  --brand-logo-name-color: var(--color-on-dark);
+  --brand-logo-mark-color: var(--color-primary-soft);
+  --brand-logo-hover-color: #ffffff;
+}
+
+.brand-logo--compact {
+  --brand-logo-font-size: 1.625rem;
+  --brand-logo-mark-size: 1rem;
+}
+
+.brand-logo__mark {
+  inline-size: 0.6875rem;
+  block-size: 0.6875rem;
+  flex: none;
+  border-radius: 50%;
+  background: var(--brand-logo-mark-color);
+  box-shadow: 0 0 0 0.25rem color-mix(in srgb, var(--brand-logo-mark-color) 18%, transparent);
+  color: transparent;
+  font-size: 0;
+  line-height: 1;
+  transform-origin: center;
+  transition:
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.brand-logo__name {
+  min-inline-size: 0;
+  color: inherit;
+  font-family: var(--font-serif);
+  font-size: var(--brand-logo-font-size);
+  font-style: normal;
+  font-weight: 400;
+  letter-spacing: 0.01875rem;
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+}
+
+a.brand-logo {
+  border-radius: 0.375rem;
+  transition: color 160ms ease;
+}
+
+a.brand-logo:hover {
+  color: var(--brand-logo-hover-color);
+}
+
+a.brand-logo:hover .brand-logo__mark {
+  background: currentColor;
+  transform: scale(1.08);
+}
+
+a.brand-logo:focus-visible {
+  outline: 0.1875rem solid rgba(var(--color-primary-rgb), 0.45);
+  outline-offset: 0.25rem;
+}
+
+@media (max-width: 40rem) {
+  .brand-logo {
+    --brand-logo-font-size: 1.5625rem;
+  }
+
+  .brand-logo--compact {
+    --brand-logo-font-size: 1.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand-logo__mark,
+  a.brand-logo {
+    transition: none;
+  }
+}

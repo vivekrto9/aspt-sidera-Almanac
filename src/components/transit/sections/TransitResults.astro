@@ -1,0 +1,482 @@
+---
+import type { SupportedLocale } from "../../../data/localization-contract.ts";
+import type { TransitResultsCopy } from "../../../data/locale/transit/sections/results.ts";
+import type { PreparedTransitResult } from "../../../data/transit/results.ts";
+import AspectRow from "../../shared/AspectRow.astro";
+import ChartWheel from "../../shared/ChartWheel.astro";
+import DateNavigator from "../../shared/DateNavigator.astro";
+import ResultsShell from "../../shared/ResultsShell.astro";
+import "../../../styles/transit/sections/results.css";
+
+type Props = {
+  copy: TransitResultsCopy;
+  locale: SupportedLocale;
+  result: PreparedTransitResult;
+  resultHref: string;
+  editAttributes?: (
+    field: keyof TransitResultsCopy,
+  ) => Record<string, string>;
+};
+
+const {
+  copy,
+  locale,
+  result,
+  resultHref,
+  editAttributes = () => ({}),
+} = Astro.props as Props;
+
+const localeTags: Record<SupportedLocale, string> = {
+  en: "en-US",
+  es: "es-ES",
+  fr: "fr-FR",
+  pt: "pt-PT",
+  ru: "ru-RU",
+  it: "it-IT",
+  de: "de-DE",
+};
+const dayMs = 86_400_000;
+const rangeMin = -30;
+const rangeMax = 120;
+const rangeThumbSizeRem = 1.5;
+const viewedDate = new Date(`${result.dateIso}T00:00:00Z`);
+const today = new Date();
+today.setUTCHours(0, 0, 0, 0);
+const todayIso = today.toISOString().slice(0, 10);
+const offsetFromToday = Math.max(
+  rangeMin,
+  Math.min(
+    rangeMax,
+    Math.round((viewedDate.getTime() - today.getTime()) / dayMs),
+  ),
+);
+const todayMarkerProgress = Math.abs(rangeMin) / (rangeMax - rangeMin);
+const todayMarkerPosition = `${todayMarkerProgress * 100}%`;
+const todayMarkerThumbCorrection = `${
+  rangeThumbSizeRem * (0.5 - todayMarkerProgress)
+}rem`;
+const shiftDate = (days: number) =>
+  new Date(viewedDate.getTime() + days * dayMs).toISOString().slice(0, 10);
+const dateHref = (dateIso: string) => {
+  const url = new URL(resultHref, "https://sidera.local");
+  url.searchParams.set("date", dateIso);
+  return `${url.pathname}${url.search}`;
+};
+const viewDateLong = new Intl.DateTimeFormat(localeTags[locale], {
+  weekday: "long",
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+  timeZone: "UTC",
+}).format(viewedDate);
+const rangeStart = new Intl.DateTimeFormat(localeTags[locale], {
+  month: "short",
+  year: "numeric",
+  timeZone: "UTC",
+}).format(new Date(today.getTime() + rangeMin * dayMs));
+const rangeEnd = new Intl.DateTimeFormat(localeTags[locale], {
+  month: "short",
+  year: "numeric",
+  timeZone: "UTC",
+}).format(new Date(today.getTime() + rangeMax * dayMs));
+
+const chartPlanets = result.planets.map((planet, index) => ({
+  glyph: planet.glyph,
+  longitude: planet.longitude,
+  label: planet.label,
+  color: planet.color,
+  ring: planet.ring,
+  selected:
+    index === result.aspects[0]?.transitIndex ||
+    index === result.aspects[0]?.natalIndex,
+}));
+const chartAspects = result.aspects.map((aspect, index) => ({
+  from: aspect.transitIndex,
+  to: aspect.natalIndex,
+  color: aspect.color,
+  weight: index === 0 ? 2.6 : 1.25,
+  dashed: aspect.tone === "harmonious",
+}));
+const movingPlanets = result.planets
+  .filter((planet) => planet.ring === "outer")
+  .slice(0, 6);
+---
+
+<ResultsShell
+  id="transit-results"
+  class="transit-results"
+  title={`${copy.results_title_prefix} ${result.chartName}`}
+  eyebrow={copy.results_eyebrow}
+  chartTitle={copy.results_chart_title}
+  chartDescription={copy.results_chart_description}
+  layout="stacked"
+  chartSurface="plain"
+  eyebrowEditAttributes={editAttributes("results_eyebrow")}
+  data-transit-results
+  data-result-href={resultHref}
+  data-today-iso={todayIso}
+>
+  <Fragment slot="title">
+    <span class="transit-results__title">
+      <span {...editAttributes("results_title_prefix")}>
+        {copy.results_title_prefix}
+      </span>
+      {" "}{result.chartName}
+    </span>
+  </Fragment>
+
+  <div
+    slot="summary"
+    class="transit-results__summary"
+    aria-label="Natal chart context"
+  >
+    <strong>
+      <span {...editAttributes("results_natal_label")}>
+        {copy.results_natal_label}
+      </span>
+      {" · "}{result.birthSummary}
+    </strong>
+    <span>{result.birthPlace}</span>
+  </div>
+
+  <div slot="orientation" class="transit-results__date-wrap">
+    <section
+      class="transit-results__date-panel"
+      aria-label={copy.results_range_label}
+    >
+      <DateNavigator
+        id="transit-results-date-navigation"
+        label={viewDateLong}
+        groupLabel={copy.results_range_label}
+        previousLabel={copy.results_previous_day_label}
+        nextLabel={copy.results_next_day_label}
+        resetLabel={copy.results_today_label}
+        eyebrow={copy.results_viewing_label}
+        description={result.dateIso === todayIso ? copy.results_today_label : result.dateIso}
+        previousHref={dateHref(shiftDate(-1))}
+        nextHref={dateHref(shiftDate(1))}
+        resetHref={dateHref(todayIso)}
+        eyebrowEditAttributes={editAttributes("results_viewing_label")}
+        resetLabelEditAttributes={editAttributes("results_today_label")}
+      />
+
+      <div
+        class:list={[
+          "transit-results__range",
+          {
+            "transit-results__range--today": result.dateIso === todayIso,
+          },
+        ]}
+      >
+        <span
+          class="transit-results__today-marker"
+          style={{
+            "--today-position": todayMarkerPosition,
+            "--today-thumb-correction": todayMarkerThumbCorrection,
+          }}
+          aria-hidden="true"
+        >
+          <span {...editAttributes("results_today_label")}>
+            {copy.results_today_label}
+          </span>
+        </span>
+        <input
+          type="range"
+          min={rangeMin}
+          max={rangeMax}
+          step="1"
+          value={offsetFromToday}
+          aria-label={copy.results_range_label}
+          data-transit-date-range
+        />
+        <div class="transit-results__range-labels" aria-hidden="true">
+          <span>{rangeStart}</span>
+          <span>{rangeEnd}</span>
+        </div>
+      </div>
+
+      <div class="transit-results__moving">
+        <p {...editAttributes("results_moving_now_label")}>
+          {copy.results_moving_now_label}
+        </p>
+        <div class="transit-results__moving-list" role="list">
+          {
+            movingPlanets.map((planet) => (
+              <span role="listitem">
+                <i aria-hidden="true">{planet.glyph}</i>
+                {planet.position}
+                {planet.retrograde ? <b>℞</b> : null}
+              </span>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div slot="chart" class="transit-results__workspace">
+    <section class="transit-results__chart-card">
+      <ChartWheel
+        title={copy.results_chart_title}
+        description={copy.results_chart_description}
+        mode="transit"
+        size="large"
+        rotation={result.chartRotation}
+        houseCusps={result.houseCusps}
+        planets={chartPlanets}
+        aspects={chartAspects}
+        showHouses
+        showAspects
+        interactive
+        centerGlyph="✦"
+        class="transit-results__chart-wheel"
+      />
+
+      <div class="transit-results__chart-legend">
+        <span>
+          <i class="transit-results__ring-dot transit-results__ring-dot--natal"></i>
+          <b {...editAttributes("results_natal_legend")}>
+            {copy.results_natal_legend}
+          </b>
+        </span>
+        <span>
+          <i class="transit-results__ring-dot transit-results__ring-dot--transit"></i>
+          <b {...editAttributes("results_transiting_legend")}>
+            {copy.results_transiting_legend}
+          </b>
+        </span>
+      </div>
+    </section>
+
+    <aside
+      class="transit-results__inspector"
+      aria-label={`${copy.results_title_prefix} ${result.chartName} details`}
+    >
+      <div class="transit-results__readings" aria-live="polite">
+        {
+          result.aspects.length > 0 ? result.aspects.map((aspect, index) => {
+            const transit = result.planets[aspect.transitIndex];
+            const natal = result.planets[aspect.natalIndex];
+            return (
+              <article
+                class="transit-results__reading"
+                data-transit-aspect-panel={index}
+                hidden={index !== 0}
+                aria-label={aspect.title}
+              >
+                <div class="transit-results__reading-identity">
+                  <span>{transit?.glyph}</span>
+                  <i>{aspect.aspectGlyph}</i>
+                  <span class="transit-results__natal-glyph">{natal?.glyph}</span>
+                  <div>
+                    <h2>{aspect.title}</h2>
+                    <p>{aspect.status}</p>
+                  </div>
+                </div>
+                <p class="transit-results__interpretation">
+                  {aspect.interpretation}
+                </p>
+                <small>{aspect.positionLabel}</small>
+              </article>
+            );
+          }) : (
+            <article class="transit-results__reading">
+              <h2 {...editAttributes("results_no_aspects_title")}>
+                {copy.results_no_aspects_title}
+              </h2>
+              <p {...editAttributes("results_no_aspects_body")}>
+                {copy.results_no_aspects_body}
+              </p>
+            </article>
+          )
+        }
+      </div>
+
+      <section
+        class="transit-results__aspects"
+        aria-labelledby="transit-results-aspects-title"
+      >
+        <header>
+          <h2
+            id="transit-results-aspects-title"
+            {...editAttributes("results_active_title")}
+          >
+            {copy.results_active_title}
+          </h2>
+          <p>
+            {result.totalAspectCount}
+            {" "}
+            <span {...editAttributes("results_count_suffix")}>
+              {copy.results_count_suffix}
+            </span>
+          </p>
+        </header>
+
+        {
+          result.aspects.length > 0 ? (
+            <div class="transit-results__aspect-list">
+              {result.aspects.map((aspect, index) => {
+                const transit = result.planets[aspect.transitIndex];
+                const natal = result.planets[aspect.natalIndex];
+                return transit && natal ? (
+                  <AspectRow
+                    firstLabel={transit.name}
+                    firstGlyph={transit.glyph}
+                    secondLabel={natal.name}
+                    secondGlyph={natal.glyph}
+                    aspectLabel={aspect.aspectLabel}
+                    aspectGlyph={aspect.aspectGlyph}
+                    orb={aspect.orb}
+                    phaseLabel={aspect.phaseLabel}
+                    phaseTone={aspect.phase === "applying" ? "accent" : "neutral"}
+                    tone={aspect.tone}
+                    size="compact"
+                    interactive
+                    selected={index === 0}
+                    class="transit-results__aspect"
+                    data-transit-aspect-row={index}
+                    data-first-index={aspect.transitIndex}
+                    data-second-index={aspect.natalIndex}
+                  />
+                ) : null;
+              })}
+            </div>
+          ) : (
+            <p
+              class="transit-results__empty"
+              {...editAttributes("results_no_aspects_body")}
+            >
+              {copy.results_no_aspects_body}
+            </p>
+          )
+        }
+
+        <p class="transit-results__aspect-legend">
+          <span>
+            <i class="transit-results__legend-dot transit-results__legend-dot--conjunction"></i>
+            <b {...editAttributes("results_conjunction_label")}>
+              {copy.results_conjunction_label}
+            </b>
+          </span>
+          <span>
+            <i class="transit-results__legend-dot transit-results__legend-dot--harmonious"></i>
+            <b {...editAttributes("results_harmonious_label")}>
+              {copy.results_harmonious_label}
+            </b>
+          </span>
+          <span>
+            <i class="transit-results__legend-dot transit-results__legend-dot--challenging"></i>
+            <b {...editAttributes("results_challenging_label")}>
+              {copy.results_challenging_label}
+            </b>
+          </span>
+        </p>
+      </section>
+    </aside>
+  </div>
+</ResultsShell>
+
+<script>
+  const initializeTransitResults = () => {
+    document
+      .querySelectorAll<HTMLElement>("[data-transit-results]")
+      .forEach((results) => {
+        if (results.dataset.transitResultsReady === "true") return;
+
+        const selectAspect = (index: number) => {
+          const selectedRow = results.querySelector<HTMLElement>(
+            `[data-transit-aspect-row="${index}"]`,
+          );
+          if (!selectedRow) return;
+
+          results
+            .querySelectorAll<HTMLElement>("[data-transit-aspect-panel]")
+            .forEach((panel) => {
+              panel.hidden =
+                Number(panel.dataset.transitAspectPanel) !== index;
+            });
+          results
+            .querySelectorAll<HTMLButtonElement>("[data-transit-aspect-row]")
+            .forEach((row) => {
+              const selected =
+                Number(row.dataset.transitAspectRow) === index;
+              row.classList.toggle(
+                "sidera-aspect-row--selected",
+                selected,
+              );
+              row.setAttribute("aria-pressed", String(selected));
+            });
+
+          const firstIndex = Number(selectedRow.dataset.firstIndex);
+          const secondIndex = Number(selectedRow.dataset.secondIndex);
+          results
+            .querySelectorAll<SVGGElement>("[data-planet-index]")
+            .forEach((planet) => {
+              const planetIndex = Number(planet.dataset.planetIndex);
+              planet.classList.toggle(
+                "chart-wheel__planet--selected",
+                planetIndex === firstIndex || planetIndex === secondIndex,
+              );
+            });
+        };
+
+        results
+          .querySelectorAll<HTMLButtonElement>("[data-transit-aspect-row]")
+          .forEach((row) => {
+            row.addEventListener("click", () =>
+              selectAspect(Number(row.dataset.transitAspectRow)),
+            );
+          });
+        results
+          .querySelector<HTMLElement>("[data-chart-wheel]")
+          ?.addEventListener("planetselect", (event) => {
+            const planetIndex = Number(
+              (event as CustomEvent<{ index?: number }>).detail?.index,
+            );
+            const relatedRow = Array.from(
+              results.querySelectorAll<HTMLElement>(
+                "[data-transit-aspect-row]",
+              ),
+            ).find(
+              (row) =>
+                Number(row.dataset.firstIndex) === planetIndex ||
+                Number(row.dataset.secondIndex) === planetIndex,
+            );
+            if (relatedRow) {
+              selectAspect(Number(relatedRow.dataset.transitAspectRow));
+            }
+          });
+
+        const range =
+          results.querySelector<HTMLInputElement>("[data-transit-date-range]");
+        range?.addEventListener("input", () => {
+          range
+            .closest(".transit-results__range")
+            ?.classList.toggle(
+              "transit-results__range--today",
+              Number(range.value) === 0,
+            );
+        });
+        range?.addEventListener("change", () => {
+          const resultHref = results.dataset.resultHref;
+          const todayIso = results.dataset.todayIso;
+          if (!resultHref || !todayIso) return;
+          const date = new Date(`${todayIso}T00:00:00Z`);
+          date.setUTCDate(date.getUTCDate() + Number(range.value));
+          const destination = new URL(resultHref, window.location.href);
+          destination.searchParams.set(
+            "date",
+            date.toISOString().slice(0, 10),
+          );
+          window.location.assign(
+            `${destination.pathname}${destination.search}`,
+          );
+        });
+
+        results.dataset.transitResultsReady = "true";
+      });
+  };
+
+  initializeTransitResults();
+  document.addEventListener("astro:page-load", initializeTransitResults);
+</script>

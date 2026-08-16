@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "contract": "sales-mcp.v1",
+  "semanticModel": "commerce.v1",
+  "schemaRevision": "sidera-almanac-sales-2026-08-16-1",
+  "paymentStatuses": ["pending", "paid", "captured", "succeeded", "completed", "failed", "cancelled", "refunded"],
+  "transactionKinds": [
+    {
+      "key": "report_order",
+      "label": "Report orders",
+      "description": "Paid or attempted report orders.",
+      "examples": ["report order", "custom report"]
+    },
+    {
+      "key": "product_order",
+      "label": "Shop orders",
+      "description": "Paid or attempted physical product orders.",
+      "examples": ["shop order", "product order"]
+    }
+  ],
+  "dimensions": [
+    {
+      "key": "product",
+      "label": "Product",
+      "description": "The report or physical product included in the order."
+    }
+  ],
+  "entities": [
+    { "type": "item", "key": "report_order", "label": "Report Order", "transactionKind": "report_order" },
+    { "type": "item", "key": "product_order", "label": "Shop Order", "transactionKind": "product_order" }
+  ]
+}

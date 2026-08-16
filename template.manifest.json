@@ -1,0 +1,767 @@
+{
+  "templateKey": "sidera-almanac",
+  "displayName": "Sidera Almanac",
+  "stage": "starter-template",
+  "runtime": {
+    "type": "official-emdash-astro-cloudflare",
+    "scaffold": {
+      "package": "create-emdash",
+      "version": "0.14.0",
+      "template": "cloudflare:starter"
+    },
+    "requiredFiles": [
+      "astro.config.mjs",
+      "src/live.config.ts",
+      "src/worker.ts",
+      "wrangler.jsonc"
+    ],
+    "adminPath": "/_emdash/admin",
+    "apiPrefix": "/_emdash/api"
+  },
+  "analytics": {
+    "required": true,
+    "path": "astropages/analytics.manifest.json"
+  },
+  "leads": {
+    "required": true,
+    "path": "astropages/leads.manifest.json"
+  },
+  "cloudflare": {
+    "runtimeContractStatus": "defined",
+    "wranglerConfig": "wrangler.jsonc",
+    "environments": {
+      "preview": {
+        "workerName": "sidera-almanac-preview",
+        "d1DatabaseName": "sidera-almanac-preview-site",
+        "r2BucketName": "sidera-almanac-preview-media",
+        "kvNamespaceName": "sidera-almanac-preview-session",
+        "siteUrlVariable": "PREVIEW_SITE_URL",
+        "d1DatabaseIdVariable": "PREVIEW_SITE_D1_DATABASE_ID",
+        "sessionKvNamespaceIdVariable": "PREVIEW_SITE_SESSION_KV_NAMESPACE_ID"
+      },
+      "production": {
+        "workerName": "sidera-almanac-production",
+        "d1DatabaseName": "sidera-almanac-production-site",
+        "r2BucketName": "sidera-almanac-production-media",
+        "kvNamespaceName": "sidera-almanac-production-session",
+        "siteUrlVariable": "PRODUCTION_SITE_URL",
+        "d1DatabaseIdVariable": "PRODUCTION_SITE_D1_DATABASE_ID",
+        "sessionKvNamespaceIdVariable": "PRODUCTION_SITE_SESSION_KV_NAMESPACE_ID"
+      }
+    },
+    "bindings": [
+      {
+        "name": "DB",
+        "type": "d1",
+        "purpose": "EmDash and generated-site runtime data"
+      },
+      {
+        "name": "MEDIA",
+        "type": "r2",
+        "purpose": "EmDash media storage"
+      },
+      {
+        "name": "SESSION",
+        "type": "kv",
+        "purpose": "Astro and EmDash session storage"
+      },
+      {
+        "name": "LOADER",
+        "type": "worker_loader",
+        "purpose": "EmDash plugin sandboxing"
+      },
+      {
+        "name": "IMAGES",
+        "type": "images",
+        "purpose": "Astro Cloudflare image transformation"
+      }
+    ]
+  },
+  "secrets": {
+    "requiredNow": [
+      "EMDASH_ENCRYPTION_KEY",
+      "BUILDER_MCP_TOKEN",
+      "BUILDER_MCP_PROVISION_SECRET"
+    ],
+    "requiredForTemplateDeployment": [
+      "CLOUDFLARE_API_TOKEN",
+      "CLOUDFLARE_ACCOUNT_ID",
+      "CLOUDFLARE_DEV_WORKERS_SUBDOMAIN",
+      "EMDASH_ENCRYPTION_KEY",
+      "BUILDER_MCP_TOKEN",
+      "BUILDER_MCP_PROVISION_SECRET"
+    ],
+    "requiredForGeneratedSiteDeployment": [
+      "CLOUDFLARE_API_TOKEN",
+      "CLOUDFLARE_ACCOUNT_ID",
+      "CLOUDFLARE_DEV_WORKERS_SUBDOMAIN",
+      "EMDASH_ENCRYPTION_KEY",
+      "ASTROPAGES_CONTROL_PLANE_CALLBACK_TOKEN",
+      "ASTROPAGES_CONTROL_PLANE_CALLBACK_BASE_URL",
+      "ASTROPAGES_SSO_PUBLIC_JWK"
+    ],
+    "deploymentVariables": [
+      "GH_REPOSITORY_VARIABLES_TOKEN",
+      "CLOUDFLARE_SECRETS_STORE_ID",
+      "PREVIEW_SITE_D1_DATABASE_ID",
+      "PREVIEW_SITE_SESSION_KV_NAMESPACE_ID",
+      "PREVIEW_SITE_URL",
+      "PRODUCTION_SITE_D1_DATABASE_ID",
+      "PRODUCTION_SITE_SESSION_KV_NAMESPACE_ID",
+      "PRODUCTION_SITE_URL"
+    ],
+    "deploymentMapping": {
+      "workerSecretsFile": "sidera-almanac-worker-secrets.json",
+      "workerSecrets": [
+        "EMDASH_ENCRYPTION_KEY",
+        "BUILDER_MCP_TOKEN",
+        "BUILDER_MCP_PROVISION_SECRET"
+      ],
+      "generatedSiteWorkerSecrets": [
+        "EMDASH_ENCRYPTION_KEY",
+        "ASTROPAGES_CONTROL_PLANE_CALLBACK_TOKEN"
+      ],
+      "generatedSiteRuntimeVars": [
+        "ASTROPAGES_PROJECT_ID",
+        "ASTROPAGES_SITE_ENVIRONMENT",
+        "ASTROPAGES_SSO_PUBLIC_JWK"
+      ],
+      "secretStoreBundleBinding": "ASTROPAGES_INTEGRATION_SECRETS_JSON",
+      "platformGooglePlacesBinding": "ASTROPAGES_PLATFORM_GOOGLE_PLACES_GOOGLE_PLACES_API_KEY"
+    },
+    "valuesAllowedInSource": false,
+    "generatedSiteRuntimeConfig": [
+      "SES_SENDER_EMAIL",
+      "SES_SENDER_NAME",
+      "AWS_REGION",
+      "ASTROLOGY_API_BASE_URL",
+      "ASTROLOGYAPI_CHAT_BASE_URL",
+      "TRANSIT_CALC_BASE_URL",
+      "CALENDLY_15_MIN_EVENT_TYPE_URI",
+      "CALENDLY_30_MIN_EVENT_TYPE_URI",
+      "CALENDLY_45_MIN_EVENT_TYPE_URI",
+      "CALENDLY_60_MIN_EVENT_TYPE_URI"
+    ],
+    "providerCredentials": [
+      "AWS_ACCESS_KEY_ID",
+      "AWS_SECRET_ACCESS_KEY",
+      "STRIPE_SECRET_KEY",
+      "STRIPE_WEBHOOK_SECRET",
+      "X_ASTROLOGYAPI_KEY",
+      "ASTROLOGYAPI_USER_ID",
+      "ASTROLOGYAPI_PASSWORD",
+      "CALENDLY_API_TOKEN",
+      "CALENDLY_WEBHOOK_SIGNING_KEY"
+    ]
+  },
+  "localization": {
+    "strategy": "query-param",
+    "requiredDefaultLocale": "en",
+    "defaultLocale": "en",
+    "activeLocales": ["en", "es", "fr", "pt", "ru", "it", "de"],
+    "availableLocaleCatalog": ["en", "es", "fr", "pt", "ru", "it", "de"],
+    "maxActiveLocales": 8,
+    "rtlSupported": false,
+    "editableContentSource": "src/data/public-copy.ts",
+    "publicEditableCollection": "multiple",
+    "publicEditableEntries": [
+      "site_account/account",
+      "site_about/about",
+      "site_blog_article_bodies/bodies",
+      "site_blog_articles/articles",
+      "site_blog/blog",
+      "site_chrome/main",
+      "site_astrologers/astrologers",
+      "site_daily_horoscope/daily_horoscope",
+      "site_daily_horoscope_cta/cta",
+      "site_faq/faq",
+      "site_glossary/glossary",
+      "site_login/login",
+      "site_signup/signup",
+      "site_forgot_password/forgot-password",
+      "site_reset_password/reset-password",
+      "site_moon_calendar/moon_calendar",
+      "site_reports/reports",
+      "site_retrogrades/retrogrades",
+      "site_shop/shop",
+      "site_shop_catalog/catalog",
+      "site_shop_checkout_flow/checkout-flow",
+      "site_shop_product_detail/detail",
+      "site_shop_product_descriptions/descriptions",
+      "site_transit/transit",
+      "site_transit_results/results",
+      "site_pages/home",
+      "site_pages/not_found_page"
+    ],
+    "disabledLocalePolicy": "new locales remain inactive until AstroPages enables and verifies translated copy"
+  },
+  "workflows": {
+    "template": {
+      "ci": ".github/workflows/ci.yml",
+      "preview": ".github/workflows/deploy-template-preview.yml",
+      "production": ".github/workflows/deploy-production.yml"
+    },
+    "generatedSite": {
+      "previewSeed": ".astropages/generated-site-workflows/deploy-preview.yml",
+      "previewInstalledPath": ".github/workflows/deploy-preview.yml",
+      "productionSeed": ".astropages/generated-site-workflows/deploy-production.yml",
+      "productionInstalledPath": ".github/workflows/deploy-production.yml",
+      "statusCallbacks": {
+        "preview": "/callback/preview-deployments/{previewDeploymentId}/status",
+        "production": "/callback/production-deployments/{productionDeploymentId}/status"
+      }
+    }
+  },
+  "routes": {
+    "visitorRoutes": [
+      {
+        "method": "GET",
+        "path": "/",
+        "status": "implemented",
+        "capabilityKey": "content-seo-localization"
+      },
+      {
+        "method": "GET",
+        "path": "/account",
+        "status": "implemented",
+        "capabilityKey": "customer-auth"
+      },
+      {
+        "method": "GET",
+        "path": "/about",
+        "status": "implemented",
+        "capabilityKey": "content-seo-localization"
+      },
+      {
+        "method": "GET",
+        "path": "/login",
+        "status": "implemented",
+        "capabilityKey": "customer-auth"
+      },
+      {
+        "method": "GET",
+        "path": "/signup",
+        "status": "implemented",
+        "capabilityKey": "customer-auth"
+      },
+      {
+        "method": "GET",
+        "path": "/forgot-password",
+        "status": "implemented",
+        "capabilityKey": "customer-auth"
+      },
+      {
+        "method": "GET",
+        "path": "/reset-password",
+        "status": "implemented",
+        "capabilityKey": "customer-auth"
+      },
+      {
+        "method": "GET",
+        "path": "/astrologers",
+        "status": "implemented",
+        "capabilityKey": "content-seo-localization"
+      },
+      {
+        "method": "GET",
+        "path": "/birth-chart",
+        "status": "implemented",
+        "capabilityKey": "content-seo-localization"
+      },
+      {
+        "method": "GET",
+        "path": "/blog",
+        "status": "implemented",
+        "capabilityKey": "content-seo-localization"
+      },
+      {
+        "method": "GET",
+        "path": "/daily-horoscope",
+        "status": "implemented",
+        "capabilityKey": "content-seo-localization"
+      },
+      {
+        "method": "GET",
+        "path": "/glossary",
+        "status": "implemented",
+        "capabilityKey": "content-seo-localization"
+      },
+      {
+        "method": "GET",
+        "path": "/moon-calendar",
+        "status": "implemented",
+        "capabilityKey": "content-seo-localization"
+      },
+      {
+        "method": "GET",
+        "path": "/pricing",
+        "status": "implemented",
+        "capabilityKey": "content-seo-localization"
+      },
+      {
+        "method": "GET",
+        "path": "/retrogrades",
+        "status": "implemented",
+        "capabilityKey": "content-seo-localization"
+      },
+      {
+        "method": "GET",
+        "path": "/synastry",
+        "status": "implemented",
+        "capabilityKey": "astrology-engine"
+      },
+      {
+        "method": "GET",
+        "path": "/synastry/[slug]",
+        "status": "implemented",
+        "capabilityKey": "astrology-engine"
+      },
+      {
+        "method": "GET",
+        "path": "/todays-sky",
+        "status": "implemented",
+        "capabilityKey": "astrology-engine"
+      },
+      {
+        "method": "GET",
+        "path": "/reports",
+        "status": "implemented",
+        "capabilityKey": "content-seo-localization"
+      },
+      {
+        "method": "GET",
+        "path": "/shop",
+        "status": "implemented",
+        "capabilityKey": "content-seo-localization"
+      },
+      {
+        "method": "GET",
+        "path": "/transit",
+        "status": "implemented",
+        "capabilityKey": "astrology-engine"
+      },
+      {
+        "method": "GET",
+        "path": "/transit/[slug]",
+        "status": "implemented",
+        "capabilityKey": "astrology-engine"
+      }
+    ],
+    "generatedSiteApis": [
+      {
+        "method": "GET",
+        "path": "/api/astropages/generated-site/health",
+        "status": "implemented",
+        "capabilityKey": "generated-site-operations"
+      },
+      {
+        "method": "GET",
+        "path": "/api/astropages/generated-site/edit-readiness",
+        "status": "implemented",
+        "capabilityKey": "generated-site-operations"
+      },
+      {
+        "method": "POST",
+        "path": "/api/astropages/generated-site/emdash/bootstrap",
+        "status": "implemented",
+        "capabilityKey": "generated-site-operations"
+      },
+      {
+        "method": "GET",
+        "path": "/api/astropages/generated-site/content-release/status",
+        "status": "implemented",
+        "capabilityKey": "generated-site-operations"
+      },
+      {
+        "method": "POST",
+        "path": "/api/astropages/generated-site/content-release/export",
+        "status": "implemented",
+        "capabilityKey": "generated-site-operations"
+      },
+      {
+        "method": "POST",
+        "path": "/api/astropages/generated-site/content-release/import",
+        "status": "implemented",
+        "capabilityKey": "generated-site-operations"
+      },
+      {
+        "method": "GET",
+        "path": "/api/astropages/generated-site/editor/content-diff",
+        "status": "implemented",
+        "capabilityKey": "generated-site-operations"
+      },
+      {
+        "method": "POST",
+        "path": "/api/astropages/generated-site/editor/content-field",
+        "status": "implemented",
+        "capabilityKey": "generated-site-operations"
+      },
+      {
+        "method": "POST",
+        "path": "/api/astropages/generated-site/editor/provision-mcp-token",
+        "status": "implemented",
+        "capabilityKey": "generated-site-operations"
+      },
+      {
+        "method": "POST",
+        "path": "/api/astropages/generated-site/customer-auth/login",
+        "status": "implemented",
+        "capabilityKey": "customer-auth"
+      },
+      {
+        "method": "POST",
+        "path": "/api/astropages/generated-site/customer-auth/logout",
+        "status": "implemented",
+        "capabilityKey": "customer-auth"
+      },
+      {
+        "method": "GET",
+        "path": "/api/astropages/generated-site/customer-auth/me",
+        "status": "implemented",
+        "capabilityKey": "customer-auth"
+      },
+      {
+        "method": "POST",
+        "path": "/api/astropages/generated-site/customer-auth/signup",
+        "status": "implemented",
+        "capabilityKey": "customer-auth"
+      },
+      {
+        "method": "POST",
+        "path": "/api/astropages/generated-site/customer-auth/request-password-reset",
+        "status": "implemented",
+        "capabilityKey": "customer-auth"
+      },
+      {
+        "method": "POST",
+        "path": "/api/astropages/generated-site/customer-auth/reset-password",
+        "status": "implemented",
+        "capabilityKey": "customer-auth"
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/astropages/generated-site/customer/profile",
+        "status": "implemented",
+        "capabilityKey": "customer-auth"
+      },
+      {
+        "method": "GET/POST",
+        "path": "/api/astropages/generated-site/customer/user-profiles",
+        "status": "implemented",
+        "capabilityKey": "customer-auth"
+      },
+      {
+        "method": "PATCH/DELETE",
+        "path": "/api/astropages/generated-site/customer/user-profiles/[profileId]",
+        "status": "implemented",
+        "capabilityKey": "customer-auth"
+      },
+      {
+        "method": "GET/POST",
+        "path": "/api/astropages/generated-site/birth-chart",
+        "status": "implemented",
+        "capabilityKey": "astrology-engine"
+      },
+      {
+        "method": "POST",
+        "path": "/api/astropages/generated-site/horoscope",
+        "status": "implemented",
+        "capabilityKey": "astrology-engine"
+      },
+      {
+        "method": "GET",
+        "path": "/api/astropages/generated-site/moon-guide",
+        "status": "implemented",
+        "capabilityKey": "astrology-engine"
+      },
+      {
+        "method": "GET",
+        "path": "/api/astropages/generated-site/todays-sky",
+        "status": "implemented",
+        "capabilityKey": "astrology-engine"
+      },
+      {
+        "method": "GET",
+        "path": "/api/astropages/generated-site/retrogrades",
+        "status": "implemented",
+        "capabilityKey": "astrology-engine"
+      },
+      {
+        "method": "GET/POST",
+        "path": "/api/astropages/generated-site/synastry",
+        "status": "implemented",
+        "capabilityKey": "astrology-engine"
+      },
+      {
+        "method": "GET/POST",
+        "path": "/api/astropages/generated-site/transit",
+        "status": "implemented",
+        "capabilityKey": "astrology-engine"
+      },
+      {
+        "method": "POST",
+        "path": "/api/astropages/generated-site/session-checkout-intents",
+        "status": "implemented",
+        "capabilityKey": "checkout-and-payments"
+      },
+      {
+        "method": "POST",
+        "path": "/api/astropages/generated-site/payments/stripe/session-confirm",
+        "status": "implemented",
+        "capabilityKey": "checkout-and-payments"
+      },
+      {
+        "method": "POST",
+        "path": "/api/astropages/generated-site/webhooks/payment/stripe",
+        "status": "implemented",
+        "capabilityKey": "checkout-and-payments"
+      },
+      {
+        "method": "GET",
+        "path": "/api/astropages/generated-site/session-entitlements/[entitlementId]",
+        "status": "implemented",
+        "capabilityKey": "checkout-and-payments"
+      },
+      {
+        "method": "POST",
+        "path": "/api/astro-chat/check-eligibility",
+        "status": "implemented",
+        "capabilityKey": "ai-chat"
+      },
+      {
+        "method": "POST",
+        "path": "/api/astro-chat/create-session",
+        "status": "implemented",
+        "capabilityKey": "ai-chat"
+      },
+      {
+        "method": "POST",
+        "path": "/api/astro-chat/send-message",
+        "status": "implemented",
+        "capabilityKey": "ai-chat"
+      },
+      {
+        "method": "GET",
+        "path": "/api/astro-chat/sessions",
+        "status": "implemented",
+        "capabilityKey": "ai-chat"
+      },
+      {
+        "method": "GET/PATCH/DELETE",
+        "path": "/api/astro-chat/session/[sessionId]",
+        "status": "implemented",
+        "capabilityKey": "ai-chat"
+      },
+      {
+        "method": "GET",
+        "path": "/api/astro-chat/calendly-availability",
+        "status": "implemented",
+        "capabilityKey": "western-calendly"
+      },
+      {
+        "method": "POST",
+        "path": "/api/astro-chat/create-scheduled-session",
+        "status": "implemented",
+        "capabilityKey": "western-calendly"
+      },
+      {
+        "method": "POST",
+        "path": "/api/astropages/generated-site/webhooks/calendly",
+        "status": "implemented",
+        "capabilityKey": "western-calendly"
+      },
+      {
+        "method": "POST",
+        "path": "/api/astropages/generated-site/runtime-config/sync",
+        "status": "implemented",
+        "capabilityKey": "generated-site-operations"
+      },
+      {
+        "method": "GET",
+        "path": "/api/astropages/generated-site/sso/exchange",
+        "status": "implemented",
+        "capabilityKey": "generated-site-operations"
+      },
+      {
+        "method": "POST",
+        "path": "/api/astropages/generated-site/sso/logout",
+        "status": "implemented",
+        "capabilityKey": "generated-site-operations"
+      },
+      {
+        "method": "POST",
+        "path": "/api/astropages/provision/emdash-mcp-token",
+        "status": "implemented",
+        "capabilityKey": "generated-site-operations"
+      },
+      {
+        "method": "GET",
+        "path": "/api/astropages/generated-site/assets/status",
+        "status": "implemented",
+        "capabilityKey": "generated-site-operations"
+      },
+      {
+        "method": "POST",
+        "path": "/api/astropages/generated-site/assets/export",
+        "status": "implemented",
+        "capabilityKey": "generated-site-operations"
+      },
+      {
+        "method": "POST",
+        "path": "/api/astropages/generated-site/assets/import",
+        "status": "implemented",
+        "capabilityKey": "generated-site-operations"
+      },
+      {
+        "method": "POST",
+        "path": "/api/astropages/generated-site/assets/register",
+        "status": "implemented",
+        "capabilityKey": "generated-site-operations"
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/astropages/generated-site/assets/[assetId]",
+        "status": "implemented",
+        "capabilityKey": "generated-site-operations"
+      },
+      {
+        "method": "DELETE",
+        "path": "/api/astropages/generated-site/assets/[assetId]",
+        "status": "implemented",
+        "capabilityKey": "generated-site-operations"
+      },
+      {
+        "method": "POST",
+        "path": "/api/astropages/generated-site/assets/[assetId]/restore",
+        "status": "implemented",
+        "capabilityKey": "generated-site-operations"
+      },
+      {
+        "method": "GET/POST",
+        "path": "/api/astropages/generated-site/email-templates",
+        "status": "implemented",
+        "capabilityKey": "transactional-notifications",
+        "capabilityFacet": "email-templates"
+      },
+      {
+        "method": "POST",
+        "path": "/api/astropages/generated-site/email-templates/render",
+        "status": "implemented",
+        "capabilityKey": "transactional-notifications",
+        "capabilityFacet": "email-templates"
+      },
+      {
+        "method": "POST",
+        "path": "/api/astropages/generated-site/email-templates/test-send",
+        "status": "implemented",
+        "capabilityKey": "transactional-notifications",
+        "capabilityFacet": "email-templates"
+      },
+      {
+        "method": "POST",
+        "path": "/api/astropages/generated-site/email-templates/publish",
+        "status": "implemented",
+        "capabilityKey": "transactional-notifications",
+        "capabilityFacet": "email-templates"
+      }
+    ]
+  },
+  "supportedCapabilities": [
+    "capability-content-seo-localization@0.3.0",
+    "capability-generated-site-operations@0.3.0",
+    "capability-customer-auth@0.1.0",
+    "capability-ai-chat@0.1.1",
+    "capability-checkout-and-payments@0.3.0",
+    "capability-transactional-notifications@0.3.0"
+  ],
+  "integrationRequirements": {
+    "required": [
+      {
+        "key": "astrology-engine",
+        "label": "Astrology engine",
+        "description": "AstrologyAPI access is required for provider-backed charts, sky data, retrogrades, transits, horoscopes, moon data, and paid chat replies.",
+        "evaluation": "all_of",
+        "providers": [
+          {
+            "providerKey": "astrologyapi",
+            "environment": "both",
+            "credentialMode": "live"
+          }
+        ]
+      }
+    ],
+    "recommended": [],
+    "optional": []
+  },
+  "assets": {
+    "contractVersion": 1,
+    "manifestPath": "astropages/assets.manifest.json",
+    "seedRoot": "astropages/assets"
+  },
+  "communications": {
+    "contractVersion": "transactional-email.v1",
+    "manifestPath": "astropages/email-templates.manifest.json",
+    "managementMode": "project-d1-via-emdash-mcp"
+  },
+  "contracts": {
+    "sales": {
+      "required": true,
+      "path": "astropages/sales.manifest.json"
+    },
+    "usersData": {
+      "required": true,
+      "path": "astropages/users-data.manifest.json"
+    },
+    "secrets": {
+      "required": true,
+      "path": "astropages/secrets.manifest.json"
+    }
+  },
+  "runtimePersistence": {
+    "status": "generated-site-runtime-managed",
+    "binding": "DB",
+    "canonicalSchema": "database/d1/001_initial_site_schema.sql",
+    "wranglerMigration": "migrations/0000_emdash_schema_bootstrap.sql",
+    "verificationQuery": "database/d1/verify_runtime_tables.sql",
+    "tables": [
+      "ap_runtime_config",
+      "ap_business_settings",
+      "ap_asset_records",
+      "ap_asset_revisions",
+      "ap_asset_aliases",
+      "ap_asset_events",
+      "ap_asset_release_state",
+      "ap_admin_sessions",
+      "ap_admin_sso_exchanges",
+      "ap_content_revision_log",
+      "ap_content_environment_state",
+      "ap_emdash_bootstrap_state",
+      "ap_customer_accounts",
+      "ap_customer_sessions",
+      "ap_customer_password_resets",
+      "ap_customer_user_profiles",
+      "ap_chart_readings",
+      "ap_astrology_provider_cache",
+      "ap_report_products",
+      "ap_shop_products",
+      "ap_astrologers",
+      "ap_session_entitlements",
+      "ap_payment_attempts",
+      "ap_payment_events",
+      "ap_astrology_chat_sessions",
+      "ap_astrology_chat_messages",
+      "ap_astrologer_calendly_event_types",
+      "ap_scheduled_sessions",
+      "ap_calendly_events",
+      "ap_commerce_orders",
+      "ap_commerce_order_lines",
+      "ap_commerce_order_notifications",
+      "ap_session_entitlement_notifications",
+      "ap_business_events",
+      "ap_leads",
+      "ap_email_templates",
+      "ap_email_events",
+      "ap_email_variable_mappings"
+    ]
+  }
+}

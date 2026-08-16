@@ -1,0 +1,30 @@
+---
+import type { TransitCastingStateCopy } from "../../../data/locale/transit/sections/casting-state.ts";
+import CastingState from "../../shared/CastingState.astro";
+import "../../../styles/transit/sections/casting-state.css";
+
+type Props = {
+  copy: TransitCastingStateCopy;
+  editAttributes?: (
+    field: keyof TransitCastingStateCopy,
+  ) => Record<string, string>;
+};
+
+const { copy, editAttributes = () => ({}) } = Astro.props as Props;
+---
+
+<CastingState
+  class="transit-casting"
+  data-transit-casting
+  title={copy.casting_title}
+  statusLabel={copy.casting_status}
+  summary={copy.casting_summary}
+  visual="transit"
+  height="viewport"
+  headingTag="h1"
+  titleEditAttributes={editAttributes("casting_title")}
+  statusEditAttributes={editAttributes("casting_status")}
+  summaryEditAttributes={editAttributes("casting_summary")}
+  tabindex="-1"
+  hidden
+/>

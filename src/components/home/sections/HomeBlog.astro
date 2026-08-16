@@ -1,0 +1,99 @@
+---
+import ArticleCard from "../../shared/ArticleCard.astro";
+import Button from "../../shared/Button.astro";
+import CardGrid from "../../shared/CardGrid.astro";
+import SectionHeading from "../../shared/SectionHeading.astro";
+import type { HomeBlogCopy } from "../../../data/locale/home/sections/blog.ts";
+import "../../../styles/home/sections/home-blog.css";
+
+type EditAttributes = Record<string, string>;
+type DisplayedPost = HomeBlogCopy["posts"][number] & {
+  href: string;
+  image?: { src: string; alt: string; width: number; height: number };
+};
+
+type Props = {
+  copy: HomeBlogCopy;
+  actionHref: string;
+  posts?: DisplayedPost[];
+  dynamicContent?: boolean;
+  editAttributes?: (field: string) => EditAttributes;
+};
+
+const {
+  copy,
+  actionHref,
+  posts,
+  dynamicContent = false,
+  editAttributes = () => ({}),
+} = Astro.props as Props;
+const displayedPosts: DisplayedPost[] = posts ?? copy.posts.map((post) => ({
+  ...post,
+  href: actionHref,
+}));
+---
+
+<section class="home-blog" id="blog" aria-labelledby="home-blog-title">
+  <div class="home-blog__inner">
+    <SectionHeading
+      title={`${copy.titleAccent} ${copy.titleRest}`}
+      description={copy.tagline}
+      headingId="home-blog-title"
+      alignment="right"
+      class="home-blog__heading"
+      descriptionEditAttributes={editAttributes("tagline")}
+    >
+      <Fragment slot="title">
+        <em {...editAttributes("title_accent")}>{copy.titleAccent}</em>{" "}<span
+          {...editAttributes("title_rest")}>{copy.titleRest}</span
+        >
+      </Fragment>
+    </SectionHeading>
+
+    <CardGrid
+      columns={3}
+      tabletColumns={2}
+      mobileColumns={1}
+      gap="loose"
+      ariaLabelledby="home-blog-title"
+      class="home-blog__grid"
+    >
+      {
+        displayedPosts.map((post, index) => {
+          const postNumber = index + 1;
+          const edit = (field: string) =>
+            dynamicContent ? {} : editAttributes(`post_${postNumber}_${field}`);
+          return (
+            <ArticleCard
+              title={post.title}
+              eyebrow={post.category}
+              excerpt={post.excerpt}
+              href={post.href}
+              ariaLabel={`${post.title}: ${post.category}`}
+              class="home-blog__card"
+              eyebrowEditAttributes={edit("category")}
+              titleEditAttributes={edit("title")}
+              excerptEditAttributes={edit("excerpt")}
+              coverSrc={post.image?.src}
+              coverAlt={post.image?.alt ?? post.imageAlt}
+              coverWidth={post.image?.width}
+              coverHeight={post.image?.height}
+              coverAltEditAttributes={edit("image_alt")}
+            />
+          );
+        })
+      }
+    </CardGrid>
+
+    <div class="home-blog__action">
+      <Button
+        href={actionHref}
+        variant="outline"
+        editAttributes={editAttributes("browse_label")}
+      >
+        {copy.browseLabel}
+        <span slot="trailing-icon">→</span>
+      </Button>
+    </div>
+  </div>
+</section>

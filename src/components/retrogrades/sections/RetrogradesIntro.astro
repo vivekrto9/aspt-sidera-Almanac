@@ -1,0 +1,57 @@
+---
+import PageIntro from "../../shared/PageIntro.astro";
+import "../../../styles/retrogrades/sections/intro.css";
+
+type EditAttributes = Record<string, string>;
+
+type Props = {
+  eyebrow: string;
+  titleLead: string;
+  titleAccent: string;
+  titleSuffix: string;
+  description: string;
+  eyebrowEditAttributes?: EditAttributes;
+  titleLeadEditAttributes?: EditAttributes;
+  titleAccentEditAttributes?: EditAttributes;
+  titleSuffixEditAttributes?: EditAttributes;
+  descriptionEditAttributes?: EditAttributes;
+};
+
+const {
+  eyebrow,
+  titleLead,
+  titleAccent,
+  titleSuffix,
+  description,
+  eyebrowEditAttributes = {},
+  titleLeadEditAttributes = {},
+  titleAccentEditAttributes = {},
+  titleSuffixEditAttributes = {},
+  descriptionEditAttributes = {},
+} = Astro.props as Props;
+
+const normalizedSuffix = titleSuffix.trim();
+const titleJoiner = /^[.,!?;:]/.test(normalizedSuffix) ? "" : " ";
+const fullTitle = `${titleLead} ${titleAccent}${titleJoiner}${normalizedSuffix}`;
+---
+
+<div class="retrogrades-intro-shell">
+  <PageIntro
+    id="retrogrades-intro"
+    class="retrogrades-intro"
+    title={fullTitle}
+    eyebrow={eyebrow}
+    description={description}
+    alignment="center"
+    density="standard"
+    headingMeasure="full"
+    eyebrowEditAttributes={eyebrowEditAttributes}
+    descriptionEditAttributes={descriptionEditAttributes}
+  >
+    <Fragment slot="title">
+      <span {...titleLeadEditAttributes}>{titleLead}</span>{" "}<em
+        {...titleAccentEditAttributes}>{titleAccent}</em
+      >{titleJoiner}<span {...titleSuffixEditAttributes}>{normalizedSuffix}</span>
+    </Fragment>
+  </PageIntro>
+</div>

@@ -1,0 +1,111 @@
+---
+import "../../styles/shared/form-field.css";
+
+type FormFieldTone = "default" | "inverse";
+
+type Props = {
+  label: string;
+  controlId?: string;
+  id?: string;
+  helpText?: string;
+  errorText?: string;
+  optionalText?: string;
+  required?: boolean;
+  group?: boolean;
+  labelHidden?: boolean;
+  tone?: FormFieldTone;
+  class?: string;
+  labelEditAttributes?: Record<string, string>;
+  helpEditAttributes?: Record<string, string>;
+  errorEditAttributes?: Record<string, string>;
+  [attribute: string]: unknown;
+};
+
+const {
+  label,
+  controlId,
+  id,
+  helpText,
+  errorText,
+  optionalText,
+  required = false,
+  group = false,
+  labelHidden = false,
+  tone = "default",
+  class: className,
+  labelEditAttributes = {},
+  helpEditAttributes = {},
+  errorEditAttributes = {},
+  ...rootAttributes
+} = Astro.props as Props;
+
+if (!group && !controlId) {
+  throw new Error("FormField requires controlId unless group is true.");
+}
+
+const fieldId = id ?? controlId;
+const helpId = fieldId ? `${fieldId}-help` : undefined;
+const errorId = fieldId ? `${fieldId}-error` : undefined;
+const describedBy = [helpText ? helpId : undefined, errorId].filter(Boolean).join(" ") || undefined;
+const Root = group ? "fieldset" : "div";
+const LabelElement = group ? "legend" : "label";
+const classes = [
+  "sidera-form-field",
+  `sidera-form-field--${tone}`,
+  group && "sidera-form-field--group",
+  labelHidden && "sidera-form-field--label-hidden",
+  errorText && "sidera-form-field--invalid",
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+---
+
+<Root
+  {...rootAttributes}
+  class={classes}
+  id={group ? id : undefined}
+  aria-describedby={group ? describedBy : undefined}
+  data-invalid={errorText ? "true" : undefined}
+>
+  <LabelElement
+    class="sidera-form-field__label"
+    for={!group ? controlId : undefined}
+  >
+    <span {...labelEditAttributes}>{label}</span>
+    {
+      required ? (
+        <span class="sidera-form-field__required" aria-hidden="true">*</span>
+      ) : optionalText ? (
+        <span class="sidera-form-field__optional">{optionalText}</span>
+      ) : null
+    }
+  </LabelElement>
+
+  <div class="sidera-form-field__control">
+    <slot />
+  </div>
+
+  {
+    helpText ? (
+      <p
+        class="sidera-form-field__help"
+        id={helpId}
+        {...helpEditAttributes}
+      >
+        {helpText}
+      </p>
+    ) : null
+  }
+
+  <p
+    class="sidera-form-field__error"
+    id={errorId}
+    role={errorText ? "alert" : undefined}
+    aria-live="polite"
+    aria-atomic="true"
+    {...errorEditAttributes}
+  >
+    {errorText}
+  </p>
+</Root>

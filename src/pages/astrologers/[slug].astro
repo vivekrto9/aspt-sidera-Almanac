@@ -1,0 +1,630 @@
+---
+import type { BuilderEditAttributes } from "../../builder/builder.ts";
+import { loadPublicPageContent } from "../../builder/public-page.ts";
+import AstrologerProfile from "../../components/astrologers/sections/AstrologerProfile.astro";
+import AstrologerLiveSession from "../../components/astrologers/sections/AstrologerLiveSession.astro";
+import AstrologerSessionSetup from "../../components/astrologers/sections/AstrologerSessionSetup.astro";
+import AstrologerSessionSummary from "../../components/astrologers/sections/AstrologerSessionSummary.astro";
+import Footer from "../../components/shared/Footer.astro";
+import Header from "../../components/shared/Header.astro";
+import type { AstrologerProfilePickerCopy } from "../../data/locale/astrologers/sections/browse.ts";
+import type { AstrologerProfileCopy } from "../../data/locale/astrologers/sections/profile.ts";
+import type { AstrologerLiveSessionCopy } from "../../data/locale/astrologers/sections/live-session.ts";
+import type { AstrologerSessionSetupCopy } from "../../data/locale/astrologers/sections/session-setup.ts";
+import type { AstrologerSessionSummaryCopy } from "../../data/locale/astrologers/sections/session-summary.ts";
+import type { PreparedBirthChartResult } from "../../data/birth-chart/results.ts";
+import { getBirthChartResultsCopy } from "../../data/locale/birth-chart/sections/results.ts";
+import { getSynastrySetupCopy } from "../../data/locale/synastry/sections/two-profile-setup.ts";
+import {
+  activeLocales,
+  defaultLocale,
+  localizePath,
+  type SupportedLocale,
+} from "../../data/localization-contract.ts";
+import { createSharedFooterProps } from "../../data/shared-footer-navigation.ts";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getAstrologerBySlug } from "../../server/aggregator/astrologer-directory.ts";
+import {
+  getAstrologyChatSessionDetail,
+  listAstrologyChatSessions,
+} from "../../server/aggregator/astrology-chat.ts";
+import { listBirthChartReadings } from "../../server/aggregator/birth-chart-api.ts";
+import { getCustomerSession } from "../../server/aggregator/customer-auth.ts";
+import { listCustomerUserProfiles } from "../../server/aggregator/customer-profiles.ts";
+import { getCustomerWalletSummary, listWalletTransactions } from "../../server/aggregator/wallet-store.ts";
+import { getRuntimeEnv } from "../../server/generated-site/request.ts";
+import "../../styles/astrologers/astrologers.css";
+
+export const prerender = false;
+
+const {
+  content,
+  locale,
+  builder,
+  builderPage,
+  chromePage,
+  reviewTargets,
+  builderEdit,
+  chromeEdit,
+} = await loadPublicPageContent(Astro, "astrologers");
+const runtimeEnv = await getRuntimeEnv(Astro);
+const astrologer = await getAstrologerBySlug(runtimeEnv, Astro.params.slug ?? "");
+if (!astrologer) {
+  return Astro.redirect(localizePath("/astrologers", locale));
+}
+const customerSession = await getCustomerSession(runtimeEnv, Astro.request).catch(
+  () => null,
+);
+const requestedSessionId = Astro.url.searchParams.get("sessionId") ?? "";
+const chatDetail = customerSession && requestedSessionId
+  ? await getAstrologyChatSessionDetail(
+      runtimeEnv,
+      customerSession.account.id,
+      requestedSessionId,
+    )
+  : null;
+const chatSessions = customerSession && chatDetail
+  ? (
+      await listAstrologyChatSessions({
+        env: runtimeEnv,
+        accountId: customerSession.account.id,
+        pageSize: 50,
+      })
+    ).sessions
+  : [];
+const customerProfiles = customerSession
+  ? await listCustomerUserProfiles(runtimeEnv, customerSession.account.id)
+  : [];
+const customerWallet = customerSession
+  ? await getCustomerWalletSummary(runtimeEnv, customerSession.account.id, locale)
+  : null;
+const walletTransactions = customerSession && chatDetail
+  ? await listWalletTransactions(runtimeEnv, customerSession.account.id, {
+      limit: 50,
+      locale,
+    })
+  : [];
+const requestedProfileId =
+  chatDetail?.session.profileId ?? Astro.url.searchParams.get("profileId") ?? "";
+const defaultProfileId =
+  customerProfiles.find((profile) => profile.id === requestedProfileId)?.id ??
+  customerProfiles[0]?.id ??
+  "";
+const profileFormCopy = getSynastrySetupCopy(locale);
+const birthChartCopy = getBirthChartResultsCopy(locale);
+type CustomerChartReading = {
+  id: string;
+  profileId: string;
+  generatedAt: string;
+  chart: PreparedBirthChartResult;
+};
+const customerChartReadings: CustomerChartReading[] = customerSession
+  ? (
+      await listBirthChartReadings({
+        env: runtimeEnv,
+        accountId: customerSession.account.id,
+        pageSize: 50,
+      }).catch(() => ({ items: [] }))
+    ).items
+  : [];
+const selectedCustomerProfile = customerProfiles.find(
+  (profile) => profile.id === defaultProfileId,
+);
+const selectedCustomerReading = selectedCustomerProfile
+  ? customerChartReadings.find(
+      (reading) =>
+        reading.profileId === selectedCustomerProfile.id &&
+        (selectedCustomerProfile.createdAt === selectedCustomerProfile.updatedAt ||
+          Date.parse(reading.generatedAt) >=
+            Date.parse(selectedCustomerProfile.updatedAt)),
+    )
+  : undefined;
+const birthChartRoleLabels = {
+  sun: birthChartCopy.results_sun_role,
+  moon: birthChartCopy.results_moon_role,
+  rising: birthChartCopy.results_rising_role,
+};
+const selectedCustomerSummary = selectedCustomerReading
+  ? selectedCustomerReading.chart.bigThree
+      .map(
+        (placement) =>
+          `${placement.sign} ${birthChartRoleLabels[placement.role]}`,
+      )
+      .join(" · ") ||
+    [
+      selectedCustomerReading.chart.birthSummary,
+      selectedCustomerReading.chart.birthPlace,
+    ]
+      .filter(Boolean)
+      .join(" · ")
+  : "";
+const customerChart =
+  selectedCustomerProfile && selectedCustomerReading && selectedCustomerSummary
+    ? {
+        profileName: selectedCustomerProfile.profileName,
+        summary: selectedCustomerSummary,
+        href: localizePath(
+          `/birth-chart/${encodeURIComponent(selectedCustomerReading.id)}`,
+          locale,
+        ),
+        rotation: selectedCustomerReading.chart.chartRotation || 0,
+        planets: selectedCustomerReading.chart.planets.map((planet) => ({
+          glyph: planet.glyph,
+          longitude: planet.longitude,
+          label: planet.name,
+          color: planet.color,
+        })),
+        placements: (["sun", "moon", "rising"] as const).map((role) => {
+          const bigThree = selectedCustomerReading.chart.bigThree.find(
+            (placement) => placement.role === role,
+          );
+          const planet = selectedCustomerReading.chart.planets.find((item) => {
+            const name = item.name.toLowerCase();
+            return role === "rising"
+              ? name.includes("ascendant") || name.includes("rising")
+              : name === role;
+          });
+          const position = planet
+            ? [planet.degreeText, planet.signName].filter(Boolean).join(" ")
+            : bigThree?.sign || "";
+          return {
+            role,
+            label: [birthChartRoleLabels[role], position]
+              .filter(Boolean)
+              .join(" · "),
+          };
+        }).filter((placement) => placement.label),
+      }
+    : undefined;
+
+const seoContent = {
+  seo_title: `${astrologer.name} · ${content.seo_title}`,
+  seo_description: astrologer.description,
+  seo_canonical_path: `/astrologers/${astrologer.slug}`,
+  seo_robots: content.seo_robots,
+  og_title: `${astrologer.name} · ${content.og_title}`,
+  og_description: astrologer.description,
+  og_image: astrologer.imageUrl,
+  og_image_alt: astrologer.name,
+  twitter_card: content.twitter_card,
+  twitter_title: `${astrologer.name} · ${content.twitter_title}`,
+  twitter_description: astrologer.description,
+  twitter_image: astrologer.imageUrl,
+};
+
+const componentEditAttributes = (
+  attributes: BuilderEditAttributes,
+): Record<string, string> =>
+  Object.fromEntries(
+    Object.entries(attributes)
+      .filter((entry): entry is [string, string | true] => entry[1] !== undefined)
+      .map(([key, value]) => [key, value === true ? "true" : value]),
+  );
+
+const localeHref = (targetLocale: SupportedLocale) => {
+  const url = new URL(Astro.request.url);
+  if (targetLocale === defaultLocale) {
+    if (locale === defaultLocale) url.searchParams.delete("locale");
+    else url.searchParams.set("locale", defaultLocale);
+  } else {
+    url.searchParams.set("locale", targetLocale);
+  }
+  return `${url.pathname}${url.search}${url.hash}`;
+};
+
+const navigation = [
+  ["nav_todays_sky", "/todays-sky"],
+  ["nav_charts", "/birth-chart"],
+  ["nav_compatibility", "/synastry"],
+  ["nav_moon", "/moon-calendar"],
+  ["nav_horoscope", "/daily-horoscope"],
+  ["nav_astrologers", "/astrologers"],
+  ["nav_blog", "/blog"],
+].map(([field, path]) => ({
+  label: content[field],
+  href: localizePath(path, locale),
+  current: path === "/astrologers",
+  editAttributes: componentEditAttributes(chromeEdit(field)),
+}));
+
+const actions = [
+  {
+    id: "sign-in",
+    label: content.action_sign_in,
+    href: localizePath("/login", locale),
+    variant: "ghost" as const,
+    editAttributes: componentEditAttributes(chromeEdit("action_sign_in")),
+  },
+  {
+    id: "get-chart",
+    label: content.action_get_chart,
+    href: localizePath("/birth-chart", locale),
+    variant: "primary" as const,
+    editAttributes: componentEditAttributes(chromeEdit("action_get_chart")),
+  },
+];
+
+const languageOptions = activeLocales.map((item) => {
+  const field = `language_option_${item.code}_label`;
+  return {
+    code: item.code,
+    label: content[field] || item.nativeName,
+    href: localeHref(item.code),
+    lang: item.code,
+    hreflang: item.hreflang,
+    editAttributes: componentEditAttributes(chromeEdit(field)),
+  };
+});
+
+const profileCopy: AstrologerProfileCopy = {
+  backLabel: content.profile_back_label,
+  yearsReading: content.profile_years_reading,
+  sessions: content.profile_sessions,
+  languages: content.profile_languages,
+  about: content.profile_about,
+  specialties: content.profile_specialties,
+  whatToExpect: content.profile_what_to_expect,
+  expectationOne: content.profile_expectation_one,
+  expectationTwo: content.profile_expectation_two,
+  expectationThree: content.profile_expectation_three,
+  expectationFour: content.profile_expectation_four,
+  recentReviews: content.profile_recent_reviews,
+  average: content.profile_average,
+  reviewsSuffix: content.profile_reviews_suffix,
+  rateUnit: content.profile_rate_unit,
+  talkNow: content.profile_talk_now,
+  bookNextSlot: content.profile_book_next_slot,
+  schedule: content.profile_schedule,
+  checkReviews: content.profile_written_question,
+  freeMinutesNote: content.profile_free_minutes_note,
+  chartReady: content.profile_chart_ready,
+  chartOwner: content.profile_chart_owner,
+  chartLabel: content.profile_chart_label,
+  reviewOneDate: content.profile_review_one_date,
+  reviewOneText: content.profile_review_one_text,
+  reviewTwoDate: content.profile_review_two_date,
+  reviewTwoText: content.profile_review_two_text,
+  reviewThreeDate: content.profile_review_three_date,
+  reviewThreeText: content.profile_review_three_text,
+};
+
+const profilePickerCopy: AstrologerProfilePickerCopy = {
+  profilePickerEyebrow: content.browse_profile_picker_eyebrow,
+  profilePickerTitle: content.browse_profile_picker_title,
+  profilePickerDescription: content.browse_profile_picker_description,
+  profilePickerCloseLabel: content.browse_profile_picker_close_label,
+  profilePickerEmptyTitle: content.browse_profile_picker_empty_title,
+  profilePickerEmptyDescription: content.browse_profile_picker_empty_description,
+  profilePickerCreateLabel: content.browse_profile_picker_create_label,
+  profilePickerSelectLabel: content.browse_profile_picker_select_label,
+  profilePickerDefaultLabel: content.browse_profile_picker_default_label,
+  profilePickerAddTitle: content.browse_profile_picker_add_title,
+  profilePickerBackLabel: content.browse_profile_picker_back_label,
+  profilePickerSaveLabel: content.browse_profile_picker_save_label,
+  profilePickerSavingLabel: content.browse_profile_picker_saving_label,
+  profilePickerError: content.browse_profile_picker_error,
+};
+
+const sessionSetupCopy: AstrologerSessionSetupCopy = {
+  backLabel: content.setup_back_label,
+  title: content.setup_title,
+  description: content.setup_description,
+  connectTitle: content.setup_connect_title,
+  liveChat: content.setup_chat_label,
+  liveChatDescription: content.setup_chat_description,
+  voiceCall: content.setup_voice_label,
+  voiceCallDescription: content.setup_voice_description,
+  videoCall: content.setup_video_label,
+  videoCallDescription: content.setup_video_description,
+  writtenQuestion: content.setup_written_label,
+  writtenQuestionDescription: content.setup_written_description,
+  whenTitle: content.setup_when_title,
+  talkNow: content.setup_talk_now,
+  talkNowDescription: content.setup_talk_now_description,
+  scheduleLater: content.setup_schedule_later,
+  scheduleLaterDescription: content.setup_schedule_later_description,
+  chooseSlot: content.setup_choose_slot,
+  slotOne: content.setup_slot_one,
+  slotTwo: content.setup_slot_two,
+  slotThree: content.setup_slot_three,
+  slotFour: content.setup_slot_four,
+  slotFive: content.setup_slot_five,
+  slotSix: content.setup_slot_six,
+  sessionLength: content.setup_session_length,
+  durationFifteen: content.setup_duration_fifteen,
+  durationThirty: content.setup_duration_thirty,
+  durationFortyFive: content.setup_duration_forty_five,
+  durationSixty: content.setup_duration_sixty,
+  questionTitle: content.setup_question_title,
+  questionDescription: content.setup_question_description,
+  topicLove: content.setup_topic_love,
+  topicCareer: content.setup_topic_career,
+  topicTiming: content.setup_topic_timing,
+  topicLifePath: content.setup_topic_life_path,
+  questionPlaceholder: content.setup_question_placeholder,
+  chartShared: content.setup_chart_shared,
+  chartOwner: content.setup_chart_owner,
+  chartLabel: content.setup_chart_label,
+  editChart: content.setup_edit_chart,
+  summaryLabel: content.setup_summary_label,
+  sessionLabel: content.setup_session_label,
+  whenLabel: content.setup_when_label,
+  withinDayLabel: content.setup_within_day_label,
+  rateLabel: content.setup_rate_label,
+  perMinuteLabel: content.setup_per_minute_label,
+  flatRateLabel: content.setup_flat_rate_label,
+  estimatedLabel: content.setup_estimated_label,
+  totalLabel: content.setup_total_label,
+  freeMinutes: content.setup_free_minutes,
+  startNow: content.setup_start_now,
+  confirmBooking: content.setup_confirm_booking,
+  sendQuestion: content.setup_send_question,
+  secureNote: content.setup_secure_note,
+};
+
+const liveSessionCopy: AstrologerLiveSessionCopy = {
+  historyTitle: content.live_history_title,
+  newChat: content.live_new_chat,
+  openHistory: content.live_open_history,
+  closeHistory: content.live_close_history,
+  noHistory: content.live_no_history,
+  sessionEnded: content.live_session_ended,
+  chatsLabel: content.live_chats_label,
+  transactionsLabel: content.live_transactions_label,
+  noTransactions: content.live_no_transactions,
+  chattingAs: content.live_chatting_as,
+  securePrivate: content.live_secure_private,
+  backToAstrologers: content.live_back_to_astrologers,
+  loadMore: content.live_load_more,
+  connected: content.live_connected,
+  walletLabel: content.live_wallet_label,
+  meterLabel: content.live_meter_label,
+  endSession: content.live_end_session,
+  sessionStarted: content.live_session_started,
+  openingMessage: content.live_opening_message,
+  replyMessage: content.live_reply_message,
+  quickYear: content.live_quick_year,
+  quickCareer: content.live_quick_career,
+  quickLove: content.live_quick_love,
+  quickTransits: content.live_quick_transits,
+  messagePlaceholder: content.live_message_placeholder,
+  sendMessage: content.live_send_message,
+  chartTitle: content.live_chart_title,
+  chartOwner: content.live_chart_owner,
+  chartLabel: content.live_chart_label,
+  askedTitle: content.live_asked_title,
+  askedText: content.live_asked_text,
+  placementsTitle: content.live_placements_title,
+  sunPlacement: content.live_sun_placement,
+  moonPlacement: content.live_moon_placement,
+  risingPlacement: content.live_rising_placement,
+  walletLowTitle: content.live_wallet_low_title,
+  walletLowDescription: content.live_wallet_low_description,
+  walletCurrentLabel: content.live_wallet_current_label,
+  walletRequiredLabel: content.live_wallet_required_label,
+  walletShortfallLabel: content.live_wallet_shortfall_label,
+  addFundsLabel: content.live_add_funds_label,
+  walletCloseLabel: content.live_wallet_close_label,
+};
+
+const sessionSummaryCopy: AstrologerSessionSummaryCopy = {
+  liveOverline: content.summary_live_overline,
+  liveTitle: content.summary_live_title,
+  liveBody: content.summary_live_body,
+  bookedOverline: content.summary_booked_overline,
+  bookedTitle: content.summary_booked_title,
+  bookedBody: content.summary_booked_body,
+  sentOverline: content.summary_sent_overline,
+  sentTitle: content.summary_sent_title,
+  sentBody: content.summary_sent_body,
+  sessionTypeLabel: content.summary_session_type_label,
+  durationLabel: content.summary_duration_label,
+  freeIntroLabel: content.summary_free_intro_label,
+  freeIntroValue: content.summary_free_intro_value,
+  billedAtLabel: content.summary_billed_at_label,
+  whenLabel: content.summary_when_label,
+  lengthLabel: content.summary_length_label,
+  typeLabel: content.summary_type_label,
+  replyByLabel: content.summary_reply_by_label,
+  chartLabel: content.summary_chart_label,
+  sharedValue: content.summary_shared_value,
+  totalChargedLabel: content.summary_total_charged_label,
+  estimatedTotalLabel: content.summary_estimated_total_label,
+  ratingTitle: content.summary_rating_title,
+  ratingAriaLabel: content.summary_rating_aria_label,
+  notePlaceholder: content.summary_note_placeholder,
+  livePrimaryAction: content.summary_live_primary_action,
+  bookedPrimaryAction: content.summary_booked_primary_action,
+  sentPrimaryAction: content.summary_sent_primary_action,
+  backAction: content.summary_back_action,
+  returnHome: content.summary_return_home,
+};
+
+const summaryParam = Astro.url.searchParams.get("summary");
+const isSessionSummary = ["live", "booked", "sent"].includes(summaryParam ?? "");
+const summaryMode = (isSessionSummary ? summaryParam : "live") as "live" | "booked" | "sent";
+const sessionTypeKey = Astro.url.searchParams.get("sessionType") ?? "chat";
+const sessionTypeLabels = {
+  chat: sessionSetupCopy.liveChat,
+  voice: sessionSetupCopy.voiceCall,
+  video: sessionSetupCopy.videoCall,
+  written: sessionSetupCopy.writtenQuestion,
+} as const;
+const sessionRates = {
+  chat: astrologer.rate,
+  voice: astrologer.rate + 0.6,
+  video: astrologer.rate + 1.2,
+  written: 19,
+} as const;
+const resolvedSessionType = sessionTypeKey in sessionTypeLabels
+  ? (sessionTypeKey as keyof typeof sessionTypeLabels)
+  : "chat";
+const parsedDuration = Number.parseInt(Astro.url.searchParams.get("duration") ?? "222", 10);
+const durationSeconds = Number.isFinite(parsedDuration) ? parsedDuration : 222;
+const scheduledWhen = Astro.url.searchParams.get("slot") || sessionSetupCopy.slotOne;
+const scheduledLength = Astro.url.searchParams.get("duration") || "30";
+
+const isPaymentReturn = Astro.url.searchParams.get("payment") === "success";
+const isLiveSession = !isSessionSummary && Boolean(chatDetail);
+const isSessionSetup =
+  !isLiveSession && (Astro.url.searchParams.get("book") === "1" || isPaymentReturn);
+
+if (isSessionSetup && !customerSession && !builder.launcherEnabled) {
+  return Astro.redirect(
+    `${localizePath("/login", locale)}?next=${encodeURIComponent(`${Astro.url.pathname}${Astro.url.search}`)}`,
+    302,
+  );
+}
+
+const footerProps = createSharedFooterProps({
+  content,
+  locale,
+  editAttributes: (field) => componentEditAttributes(chromeEdit(field)),
+});
+---
+
+<BaseLayout
+  seo={seoContent}
+  bodyClass="astrologers-body"
+  builderToolbar={{
+    launcherEnabled: builder.launcherEnabled,
+    studioModeEnabled: builder.studioModeEnabled,
+    collection: builder.collection,
+    entry: builder.entry,
+    locale: builder.locale,
+    csrfToken: builder.csrfToken,
+    canPublish: builder.canPublish,
+    seo: seoContent,
+    hasSavedDraft: builderPage.hasSavedDraft || chromePage.hasSavedDraft,
+    reviewTargets,
+  }}
+>
+  {
+    !isLiveSession && (
+      <Header
+        id="astrologer-profile-header"
+        brandLabel={content.brand_name}
+        brandHref={localizePath("/", locale)}
+        brandAriaLabel={content.brand_aria_label}
+        navigationLabel={content.primary_navigation_label}
+        chromeNavigation={{ content, edit: chromeEdit }}
+        navigation={navigation}
+        actions={actions}
+        language={{
+          activeLocale: locale,
+          options: languageOptions,
+          triggerLabel: content.language_trigger_label,
+          menuLabel: content.language_menu_label,
+        }}
+        mobileUtilityActionId="sign-in"
+        menuLabel={content.menu_open_label}
+        closeMenuLabel={content.menu_close_label}
+        brandEditAttributes={componentEditAttributes(chromeEdit("brand_name"))}
+      />
+    )
+  }
+
+  <main class="astrologers-page">
+    {
+      isSessionSummary ? (
+        <AstrologerSessionSummary
+          astrologer={astrologer}
+          copy={sessionSummaryCopy}
+          mode={summaryMode}
+          sessionType={sessionTypeLabels[resolvedSessionType]}
+          durationSeconds={durationSeconds}
+          scheduledWhen={scheduledWhen}
+          scheduledLength={scheduledLength}
+          rate={sessionRates[resolvedSessionType]}
+          locale={locale}
+          bookingHref={localizePath(`/astrologers/${astrologer.slug}?book=1`, locale)}
+          browseHref={localizePath("/astrologers", locale)}
+          homeHref={localizePath("/", locale)}
+          editAttributes={(field: string) => componentEditAttributes(builderEdit(field))}
+        />
+      ) : isLiveSession ? (
+        <AstrologerLiveSession
+          astrologer={astrologer}
+          copy={liveSessionCopy}
+          sessionMode={sessionSetupCopy.liveChat}
+          sessionActive={chatDetail?.session.status === "active"}
+          sessionId={chatDetail?.session.id || ""}
+          csrfToken={customerSession?.csrfToken || ""}
+          walletBalance={customerWallet?.balance || "$0"}
+          walletBalanceCents={customerWallet?.balanceCents || 0}
+          questionPrice={new Intl.NumberFormat(locale, {
+            style: "currency",
+            currency: "USD",
+            minimumFractionDigits: 2,
+          }).format((chatDetail?.session.priceCents || 0) / 100)}
+          questionPriceCents={chatDetail?.session.priceCents || 0}
+          walletHref={localizePath("/wallet", locale)}
+          newChatHref={localizePath("/astrologers", locale)}
+          locale={locale}
+          chatSessions={chatSessions}
+          walletTransactions={walletTransactions}
+          activeProfileLabel={[
+            chatDetail?.session.profileName,
+            chatDetail?.session.partnerProfileName,
+          ].filter(Boolean).join(" + ")}
+          initialMessages={chatDetail?.messages || []}
+          chartContext={{
+            owner:
+              customerChart?.profileName ||
+              selectedCustomerProfile?.profileName ||
+              chatDetail?.session.profileName ||
+              "",
+            label:
+              customerChart?.summary ||
+              [selectedCustomerProfile?.birthDate, selectedCustomerProfile?.birthPlace]
+                .filter(Boolean)
+                .join(" · "),
+            rotation: customerChart?.rotation || 0,
+            planets: customerChart?.planets || [],
+            placements: customerChart?.placements || [],
+          }}
+          exitHref={localizePath(`/astrologers/${astrologer.slug}`, locale)}
+          editAttributes={(field: string) => componentEditAttributes(builderEdit(field))}
+        />
+      ) : isSessionSetup ? (
+        <AstrologerSessionSetup
+          astrologer={astrologer}
+          copy={sessionSetupCopy}
+          locale={locale}
+          profileHref={localizePath(`/astrologers/${astrologer.slug}`, locale)}
+          chartHref={localizePath("/account#people", locale)}
+          nextHref={localizePath(`/astrologers/${astrologer.slug}`, locale)}
+          csrfToken={customerSession?.csrfToken || ""}
+          astrologerSlug={astrologer.slug}
+          profileId={defaultProfileId}
+          loginHref={localizePath("/login", locale)}
+          editAttributes={(field: string) => componentEditAttributes(builderEdit(field))}
+        />
+      ) : (
+        <AstrologerProfile
+          astrologer={astrologer}
+          copy={profileCopy}
+          pickerCopy={profilePickerCopy}
+          profileFormCopy={profileFormCopy}
+          customerProfiles={customerProfiles}
+          customerChart={customerChart}
+          authenticated={Boolean(customerSession)}
+          csrfToken={customerSession?.csrfToken || ""}
+          locale={locale}
+          browseHref={localizePath("/astrologers", locale)}
+          bookingHref={localizePath(`/astrologers/${astrologer.slug}?book=1`, locale)}
+          chatHref={localizePath("/chat", locale)}
+          loginHref={localizePath("/login", locale)}
+          availabilityLabels={{
+            online: content.online_now,
+            busy: content.busy_label,
+            offline: content.offline_label,
+          }}
+          editAttributes={(field) => componentEditAttributes(builderEdit(field))}
+        />
+      )
+    }
+  </main>
+
+  {!isLiveSession && <Footer {...footerProps} />}
+</BaseLayout>

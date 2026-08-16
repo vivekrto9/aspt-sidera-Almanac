@@ -1,0 +1,123 @@
+---
+import Button from "./Button.astro";
+import "../../styles/shared/empty-state.css";
+
+type EmptyStateVariant = "panel" | "plain";
+type HeadingLevel = 2 | 3;
+type ActionType = "button" | "submit" | "reset";
+type AriaLive = "off" | "polite" | "assertive";
+
+type Props = {
+  title: string;
+  description?: string;
+  variant?: EmptyStateVariant;
+  headingLevel?: HeadingLevel;
+  showVisual?: boolean;
+  actionLabel?: string;
+  actionHref?: string;
+  actionType?: ActionType;
+  actionForm?: string;
+  actionName?: string;
+  actionValue?: string;
+  actionDisabled?: boolean;
+  actionAriaLabel?: string;
+  ariaLive?: AriaLive;
+  id?: string;
+  class?: string;
+  titleEditAttributes?: Record<string, string>;
+  descriptionEditAttributes?: Record<string, string>;
+  actionEditAttributes?: Record<string, string>;
+  [attribute: string]: unknown;
+};
+
+const {
+  title,
+  description,
+  variant = "plain",
+  headingLevel = 2,
+  showVisual = true,
+  actionLabel,
+  actionHref,
+  actionType = "button",
+  actionForm,
+  actionName,
+  actionValue,
+  actionDisabled = false,
+  actionAriaLabel,
+  ariaLive = "off",
+  id,
+  class: className,
+  titleEditAttributes = {},
+  descriptionEditAttributes = {},
+  actionEditAttributes = {},
+  ...stateAttributes
+} = Astro.props as Props;
+
+const HeadingTag = `h${headingLevel}` as const;
+const headingId = id ? `${id}-title` : undefined;
+const hasVisualSlot = Astro.slots.has("visual");
+const hasActionSlot = Astro.slots.has("action");
+const hasAction = hasActionSlot || Boolean(actionLabel);
+const classes = [
+  "sidera-empty-state",
+  `sidera-empty-state--${variant}`,
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+---
+
+<section
+  {...stateAttributes}
+  id={id}
+  class={classes}
+  aria-labelledby={headingId}
+  aria-live={ariaLive === "off" ? undefined : ariaLive}
+>
+  {
+    showVisual ? (
+      <div class="sidera-empty-state__visual" aria-hidden="true">
+        {hasVisualSlot ? <slot name="visual" /> : <span>✦</span>}
+      </div>
+    ) : null
+  }
+
+  <HeadingTag
+    id={headingId}
+    class="sidera-empty-state__title"
+    {...titleEditAttributes}
+  >
+    {title}
+  </HeadingTag>
+
+  {
+    description ? (
+      <p class="sidera-empty-state__description" {...descriptionEditAttributes}>
+        {description}
+      </p>
+    ) : null
+  }
+
+  {
+    hasAction ? (
+      <div class="sidera-empty-state__action">
+        {hasActionSlot ? (
+          <slot name="action" />
+        ) : (
+          <Button
+            href={actionHref}
+            type={actionType}
+            form={actionForm}
+            name={actionName}
+            value={actionValue}
+            disabled={actionDisabled}
+            ariaLabel={actionAriaLabel}
+            editAttributes={actionEditAttributes}
+          >
+            {actionLabel}
+          </Button>
+        )}
+      </div>
+    ) : null
+  }
+</section>

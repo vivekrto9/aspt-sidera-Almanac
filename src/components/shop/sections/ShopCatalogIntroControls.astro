@@ -1,0 +1,81 @@
+---
+import type { SupportedLocale } from "../../../data/localization-contract.ts";
+import type { ShopCategoryId } from "../../../data/shop/catalog.ts";
+import ChoiceChips from "../../shared/ChoiceChips.astro";
+import PageIntro from "../../shared/PageIntro.astro";
+import "../../../styles/shop/sections/catalog-intro-controls.css";
+
+type EditAttributes = Record<string, string>;
+type Category = { value: ShopCategoryId; label: string; editAttributes?: EditAttributes };
+
+type Props = {
+  locale: SupportedLocale;
+  eyebrow: string;
+  titleLead: string;
+  titleAccent: string;
+  titleRest: string;
+  description: string;
+  filterLabel: string;
+  categories: Category[];
+  activeCategory: ShopCategoryId;
+  resultCount: number;
+  piecesSuffix: string;
+  editAttributes?: (field: string) => EditAttributes;
+};
+
+const {
+  locale, eyebrow, titleLead, titleAccent, titleRest, description,
+  filterLabel, categories, activeCategory, resultCount, piecesSuffix,
+  editAttributes = () => ({}),
+} = Astro.props as Props;
+---
+
+<section class="shop-catalog-intro-controls" data-screen-label="Shop">
+  <PageIntro
+    id="shop-catalog-intro"
+    class="shop-catalog-intro-controls__intro"
+    title={`${titleLead} ${titleAccent}${titleRest}`}
+    eyebrow={eyebrow}
+    description={description}
+    alignment="center"
+    headingMeasure="full"
+    eyebrowEditAttributes={editAttributes("catalog_eyebrow")}
+    descriptionEditAttributes={editAttributes("catalog_description")}
+  >
+    <Fragment slot="title">
+      <span {...editAttributes("catalog_title_lead")}>{titleLead}</span>{" "}
+      <em {...editAttributes("catalog_title_accent")}>{titleAccent}</em><span
+        {...editAttributes("catalog_title_rest")}>{titleRest}</span
+      >
+    </Fragment>
+  </PageIntro>
+
+  <div class="shop-catalog-intro-controls__toolbar">
+    <form class="shop-catalog-intro-controls__form" action="/shop" method="get" data-shop-filter-form>
+      {locale !== "en" ? <input type="hidden" name="locale" value={locale} /> : null}
+      <ChoiceChips
+        id="shop-category-filter"
+        name="category"
+        label={filterLabel}
+        hideLabel
+        mode="single"
+        size="compact"
+        value={activeCategory}
+        options={categories}
+        labelEditAttributes={editAttributes("catalog_filter_label")}
+      />
+    </form>
+    <p class="shop-catalog-intro-controls__count" aria-live="polite">
+      <strong>{resultCount}</strong>
+      <span {...editAttributes("catalog_pieces_suffix")}>{piecesSuffix}</span>
+    </p>
+  </div>
+</section>
+
+<script>
+  document.querySelectorAll<HTMLFormElement>("[data-shop-filter-form]").forEach((form) => {
+    if (form.dataset.shopFilterReady === "true") return;
+    form.dataset.shopFilterReady = "true";
+    form.addEventListener("change", () => form.requestSubmit());
+  });
+</script>

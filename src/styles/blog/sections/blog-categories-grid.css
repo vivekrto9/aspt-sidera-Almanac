@@ -1,0 +1,42 @@
+.blog-categories-grid {
+  inline-size: 100%;
+  padding: 0 2.125rem 6rem;
+  background: var(--color-surface);
+}
+
+.blog-categories-grid__inner {
+  inline-size: min(100%, 70rem);
+  margin-inline: auto;
+}
+
+.blog-categories-grid__filters {
+  margin: 0;
+  padding-block: 0 1.5rem;
+}
+
+.blog-categories-grid__filters .sidera-choice-chips {
+  --choice-chip-background: var(--color-panel);
+  --choice-chip-border: rgba(var(--color-text-rgb), 0.18);
+  --choice-chip-color: var(--color-text);
+  --choice-chip-min-height: 2.125rem;
+  --choice-chip-padding: 0.5rem 1rem;
+  --choice-chip-font-size: 0.8125rem;
+}
+
+.blog-categories-grid__grid {
+  --sidera-card-grid-gap: 1.625rem;
+}
+
+.blog-categories-grid__item {
+  min-inline-size: 0;
+}
+
+@media (max-width: 40rem) {
+  .blog-categories-grid {
+    padding: 0 1.25rem 4.5rem;
+  }
+
+  .blog-categories-grid__filters {
+    padding-block-end: 1.25rem;
+  }
+}

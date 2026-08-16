@@ -1,0 +1,335 @@
+---
+import Checkbox from "./Checkbox.astro";
+import FormField from "./FormField.astro";
+import SelectField, { type SelectFieldOption } from "./SelectField.astro";
+import "../../styles/shared/time-selector.css";
+
+type TimeSelectorDensity = "standard" | "compact";
+type TimeSelectorPresentation = "native" | "popover";
+
+type Props = {
+  id: string;
+  label: string;
+  hourLabel: string;
+  minuteLabel: string;
+  periodLabel: string;
+  unknownLabel: string;
+  hours: readonly SelectFieldOption[];
+  minutes: readonly SelectFieldOption[];
+  periods: readonly SelectFieldOption[];
+  hourValue?: string | number;
+  minuteValue?: string | number;
+  periodValue?: string | number;
+  hourName?: string;
+  minuteName?: string;
+  periodName?: string;
+  unknownName?: string;
+  unknownValue?: string;
+  unknownDescription?: string;
+  hourPlaceholder?: string;
+  minutePlaceholder?: string;
+  periodPlaceholder?: string;
+  helpText?: string;
+  errorText?: string;
+  optionalText?: string;
+  required?: boolean;
+  disabled?: boolean;
+  unknown?: boolean;
+  form?: string;
+  density?: TimeSelectorDensity;
+  selectPresentation?: TimeSelectorPresentation;
+  class?: string;
+  labelEditAttributes?: Record<string, string>;
+  helpEditAttributes?: Record<string, string>;
+  errorEditAttributes?: Record<string, string>;
+  unknownLabelEditAttributes?: Record<string, string>;
+  unknownDescriptionEditAttributes?: Record<string, string>;
+};
+
+const {
+  id,
+  label,
+  hourLabel,
+  minuteLabel,
+  periodLabel,
+  unknownLabel,
+  hours,
+  minutes,
+  periods,
+  hourValue,
+  minuteValue,
+  periodValue,
+  hourName = "hour",
+  minuteName = "minute",
+  periodName = "period",
+  unknownName = "timeUnknown",
+  unknownValue = "true",
+  unknownDescription,
+  hourPlaceholder,
+  minutePlaceholder,
+  periodPlaceholder,
+  helpText,
+  errorText,
+  optionalText,
+  required = false,
+  disabled = false,
+  unknown = false,
+  form,
+  density = "standard",
+  selectPresentation = "native",
+  class: className,
+  labelEditAttributes,
+  helpEditAttributes,
+  errorEditAttributes,
+  unknownLabelEditAttributes,
+  unknownDescriptionEditAttributes,
+} = Astro.props as Props;
+
+const classes = [
+  "sidera-time-selector",
+  `sidera-time-selector--${density}`,
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+const describedBy = [helpText ? `${id}-help` : undefined, `${id}-error`]
+  .filter(Boolean)
+  .join(" ");
+const selectedPeriod = periods.find(
+  (option) => String(option.value) === String(periodValue),
+);
+const selectedPeriodLabel =
+  selectedPeriod?.label ?? periodPlaceholder ?? periods[0]?.label ?? periodLabel;
+const fields = [
+  {
+    key: "hour",
+    label: hourLabel,
+    options: hours,
+    value: hourValue,
+    name: hourName,
+    placeholder: hourPlaceholder,
+  },
+  {
+    key: "minute",
+    label: minuteLabel,
+    options: minutes,
+    value: minuteValue,
+    name: minuteName,
+    placeholder: minutePlaceholder,
+  },
+] as const;
+---
+
+<FormField
+  id={id}
+  label={label}
+  helpText={helpText}
+  errorText={errorText}
+  optionalText={optionalText}
+  required={required}
+  group
+  class={classes}
+  data-time-selector
+  data-time-unknown={unknown ? "true" : "false"}
+  labelEditAttributes={labelEditAttributes}
+  helpEditAttributes={helpEditAttributes}
+  errorEditAttributes={errorEditAttributes}
+>
+  <div class="sidera-time-selector__fields" id={`${id}-controls`}>
+    {
+      fields.map((field) => (
+        <div class:list={["sidera-time-selector__part", `sidera-time-selector__part--${field.key}`]}>
+          <SelectField
+            id={`${id}-${field.key}`}
+            name={field.name}
+            value={field.value}
+            options={field.options}
+            placeholder={field.placeholder}
+            required={required}
+            disabled={disabled || unknown}
+            form={form}
+            density={density}
+            presentation={selectPresentation}
+            ariaLabel={field.label}
+            ariaDescribedby={describedBy}
+            invalid={Boolean(errorText)}
+            data-time-part
+          />
+        </div>
+      ))
+    }
+
+    <div class="sidera-time-selector__part sidera-time-selector__part--period">
+      <details
+        class="sidera-time-selector__period"
+        data-time-period
+        data-time-period-base-disabled={disabled ? "true" : "false"}
+        data-time-period-disabled={disabled || unknown ? "true" : "false"}
+      >
+        <summary
+          class:list={[
+            "sidera-select-field",
+            "sidera-time-selector__period-trigger",
+            `sidera-select-field--${density}`,
+          ]}
+          aria-label={`${periodLabel}: ${selectedPeriodLabel}`}
+          aria-describedby={describedBy}
+          aria-disabled={disabled || unknown ? "true" : undefined}
+          aria-invalid={errorText ? "true" : undefined}
+        >
+          <span data-time-period-label>{selectedPeriodLabel}</span>
+        </summary>
+        <div
+          class="sidera-time-selector__period-menu"
+          role="radiogroup"
+          aria-label={periodLabel}
+        >
+          {
+            periods.map((option) => (
+              <label
+                class="sidera-time-selector__period-option"
+                data-time-period-option
+                data-time-period-option-label={option.label}
+                data-time-period-selected={
+                  String(option.value) === String(periodValue) ? "true" : "false"
+                }
+                data-option-disabled={option.disabled ? "true" : undefined}
+              >
+                <input
+                  type="radio"
+                  name={periodName}
+                  value={option.value}
+                  checked={String(option.value) === String(periodValue)}
+                  required={required}
+                  disabled={disabled || unknown || option.disabled}
+                  form={form}
+                  aria-describedby={describedBy}
+                />
+                <span>{option.label}</span>
+              </label>
+            ))
+          }
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <div class="sidera-time-selector__unknown">
+    <Checkbox
+      id={`${id}-unknown`}
+      name={unknownName}
+      value={unknownValue}
+      label={unknownLabel}
+      description={unknownDescription}
+      checked={unknown}
+      disabled={disabled}
+      invalid={Boolean(errorText)}
+      ariaDescribedby={describedBy}
+      labelEditAttributes={unknownLabelEditAttributes}
+      descriptionEditAttributes={unknownDescriptionEditAttributes}
+    />
+  </div>
+</FormField>
+
+<script>
+  const initializeTimeSelector = (selector: HTMLElement) => {
+    if (selector.dataset.timeSelectorReady === "true") return;
+
+    const unknownControl = selector.querySelector<HTMLInputElement>(
+      ".sidera-time-selector__unknown input[type='checkbox']",
+    );
+    const timeFields = Array.from(
+      selector.querySelectorAll<HTMLSelectElement>("[data-time-part]"),
+    );
+    const periodMenu = selector.querySelector<HTMLDetailsElement>("[data-time-period]");
+    const periodTrigger = periodMenu?.querySelector<HTMLElement>("summary");
+    const periodLabel = periodMenu?.querySelector<HTMLElement>("[data-time-period-label]");
+    const periodInputs = Array.from(
+      periodMenu?.querySelectorAll<HTMLInputElement>("input[type='radio']") ?? [],
+    );
+
+    if (
+      !unknownControl ||
+      timeFields.length === 0 ||
+      !periodMenu ||
+      !periodTrigger ||
+      !periodLabel ||
+      periodInputs.length === 0
+    ) return;
+
+    const initiallyDisabled = timeFields.map((field) => field.disabled);
+    const periodBaseDisabled = periodMenu.dataset.timePeriodBaseDisabled === "true";
+    const synchronizeUnknownState = () => {
+      selector.dataset.timeUnknown = String(unknownControl.checked);
+      timeFields.forEach((field, index) => {
+        field.disabled = unknownControl.checked || initiallyDisabled[index];
+      });
+
+      const periodDisabled = unknownControl.checked || periodBaseDisabled;
+      periodMenu.dataset.timePeriodDisabled = String(periodDisabled);
+      periodTrigger.setAttribute("aria-disabled", String(periodDisabled));
+      periodTrigger.tabIndex = periodDisabled ? -1 : 0;
+      periodInputs.forEach((input) => {
+        input.disabled = periodDisabled || input.closest<HTMLElement>("[data-option-disabled]") !== null;
+      });
+      if (periodDisabled) periodMenu.open = false;
+    };
+
+    periodTrigger.addEventListener("click", (event) => {
+      if (periodMenu.dataset.timePeriodDisabled === "true") event.preventDefault();
+    });
+    periodMenu.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        periodMenu.open = false;
+        periodTrigger.focus();
+        return;
+      }
+
+      if (
+        periodMenu.open &&
+        (event.key === "ArrowDown" || event.key === "ArrowUp")
+      ) {
+        const enabledInputs = periodInputs.filter((input) => !input.disabled);
+        const selectedIndex = enabledInputs.findIndex((input) => input.checked);
+        const direction = event.key === "ArrowDown" ? 1 : -1;
+        const fallbackIndex = direction > 0 ? -1 : 0;
+        const nextIndex =
+          (selectedIndex < 0 ? fallbackIndex : selectedIndex) + direction;
+        const normalizedIndex =
+          (nextIndex + enabledInputs.length) % enabledInputs.length;
+        const nextInput = enabledInputs[normalizedIndex];
+
+        if (nextInput) {
+          event.preventDefault();
+          nextInput.checked = true;
+          nextInput.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+      }
+    });
+    periodInputs.forEach((input) => {
+      input.addEventListener("change", () => {
+        if (!input.checked) return;
+        const option = input.closest<HTMLElement>("[data-time-period-option]");
+        const nextLabel = option?.dataset.timePeriodOptionLabel ?? input.value;
+        periodInputs.forEach((candidate) => {
+          const candidateOption = candidate.closest<HTMLElement>("[data-time-period-option]");
+          if (candidateOption) {
+            candidateOption.dataset.timePeriodSelected = String(candidate === input);
+          }
+        });
+        periodLabel.textContent = nextLabel;
+        periodTrigger.setAttribute("aria-label", `${periodTrigger.getAttribute("aria-label")?.split(":")[0]}: ${nextLabel}`);
+        periodMenu.open = false;
+        periodTrigger.focus();
+      });
+    });
+    document.addEventListener("click", (event) => {
+      if (!periodMenu.contains(event.target as Node)) periodMenu.open = false;
+    });
+    unknownControl.addEventListener("change", synchronizeUnknownState);
+    selector.dataset.timeSelectorReady = "true";
+    synchronizeUnknownState();
+  };
+
+  document.querySelectorAll<HTMLElement>("[data-time-selector]").forEach(initializeTimeSelector);
+</script>

@@ -1,0 +1,233 @@
+.account-shell {
+  inline-size: min(100%, 75rem);
+  min-inline-size: 0;
+  display: grid;
+  grid-template-columns: 15.625rem minmax(0, 1fr);
+  align-items: start;
+  gap: 2.125rem;
+  margin-inline: auto;
+  padding: 2.125rem 2.125rem 3.75rem;
+}
+
+.account-shell__rail {
+  min-inline-size: 0;
+  position: sticky;
+  inset-block-start: 5.75rem;
+  border: 1px solid rgba(var(--color-text-rgb), 0.1);
+  border-radius: 1.25rem;
+  padding: 1.375rem;
+  background: var(--color-panel);
+}
+
+.account-shell__profile {
+  min-inline-size: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.8125rem;
+  border-bottom: 1px solid rgba(var(--color-text-rgb), 0.1);
+  padding-block-end: 1.125rem;
+}
+
+.account-shell__avatar {
+  inline-size: 3.125rem;
+  block-size: 3.125rem;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-dark);
+  color: var(--color-surface);
+  font-family: var(--font-serif), Georgia, "Times New Roman", serif;
+  font-size: 1.375rem;
+}
+
+.account-shell__identity {
+  min-inline-size: 0;
+}
+
+.account-shell__name {
+  color: var(--color-text);
+  font-family: var(--font-serif), Georgia, "Times New Roman", serif;
+  font-size: 1.1875rem;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.account-shell__signs {
+  margin-block-start: 0.1875rem;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.account-shell__membership {
+  inline-size: max-content;
+  max-inline-size: 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-block: 1rem;
+  border: 1px solid rgba(var(--color-text-rgb), 0.12);
+  border-radius: 999px;
+  padding: 0.3125rem 0.75rem;
+  background: var(--color-surface);
+  color: var(--color-primary);
+  font-size: 0.71875rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.account-shell__navigation {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.25rem;
+}
+
+.account-shell__navigation-link {
+  inline-size: 100%;
+  min-block-size: 2.5rem;
+  display: flex;
+  align-items: center;
+  border-radius: 0.625rem;
+  padding: 0.625rem 0.875rem;
+  color: var(--color-text);
+  font-size: 0.84375rem;
+  font-weight: 500;
+  line-height: 1.35;
+  text-decoration: none;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease;
+}
+
+.account-shell__navigation-link:hover {
+  background: rgba(var(--color-text-rgb), 0.06);
+}
+
+.account-shell__navigation-link--active {
+  background: var(--color-dark);
+  color: var(--color-surface);
+}
+
+:root[data-account-initial-section="overview"]
+  .account-shell__navigation-link[data-account-section-link="overview"],
+:root[data-account-initial-section="wallet"]
+  .account-shell__navigation-link[data-account-section-link="wallet"],
+:root[data-account-initial-section="charts"]
+  .account-shell__navigation-link[data-account-section-link="charts"],
+:root[data-account-initial-section="people"]
+  .account-shell__navigation-link[data-account-section-link="people"],
+:root[data-account-initial-section="orders"]
+  .account-shell__navigation-link[data-account-section-link="orders"],
+:root[data-account-initial-section="settings"]
+  .account-shell__navigation-link[data-account-section-link="settings"] {
+  background: var(--color-dark);
+  color: var(--color-surface);
+}
+
+.account-shell__navigation-link--active:hover {
+  background: var(--color-dark);
+  color: var(--color-surface);
+}
+
+body[data-builder-edit-mode]
+  .account-shell__navigation-link--active
+  [data-builder-edit]:hover,
+body[data-builder-edit-mode]
+  .account-shell__navigation-link--active
+  [data-builder-edit][data-builder-hovered],
+.account-shell__navigation-link--active [data-builder-editing] {
+  background: transparent;
+  color: var(--color-surface);
+  caret-color: var(--color-surface);
+}
+
+.account-shell__navigation-link:focus-visible,
+.account-shell__sign-out:focus-visible {
+  outline: 0.1875rem solid rgba(var(--color-primary-rgb), 0.45);
+  outline-offset: 0.125rem;
+}
+
+.account-shell__sign-out {
+  inline-size: 100%;
+  min-block-size: 0;
+  max-inline-size: none;
+  display: flex;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  margin-block-start: 1.125rem;
+  border: 0;
+  border-top: 1px solid rgba(var(--color-text-rgb), 0.1);
+  padding: 1rem 0.75rem 0.75rem;
+  border-radius: 0 0 0.625rem 0.625rem;
+  background: transparent;
+  color: var(--color-primary);
+  cursor: pointer;
+  font:
+    500 0.8125rem / 1.4 var(--font-sans),
+    system-ui,
+    sans-serif;
+  text-align: start;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.account-shell__sign-out:hover:not(:disabled) {
+  background: var(--color-danger-soft);
+  color: var(--color-primary-strong);
+}
+
+.account-shell__sign-out:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.account-shell__content {
+  min-inline-size: 0;
+  min-block-size: 20rem;
+}
+
+@media (max-width: 56rem) {
+  .account-shell {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.5rem;
+    padding-inline: 1.5rem;
+  }
+
+  .account-shell__rail {
+    position: static;
+  }
+
+  .account-shell__navigation {
+    flex-direction: row;
+    overflow-x: auto;
+    padding-block-end: 0.25rem;
+    scrollbar-width: thin;
+  }
+
+  .account-shell__navigation-link {
+    inline-size: auto;
+    flex: none;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 40rem) {
+  .account-shell {
+    padding: 1rem 1rem 3rem;
+  }
+
+  .account-shell__rail {
+    border-radius: 1rem;
+    padding: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .account-shell__navigation-link {
+    transition: none;
+  }
+}

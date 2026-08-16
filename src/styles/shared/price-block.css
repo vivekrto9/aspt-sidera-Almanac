@@ -1,0 +1,75 @@
+.sidera-price-block {
+  --price-block-label: var(--color-primary);
+  --price-block-supporting: var(--color-muted);
+  --price-block-gap: 0.625rem;
+
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--price-block-gap);
+  color: var(--price-block-supporting);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+.sidera-price-block--inverse {
+  --price-block-label: var(--color-primary-soft);
+  --price-block-supporting: var(--color-line);
+}
+
+.sidera-price-block--compact {
+  --price-block-gap: 0.375rem;
+}
+
+.sidera-price-block--display {
+  --price-block-gap: 0.75rem;
+}
+
+.sidera-price-block--center {
+  align-items: center;
+  text-align: center;
+}
+
+.sidera-price-block__meta {
+  max-inline-size: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sidera-price-block--center .sidera-price-block__meta {
+  justify-content: center;
+}
+
+.sidera-price-block__label {
+  color: var(--price-block-label);
+  font-size: 0.71875rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+
+.sidera-price-block__supporting {
+  max-inline-size: 32rem;
+  color: var(--price-block-supporting);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.sidera-price-block--compact .sidera-price-block__label {
+  font-size: 0.65625rem;
+}
+
+.sidera-price-block--compact .sidera-price-block__supporting {
+  font-size: 0.75rem;
+}
+
+@media (max-width: 40rem) {
+  .sidera-price-block {
+    inline-size: 100%;
+  }
+}

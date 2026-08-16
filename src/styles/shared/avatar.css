@@ -1,0 +1,76 @@
+.sidera-avatar {
+  --avatar-size: 4rem;
+  --avatar-font-size: 1.25rem;
+  --avatar-placeholder: var(--image-fallback-pattern);
+  --avatar-border: rgba(var(--color-text-rgb), 0.14);
+  --avatar-color: var(--color-dark);
+
+  inline-size: var(--avatar-size);
+  block-size: var(--avatar-size);
+  max-inline-size: 100%;
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--avatar-border);
+  border-radius: 50%;
+  background: var(--avatar-placeholder);
+  background-color: var(--image-fallback-background);
+  background-size: var(--image-fallback-pattern-size);
+  color: var(--avatar-color);
+  vertical-align: middle;
+}
+
+.sidera-avatar--compact {
+  --avatar-size: 2.5rem;
+  --avatar-font-size: 0.875rem;
+}
+
+.sidera-avatar--large {
+  --avatar-size: 5rem;
+  --avatar-font-size: 1.5rem;
+}
+
+.sidera-avatar--profile {
+  --avatar-size: 7.5rem;
+  --avatar-font-size: 2.25rem;
+}
+
+.sidera-avatar--accent {
+  --avatar-border: var(--color-dark);
+  --avatar-color: var(--color-surface);
+}
+
+.sidera-avatar--initials {
+  background: var(--color-dark);
+  color: var(--color-surface);
+}
+
+.sidera-avatar__media {
+  inline-size: 100%;
+  block-size: 100%;
+  background: transparent;
+}
+
+.sidera-avatar__media .sidera-media-thumbnail__custom {
+  display: grid;
+  place-items: center;
+}
+
+.sidera-avatar__initials {
+  font: 400 var(--avatar-font-size) / 1 var(--font-serif), Georgia, "Times New Roman", serif;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.sidera-avatar__placeholder {
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+@media (max-width: 40rem) {
+  .sidera-avatar--profile {
+    --avatar-size: 6rem;
+    --avatar-font-size: 1.875rem;
+  }
+}

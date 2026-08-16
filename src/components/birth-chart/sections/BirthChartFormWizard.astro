@@ -1,0 +1,373 @@
+---
+import type { SupportedLocale } from "../../../data/localization-contract.ts";
+import type { BirthChartFormWizardCopy } from "../../../data/locale/birth-chart/sections/form-wizard.ts";
+import type { BirthChartProfilePrefill } from "../../../data/birth-chart/profile-prefill.ts";
+import { birthMinuteOptions } from "../../../data/time-options.ts";
+import Button from "../../shared/Button.astro";
+import DateSelector from "../../shared/DateSelector.astro";
+import FormField from "../../shared/FormField.astro";
+import LocationAutocomplete from "../../shared/LocationAutocomplete.astro";
+import SelectField from "../../shared/SelectField.astro";
+import StepProgress from "../../shared/StepProgress.astro";
+import TextField from "../../shared/TextField.astro";
+import TimeSelector from "../../shared/TimeSelector.astro";
+import "../../../styles/birth-chart/sections/form-wizard.css";
+
+type Props = {
+  copy: BirthChartFormWizardCopy;
+  locale: SupportedLocale;
+  initialProfile?: BirthChartProfilePrefill;
+  editAttributes?: (field: keyof BirthChartFormWizardCopy) => Record<string, string>;
+};
+
+const {
+  copy,
+  locale,
+  initialProfile,
+  editAttributes = () => ({}),
+} = Astro.props as Props;
+
+const edit = (field: keyof BirthChartFormWizardCopy) => editAttributes(field);
+const now = new Date();
+const months = Array.from({ length: 12 }, (_, index) => ({
+  value: String(index + 1),
+  label: new Intl.DateTimeFormat(locale, { month: "long" }).format(
+    new Date(2024, index, 1),
+  ),
+}));
+const days = Array.from({ length: 31 }, (_, index) => ({
+  value: String(index + 1),
+  label: String(index + 1),
+}));
+const years = Array.from({ length: 110 }, (_, index) => {
+  const year = now.getFullYear() - index;
+  return { value: String(year), label: String(year) };
+});
+const hours = Array.from({ length: 12 }, (_, index) => ({
+  value: String(index + 1),
+  label: String(index + 1),
+}));
+const minutes = birthMinuteOptions;
+const periods = [
+  { value: "AM", label: "AM" },
+  { value: "PM", label: "PM" },
+];
+const houseSystems = [
+  { value: "placidus", label: copy.house_placidus },
+  { value: "whole-sign", label: copy.house_whole_sign },
+  { value: "equal", label: copy.house_equal },
+];
+const steps = [
+  { label: copy.step_date_label, hint: copy.step_date_hint },
+  { label: copy.step_time_label, hint: copy.step_time_hint },
+  { label: copy.step_place_label, hint: copy.step_place_hint },
+];
+const zodiacGlyphs = ["♈", "♉", "♊", "♋", "♌", "♍", "♎", "♏", "♐", "♑", "♒", "♓"];
+const [initialYear, initialMonth, initialDay] = initialProfile?.birthDate.split("-") ?? [];
+const [initialHour24Text, initialMinute] = initialProfile?.birthTime.split(":") ?? [];
+const initialHour24 = Number(initialHour24Text);
+const initialPeriod = Number.isFinite(initialHour24) && initialHour24 >= 12 ? "PM" : "AM";
+const initialHour = Number.isFinite(initialHour24)
+  ? String(initialHour24 % 12 || 12)
+  : "12";
+---
+
+<section
+  class="birth-chart-wizard"
+  data-birth-chart-wizard
+  aria-labelledby="birth-chart-wizard-title"
+>
+  <div class="birth-chart-wizard__layout">
+    <aside class="birth-chart-wizard__story">
+      <div class="birth-chart-wizard__story-copy">
+        <p class="birth-chart-wizard__eyebrow" {...edit("panel_kicker")}>
+          {copy.panel_kicker}
+        </p>
+        <h1 id="birth-chart-wizard-title">
+          <em {...edit("panel_title_accent")}>{copy.panel_title_accent}</em>{" "}
+          <span {...edit("panel_title_rest")}>{copy.panel_title_rest}</span>
+        </h1>
+        <p {...edit("panel_description")}>{copy.panel_description}</p>
+      </div>
+
+      <div class="birth-chart-wizard__wheel" aria-hidden="true">
+        <svg viewBox="0 0 320 320">
+          <g class="birth-chart-wizard__wheel-ring">
+            <circle cx="160" cy="160" r="150"></circle>
+            <circle cx="160" cy="160" r="120" stroke-dasharray="2 8"></circle>
+            {zodiacGlyphs.map((glyph, index) => {
+              const angle = ((index * 30 - 90) * Math.PI) / 180;
+              return (
+                <text
+                  x={160 + Math.cos(angle) * 135}
+                  y={160 + Math.sin(angle) * 135}
+                >
+                  {glyph}
+                </text>
+              );
+            })}
+          </g>
+          <circle cx="160" cy="160" r="86" class="birth-chart-wizard__wheel-inner"></circle>
+          <circle cx="160" cy="160" r="34" class="birth-chart-wizard__wheel-core"></circle>
+          <text x="160" y="162" class="birth-chart-wizard__wheel-mark">☉</text>
+        </svg>
+      </div>
+
+      <ol class="birth-chart-wizard__steps">
+        {steps.map((step, index) => (
+          <li data-step-summary data-active={index === 0 ? "true" : "false"}>
+            <span class="birth-chart-wizard__step-badge">{index + 1}</span>
+            <span>
+              <strong {...edit((`step_${["date", "time", "place"][index]}_label`) as keyof BirthChartFormWizardCopy)}>
+                {step.label}
+              </strong>
+              <small {...edit((`step_${["date", "time", "place"][index]}_hint`) as keyof BirthChartFormWizardCopy)}>
+                {step.hint}
+              </small>
+            </span>
+          </li>
+        ))}
+      </ol>
+    </aside>
+
+    <div class="birth-chart-wizard__form-panel">
+      <form class="birth-chart-wizard__form" id="birth-chart-form" novalidate>
+        <section class="birth-chart-wizard__form-step" data-wizard-step="0">
+          <StepProgress
+            current={1}
+            total={3}
+            stepLabel={copy.progress_step}
+            ofLabel={copy.progress_of}
+            stepLabelEditAttributes={edit("progress_step")}
+            ofLabelEditAttributes={edit("progress_of")}
+          />
+          <p class="birth-chart-wizard__eyebrow" {...edit("date_kicker")}>{copy.date_kicker}</p>
+          <h2 {...edit("date_title")}>{copy.date_title}</h2>
+          <p class="birth-chart-wizard__step-copy" {...edit("date_body")}>{copy.date_body}</p>
+
+          <FormField
+            label={copy.name_label}
+            controlId="birth-chart-name"
+            optionalText={copy.name_optional}
+            labelEditAttributes={edit("name_label")}
+          >
+            <TextField
+              id="birth-chart-name"
+              name="name"
+              autocomplete="name"
+              placeholder={copy.name_placeholder}
+              value={initialProfile?.name}
+              {...edit("name_placeholder")}
+            />
+          </FormField>
+
+          <DateSelector
+            id="birth-chart-date"
+            label={copy.date_label}
+            monthLabel={copy.month_label}
+            dayLabel={copy.day_label}
+            yearLabel={copy.year_label}
+            months={months}
+            days={days}
+            years={years}
+            monthValue={initialMonth ? String(Number(initialMonth)) : "1"}
+            dayValue={initialDay ? String(Number(initialDay)) : "1"}
+            yearValue={initialYear || String(now.getFullYear() - 30)}
+            monthName="month"
+            dayName="day"
+            yearName="year"
+            autocompleteSection="birth-chart"
+            required
+            selectPresentation="popover"
+            labelEditAttributes={edit("date_label")}
+          />
+        </section>
+
+        <section class="birth-chart-wizard__form-step" data-wizard-step="1" hidden>
+          <StepProgress
+            current={2}
+            total={3}
+            stepLabel={copy.progress_step}
+            ofLabel={copy.progress_of}
+            stepLabelEditAttributes={edit("progress_step")}
+            ofLabelEditAttributes={edit("progress_of")}
+          />
+          <p class="birth-chart-wizard__eyebrow" {...edit("time_kicker")}>{copy.time_kicker}</p>
+          <h2 {...edit("time_title")}>{copy.time_title}</h2>
+          <p class="birth-chart-wizard__step-copy" {...edit("time_body")}>{copy.time_body}</p>
+
+          <TimeSelector
+            id="birth-chart-time"
+            label={copy.time_label}
+            hourLabel={copy.hour_label}
+            minuteLabel={copy.minute_label}
+            periodLabel={copy.period_label}
+            unknownLabel={copy.unknown_time_label}
+            unknownDescription={copy.unknown_time_description}
+            hours={hours}
+            minutes={minutes}
+            periods={periods}
+            hourValue={initialHour}
+            minuteValue={initialMinute || "00"}
+            periodValue={initialPeriod}
+            required
+            selectPresentation="popover"
+            labelEditAttributes={edit("time_label")}
+            unknownLabelEditAttributes={edit("unknown_time_label")}
+            unknownDescriptionEditAttributes={edit("unknown_time_description")}
+          />
+        </section>
+
+        <section class="birth-chart-wizard__form-step" data-wizard-step="2" hidden>
+          <StepProgress
+            current={3}
+            total={3}
+            stepLabel={copy.progress_step}
+            ofLabel={copy.progress_of}
+            stepLabelEditAttributes={edit("progress_step")}
+            ofLabelEditAttributes={edit("progress_of")}
+          />
+          <p class="birth-chart-wizard__eyebrow" {...edit("place_kicker")}>{copy.place_kicker}</p>
+          <h2 {...edit("place_title")}>{copy.place_title}</h2>
+          <p class="birth-chart-wizard__step-copy" {...edit("place_body")}>{copy.place_body}</p>
+
+          <LocationAutocomplete
+            id="birth-chart-location"
+            label={copy.location_label}
+            name="location"
+            query={initialProfile?.locationQuery}
+            selectedLocation={initialProfile?.selectedLocation}
+            placeholder={copy.location_placeholder}
+            required
+            startText={copy.location_start}
+            searchingText={copy.location_searching}
+            noResultsText={copy.location_empty}
+            unavailableText={copy.location_unavailable}
+            selectedText={copy.location_selected}
+            labelEditAttributes={edit("location_label")}
+            inputEditAttributes={edit("location_placeholder")}
+            dateInputId="birth-chart-date-year"
+            timeInputId="birth-chart-time-hour"
+          />
+
+          <FormField
+            label={copy.house_system_label}
+            controlId="birth-chart-house-system"
+            helpText={copy.house_system_help}
+            labelEditAttributes={edit("house_system_label")}
+            helpEditAttributes={edit("house_system_help")}
+          >
+            <SelectField
+              id="birth-chart-house-system"
+              name="houseSystem"
+              value="placidus"
+              options={houseSystems}
+              presentation="popover"
+              ariaLabel={copy.house_system_label}
+            />
+          </FormField>
+        </section>
+
+        <p class="birth-chart-wizard__status" data-wizard-status aria-live="polite"></p>
+
+        <div class="birth-chart-wizard__actions">
+          <span data-wizard-back-wrap hidden>
+            <Button
+              class="birth-chart-wizard__back"
+              type="button"
+              variant="outline"
+              shape="pill"
+              editAttributes={edit("back_label")}
+            >
+              {copy.back_label}
+            </Button>
+          </span>
+          <Button
+            class="birth-chart-wizard__next birth-chart-wizard__continue"
+            type="button"
+            shape="pill"
+            fullWidth
+            editAttributes={edit("continue_label")}
+          >
+            {copy.continue_label}
+          </Button>
+          <span class="birth-chart-wizard__cast-wrap" data-wizard-cast-wrap hidden>
+            <Button
+              class="birth-chart-wizard__next birth-chart-wizard__cast"
+              type="button"
+              shape="pill"
+              fullWidth
+              editAttributes={edit("cast_label")}
+            >
+              {copy.cast_label}
+            </Button>
+          </span>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<script>
+  const initializeBirthChartWizards = () => {
+    document.querySelectorAll<HTMLElement>("[data-birth-chart-wizard]").forEach((root) => {
+      if (root.dataset.ready === "true") return;
+      const form = root.querySelector<HTMLFormElement>("#birth-chart-form");
+      const panels = [...root.querySelectorAll<HTMLElement>("[data-wizard-step]")];
+      const summaries = [...root.querySelectorAll<HTMLElement>("[data-step-summary]")];
+      const backWrap = root.querySelector<HTMLElement>("[data-wizard-back-wrap]");
+      const back = root.querySelector<HTMLButtonElement>(".birth-chart-wizard__back");
+      const nextButtons = [...root.querySelectorAll<HTMLButtonElement>(".birth-chart-wizard__next")];
+      const continueButton = root.querySelector<HTMLButtonElement>(".birth-chart-wizard__continue");
+      const castWrap = root.querySelector<HTMLElement>("[data-wizard-cast-wrap]");
+      const status = root.querySelector<HTMLElement>("[data-wizard-status]");
+      let step = 0;
+
+      const render = () => {
+        panels.forEach((panel, index) => { panel.hidden = index !== step; });
+        summaries.forEach((item, index) => { item.dataset.active = index === step ? "true" : "false"; });
+        if (backWrap) backWrap.hidden = step === 0;
+        if (continueButton) continueButton.hidden = step === panels.length - 1;
+        if (castWrap) castWrap.hidden = step !== panels.length - 1;
+        if (status) status.textContent = "";
+      };
+
+      const currentControls = () =>
+        [...panels[step].querySelectorAll<HTMLInputElement | HTMLSelectElement>("input, select")]
+          .filter((control) => !control.disabled && control.getAttribute("aria-hidden") !== "true");
+
+      const advance = () => {
+        const invalid = currentControls().find((control) => !control.checkValidity());
+        if (invalid) {
+          invalid.reportValidity();
+          invalid.focus();
+          return;
+        }
+        if (step < panels.length - 1) {
+          step += 1;
+          render();
+          panels[step].querySelector<HTMLElement>("input, summary, button")?.focus();
+          return;
+        }
+        form?.dispatchEvent(new CustomEvent("birthchartsubmit", {
+          bubbles: true,
+          detail: { formData: form ? new FormData(form) : new FormData() },
+        }));
+      };
+
+      nextButtons.forEach((button) => button.addEventListener("click", advance));
+
+      back?.addEventListener("click", () => {
+        if (step === 0) return;
+        step -= 1;
+        render();
+      });
+
+      render();
+      root.dataset.ready = "true";
+    });
+  };
+
+  initializeBirthChartWizards();
+  document.addEventListener("astro:page-load", initializeBirthChartWizards);
+</script>

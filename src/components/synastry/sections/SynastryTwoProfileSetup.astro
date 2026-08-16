@@ -1,0 +1,545 @@
+---
+import type { SupportedLocale } from "../../../data/localization-contract.ts";
+import type { SynastrySetupCopy } from "../../../data/locale/synastry/sections/two-profile-setup.ts";
+import { birthMinuteOptions } from "../../../data/time-options.ts";
+import AstrologyProfileForm, {
+  type AstrologyProfile,
+} from "../../shared/AstrologyProfileForm.astro";
+import AddProfileForm from "../../shared/AddProfileForm.astro";
+import Badge from "../../shared/Badge.astro";
+import Button from "../../shared/Button.astro";
+import Dialog from "../../shared/Dialog.astro";
+import EmptyState from "../../shared/EmptyState.astro";
+import "../../../styles/synastry/sections/two-profile-setup.css";
+
+type Props = {
+  copy: SynastrySetupCopy;
+  locale: SupportedLocale;
+  initialProfile?: SynastryInitialProfile | null;
+  savedProfiles?: readonly SynastrySavedProfile[];
+  csrfToken?: string;
+  editAttributes?: (field: keyof SynastrySetupCopy) => Record<string, string>;
+};
+
+export type SynastryInitialProfile = {
+  name: string;
+  birthDate: string;
+  birthTime: string;
+  birthPlace: string;
+  placeId: string;
+  latitude: number;
+  longitude: number;
+  timezone: string;
+  timezoneOffset: string;
+};
+
+export type SynastrySavedProfile = SynastryInitialProfile & {
+  id: string;
+  isDefault: boolean;
+};
+
+const {
+  copy,
+  locale,
+  initialProfile,
+  savedProfiles = [],
+  csrfToken = "",
+  editAttributes = () => ({}),
+} = Astro.props as Props;
+const edit = (field: keyof SynastrySetupCopy) => editAttributes(field);
+const now = new Date();
+const months = Array.from({ length: 12 }, (_, index) => ({
+  value: String(index + 1),
+  label: new Intl.DateTimeFormat(locale, { month: "long" }).format(
+    new Date(2024, index, 1),
+  ),
+}));
+const days = Array.from({ length: 31 }, (_, index) => ({
+  value: String(index + 1),
+  label: String(index + 1),
+}));
+const years = Array.from({ length: 110 }, (_, index) => {
+  const year = now.getFullYear() - index;
+  return { value: String(year), label: String(year) };
+});
+const hours = Array.from({ length: 12 }, (_, index) => ({
+  value: String(index + 1),
+  label: String(index + 1),
+}));
+const minutes = birthMinuteOptions;
+const periods = [
+  { value: "AM", label: "AM" },
+  { value: "PM", label: "PM" },
+];
+const sharedDate = {
+  label: copy.birth_date_label,
+  monthLabel: copy.month_label,
+  dayLabel: copy.day_label,
+  yearLabel: copy.year_label,
+  months,
+  days,
+  years,
+  monthValue: "1",
+  dayValue: "1",
+  yearValue: String(now.getFullYear() - 30),
+  labelEditAttributes: edit("birth_date_label"),
+};
+const sharedTime = {
+  label: copy.birth_time_label,
+  hourLabel: copy.hour_label,
+  minuteLabel: copy.minute_label,
+  periodLabel: copy.period_label,
+  unknownLabel: copy.unknown_time_label,
+  unknownDescription: copy.unknown_time_description,
+  hours,
+  minutes,
+  periods,
+  hourValue: "12",
+  minuteValue: "00",
+  periodValue: "PM",
+  labelEditAttributes: edit("birth_time_label"),
+  unknownLabelEditAttributes: edit("unknown_time_label"),
+  unknownDescriptionEditAttributes: edit("unknown_time_description"),
+};
+const sharedLocation = {
+  label: copy.birth_place_label,
+  placeholder: copy.location_placeholder,
+  startText: copy.location_start,
+  searchingText: copy.location_searching,
+  noResultsText: copy.location_empty,
+  unavailableText: copy.location_unavailable,
+  selectedText: copy.location_selected,
+  labelEditAttributes: edit("birth_place_label"),
+  inputEditAttributes: edit("location_placeholder"),
+};
+const [initialYear, initialMonth, initialDay] = initialProfile?.birthDate.split("-") ?? [];
+const [initialHourText, initialMinute = "00"] = initialProfile?.birthTime.split(":") ?? [];
+const initialHour24 = Number(initialHourText);
+const initialPeriod = initialHour24 >= 12 ? "PM" : "AM";
+const initialHour = String(initialHour24 % 12 || 12);
+const personOneDate = initialProfile ? {
+  ...sharedDate,
+  yearValue: initialYear,
+  monthValue: String(Number(initialMonth)),
+  dayValue: String(Number(initialDay)),
+} : sharedDate;
+const personOneTime = initialProfile ? {
+  ...sharedTime,
+  hourValue: initialHour,
+  minuteValue: initialMinute,
+  periodValue: initialPeriod,
+} : sharedTime;
+const personOneLocation = initialProfile ? {
+  ...sharedLocation,
+  query: initialProfile.birthPlace,
+  selectedLocation: {
+    placeId: initialProfile.placeId,
+    formattedAddress: initialProfile.birthPlace,
+    lat: initialProfile.latitude,
+    lon: initialProfile.longitude,
+    timezone: initialProfile.timezone,
+    offset: initialProfile.timezoneOffset,
+  },
+} : sharedLocation;
+const profiles: AstrologyProfile[] = [
+  {
+    id: "person-a",
+    title: copy.person_one_title,
+    badge: "A",
+    tone: "terracotta",
+    nameLabel: copy.name_label,
+    nameValue: initialProfile?.name,
+    namePlaceholder: copy.person_one_placeholder,
+    nameLabelEditAttributes: edit("name_label"),
+    namePlaceholderEditAttributes: edit("person_one_placeholder"),
+    date: personOneDate,
+    time: personOneTime,
+    location: personOneLocation,
+    titleEditAttributes: edit("person_one_title"),
+    required: true,
+  },
+  {
+    id: "person-b",
+    title: copy.person_two_title,
+    badge: "B",
+    tone: "forest",
+    nameLabel: copy.name_label,
+    namePlaceholder: copy.person_two_placeholder,
+    nameLabelEditAttributes: edit("name_label"),
+    namePlaceholderEditAttributes: edit("person_two_placeholder"),
+    date: sharedDate,
+    time: sharedTime,
+    location: sharedLocation,
+    titleEditAttributes: edit("person_two_title"),
+    required: true,
+  },
+];
+const canManageProfiles = Boolean(csrfToken);
+const addProfile: AstrologyProfile = {
+  id: "new-profile",
+  title: copy.profile_picker_add_title,
+  badge: "+",
+  tone: "terracotta",
+  nameLabel: copy.name_label,
+  namePlaceholder: copy.person_one_placeholder,
+  nameLabelEditAttributes: edit("name_label"),
+  namePlaceholderEditAttributes: edit("person_one_placeholder"),
+  date: sharedDate,
+  time: sharedTime,
+  location: sharedLocation,
+  titleEditAttributes: edit("profile_picker_add_title"),
+  required: true,
+};
+---
+
+<section class="synastry-setup" aria-labelledby="synastry-setup-title">
+  <div class="synastry-setup__inner">
+    <AstrologyProfileForm
+      id="synastry-profile-form"
+      profiles={profiles}
+      method="get"
+      action=""
+      layout="paired"
+      surface="cards"
+      connectorLabel="&"
+      submitLabel={copy.submit_label}
+      submitEditAttributes={edit("submit_label")}
+      footerText={copy.footer_text}
+      footerEditAttributes={edit("footer_text")}
+      class="synastry-setup__form"
+    >
+      <div slot="intro" class="synastry-setup__intro">
+        <p class="synastry-setup__eyebrow" {...edit("eyebrow")}>{copy.eyebrow}</p>
+        <h1 id="synastry-setup-title">
+          <em {...edit("title_accent")}>{copy.title_accent}</em>{" "}
+          <span {...edit("title_rest")}>{copy.title_rest}</span>
+        </h1>
+        <p class="synastry-setup__description" {...edit("description")}>
+          {copy.description}
+        </p>
+      </div>
+
+      {
+        canManageProfiles ? (
+          <div slot="profile-one-heading-action" class="synastry-setup__profile-heading-action">
+            <Button
+              type="button"
+              variant="link"
+              size="compact"
+              data-dialog-open="synastry-profile-picker"
+              data-synastry-profile-target="person-a"
+              editAttributes={edit("select_profile_label")}
+            >
+              {copy.select_profile_label}
+            </Button>
+          </div>
+        ) : null
+      }
+
+      {
+        canManageProfiles ? (
+          <div slot="profile-two-heading-action" class="synastry-setup__profile-heading-action">
+            <Button
+              type="button"
+              variant="link"
+              size="compact"
+              data-dialog-open="synastry-profile-picker"
+              data-synastry-profile-target="person-b"
+              editAttributes={edit("select_profile_label")}
+            >
+              {copy.select_profile_label}
+            </Button>
+          </div>
+        ) : null
+      }
+    </AstrologyProfileForm>
+    <p class="synastry-setup__status" data-synastry-status role="status" aria-live="polite"></p>
+  </div>
+
+  {
+    canManageProfiles ? (
+      <Dialog
+        id="synastry-profile-picker"
+        eyebrow={copy.profile_picker_eyebrow}
+        title={copy.profile_picker_title}
+        description={copy.profile_picker_description}
+        closeLabel={copy.profile_picker_close_label}
+        width="standard"
+        class="synastry-profile-picker"
+        eyebrowEditAttributes={edit("profile_picker_eyebrow")}
+        titleEditAttributes={edit("profile_picker_title")}
+        descriptionEditAttributes={edit("profile_picker_description")}
+      >
+        <div data-synastry-profile-list-view>
+          <div
+            class="synastry-profile-picker__list"
+            data-synastry-profile-list
+            data-default-label={copy.profile_picker_default_label}
+            hidden={savedProfiles.length === 0}
+          >
+            {savedProfiles.map((profile) => (
+              <button
+                type="button"
+                class="synastry-profile-picker__option"
+                data-synastry-profile-option
+                data-profile={JSON.stringify(profile)}
+              >
+                <span class="synastry-profile-picker__initial" aria-hidden="true">
+                  {profile.name.slice(0, 1).toUpperCase()}
+                </span>
+                <span class="synastry-profile-picker__option-copy">
+                  <span class="synastry-profile-picker__name-row">
+                    <strong title={profile.name}>{profile.name}</strong>
+                    {profile.isDefault ? (
+                      <Badge size="compact">
+                        {copy.profile_picker_default_label}
+                      </Badge>
+                    ) : null}
+                  </span>
+                  <small>{profile.birthDate} · {profile.birthPlace}</small>
+                </span>
+              </button>
+            ))}
+          </div>
+
+          <div data-synastry-profile-empty hidden={savedProfiles.length > 0}>
+            <EmptyState
+              id="synastry-profile-picker-empty"
+              title={copy.profile_picker_empty_title}
+              description={copy.profile_picker_empty_description}
+              variant="plain"
+              headingLevel={3}
+              titleEditAttributes={edit("profile_picker_empty_title")}
+              descriptionEditAttributes={edit("profile_picker_empty_description")}
+            >
+              <Button slot="action" type="button" data-synastry-profile-add>
+                <svg slot="leading-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                </svg>
+                <span {...edit("profile_picker_add_label")}>{copy.profile_picker_add_label}</span>
+              </Button>
+            </EmptyState>
+          </div>
+
+          <div class="synastry-profile-picker__add-row" hidden={savedProfiles.length === 0} data-synastry-profile-add-row>
+            <Button type="button" variant="outline" data-synastry-profile-add>
+              <svg slot="leading-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+              </svg>
+              <span {...edit("profile_picker_add_label")}>{copy.profile_picker_add_label}</span>
+            </Button>
+          </div>
+        </div>
+
+        <div data-synastry-profile-add-view hidden>
+          <Button type="button" variant="link" class="synastry-profile-picker__back" data-synastry-profile-back>
+            <svg slot="leading-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="m12.5 4.5-5.5 5.5 5.5 5.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <span {...edit("profile_picker_back_label")}>{copy.profile_picker_back_label}</span>
+          </Button>
+          <AddProfileForm
+            id="synastry-add-profile"
+            profile={addProfile}
+            csrfToken={csrfToken}
+            saveLabel={copy.profile_picker_save_label}
+            savingLabel={copy.profile_picker_saving_label}
+            errorMessage={copy.profile_picker_error}
+            saveEditAttributes={edit("profile_picker_save_label")}
+          />
+        </div>
+      </Dialog>
+    ) : null
+  }
+</section>
+
+<script>
+  type PickerProfile = {
+    id: string;
+    name?: string;
+    profileName?: string;
+    birthDate: string;
+    birthTime: string;
+    birthPlace: string;
+    placeId: string;
+    latitude?: number;
+    longitude?: number;
+    placeLat?: number;
+    placeLon?: number;
+    timezone?: string;
+    placeTimezone?: string;
+    timezoneOffset: string;
+    isDefault: boolean;
+  };
+
+  const initializeSynastryProfilePicker = (root: HTMLElement) => {
+    if (root.dataset.profilePickerReady === "true") return;
+    const dialog = root.querySelector<HTMLDialogElement>("#synastry-profile-picker");
+    if (!dialog) return;
+
+    const listView = dialog.querySelector<HTMLElement>("[data-synastry-profile-list-view]");
+    const addView = dialog.querySelector<HTMLElement>("[data-synastry-profile-add-view]");
+    const list = dialog.querySelector<HTMLElement>("[data-synastry-profile-list]");
+    const empty = dialog.querySelector<HTMLElement>("[data-synastry-profile-empty]");
+    const addRow = dialog.querySelector<HTMLElement>("[data-synastry-profile-add-row]");
+    let target = "person-a";
+
+    const showList = () => {
+      if (listView) listView.hidden = false;
+      if (addView) addView.hidden = true;
+    };
+    const showAdd = () => {
+      if (listView) listView.hidden = true;
+      if (addView) addView.hidden = false;
+      window.requestAnimationFrame(() => addView?.querySelector<HTMLElement>("input")?.focus());
+    };
+    const setSelect = (id: string, value: string) => {
+      const select = root.querySelector<HTMLSelectElement>(`#${CSS.escape(id)}`);
+      if (!select) return;
+      select.value = value;
+      select.dispatchEvent(new Event("input", { bubbles: true }));
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    };
+    const applyProfile = (profile: PickerProfile) => {
+      const name = profile.name || profile.profileName || "";
+      const nameInput = root.querySelector<HTMLInputElement>(
+        `#synastry-profile-form-${target}-name`,
+      );
+      if (nameInput) {
+        nameInput.value = name;
+        nameInput.dispatchEvent(new Event("input", { bubbles: true }));
+        nameInput.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+
+      const currentLocationInput = root.querySelector<HTMLInputElement>(
+        `#synastry-profile-form-${target}-location`,
+      );
+      currentLocationInput
+        ?.closest<HTMLElement>("[data-sidera-location-autocomplete]")
+        ?.querySelectorAll<HTMLInputElement>("[data-location-value]")
+        .forEach((field) => field.value = "");
+
+      const [year, month, day] = profile.birthDate.split("-");
+      setSelect(`synastry-profile-form-${target}-date-month`, String(Number(month)));
+      setSelect(`synastry-profile-form-${target}-date-day`, String(Number(day)));
+      setSelect(`synastry-profile-form-${target}-date-year`, year);
+
+      const [hourText, minute = "00"] = profile.birthTime.split(":");
+      const hour24 = Number(hourText);
+      setSelect(`synastry-profile-form-${target}-time-hour`, String(hour24 % 12 || 12));
+      setSelect(`synastry-profile-form-${target}-time-minute`, minute);
+      setSelect(`synastry-profile-form-${target}-time-period`, hour24 >= 12 ? "PM" : "AM");
+      const unknown = root.querySelector<HTMLInputElement>(`[name="${target}[timeUnknown]"]`);
+      if (unknown?.checked) {
+        unknown.checked = false;
+        unknown.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+
+      const locationInput = root.querySelector<HTMLInputElement>(
+        `#synastry-profile-form-${target}-location`,
+      );
+      const locationRoot = locationInput?.closest<HTMLElement>("[data-sidera-location-autocomplete]");
+      if (locationInput && locationRoot) {
+        locationInput.value = profile.birthPlace;
+        locationInput.setCustomValidity("");
+        const values = {
+          id: profile.placeId,
+          latitude: String(profile.latitude ?? profile.placeLat ?? ""),
+          longitude: String(profile.longitude ?? profile.placeLon ?? ""),
+          timezone: profile.timezone || profile.placeTimezone || "",
+          offset: profile.timezoneOffset,
+        };
+        Object.entries(values).forEach(([key, value]) => {
+          const field = locationRoot.querySelector<HTMLInputElement>(`[data-location-value="${key}"]`);
+          if (field) field.value = value;
+        });
+        const status = locationRoot.querySelector<HTMLElement>("[data-location-status]");
+        const statusText = locationRoot.querySelector<HTMLElement>("[data-location-status-text]");
+        if (status) {
+          status.hidden = false;
+          status.dataset.state = "selected";
+        }
+        if (statusText) {
+          statusText.textContent = `${locationRoot.dataset.selectedText || ""}: ${values.timezone} · ${values.offset}`;
+        }
+        locationInput.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+
+      dialog.close("selected");
+    };
+    const bindOption = (option: HTMLButtonElement) => {
+      if (option.dataset.profileOptionReady === "true") return;
+      option.addEventListener("click", () => {
+        try {
+          applyProfile(JSON.parse(option.dataset.profile || "{}") as PickerProfile);
+        } catch {
+          return;
+        }
+      });
+      option.dataset.profileOptionReady = "true";
+    };
+
+    root.querySelectorAll<HTMLButtonElement>("[data-synastry-profile-target]").forEach((trigger) => {
+      trigger.addEventListener("click", () => {
+        target = trigger.dataset.synastryProfileTarget || "person-a";
+        showList();
+      });
+    });
+    dialog.querySelectorAll<HTMLButtonElement>("[data-synastry-profile-option]").forEach(bindOption);
+    dialog.querySelectorAll<HTMLButtonElement>("[data-synastry-profile-add]").forEach((button) => {
+      button.addEventListener("click", showAdd);
+    });
+    dialog.querySelector<HTMLButtonElement>("[data-synastry-profile-back]")?.addEventListener("click", showList);
+    dialog.addEventListener("sidera:profile-created", (event) => {
+      const profile = (event as CustomEvent<{ profile?: PickerProfile }>).detail?.profile;
+      if (!profile) return;
+      if (list) {
+        const option = document.createElement("button");
+        option.type = "button";
+        option.className = "synastry-profile-picker__option";
+        option.dataset.synastryProfileOption = "";
+        option.dataset.profile = JSON.stringify(profile);
+        const initial = document.createElement("span");
+        initial.className = "synastry-profile-picker__initial";
+        initial.setAttribute("aria-hidden", "true");
+        initial.textContent = (profile.profileName || profile.name || "?").slice(0, 1).toUpperCase();
+        const copy = document.createElement("span");
+        copy.className = "synastry-profile-picker__option-copy";
+        const nameRow = document.createElement("span");
+        nameRow.className = "synastry-profile-picker__name-row";
+        const strong = document.createElement("strong");
+        strong.textContent = profile.profileName || profile.name || "";
+        strong.title = profile.profileName || profile.name || "";
+        nameRow.append(strong);
+        if (profile.isDefault) {
+          const badge = document.createElement("span");
+          badge.className = "sidera-badge sidera-badge--neutral sidera-badge--soft sidera-badge--compact";
+          const badgeLabel = document.createElement("span");
+          badgeLabel.className = "sidera-badge__label";
+          badgeLabel.textContent = list.dataset.defaultLabel || "Default";
+          badge.append(badgeLabel);
+          nameRow.append(badge);
+        }
+        const small = document.createElement("small");
+        small.textContent = `${profile.birthDate} · ${profile.birthPlace}`;
+        copy.append(nameRow, small);
+        option.append(initial, copy);
+        list.append(option);
+        list.hidden = false;
+        bindOption(option);
+      }
+      if (empty) empty.hidden = true;
+      if (addRow) addRow.hidden = false;
+      applyProfile(profile);
+    });
+    dialog.addEventListener("sidera:dialog-close", showList);
+
+    root.dataset.profilePickerReady = "true";
+  };
+
+  const initializeSynastryProfilePickers = () => {
+    document.querySelectorAll<HTMLElement>(".synastry-setup").forEach(initializeSynastryProfilePicker);
+  };
+  initializeSynastryProfilePickers();
+  document.addEventListener("astro:page-load", initializeSynastryProfilePickers);
+</script>

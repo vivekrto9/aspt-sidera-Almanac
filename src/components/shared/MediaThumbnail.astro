@@ -1,0 +1,78 @@
+---
+import "../../styles/shared/media-thumbnail.css";
+
+type MediaThumbnailSize = "compact" | "standard";
+type ImageLoading = "eager" | "lazy";
+type ImageDecoding = "async" | "auto" | "sync";
+
+type Props = {
+  src?: string;
+  alt: string;
+  width?: number;
+  height?: number;
+  size?: MediaThumbnailSize;
+  loading?: ImageLoading;
+  decoding?: ImageDecoding;
+  decorative?: boolean;
+  class?: string;
+  fallbackLabelEditAttributes?: Record<string, string>;
+  imageEditAttributes?: Record<string, string>;
+};
+
+const {
+  src,
+  alt,
+  width,
+  height,
+  size = "standard",
+  loading = "lazy",
+  decoding = "async",
+  decorative = false,
+  class: className,
+  fallbackLabelEditAttributes = {},
+  imageEditAttributes = {},
+} = Astro.props as Props;
+
+const hasMediaSlot = Astro.slots.has("default");
+const isFallback = !src && !hasMediaSlot;
+const classes = [
+  "sidera-media-thumbnail",
+  `sidera-media-thumbnail--${size}`,
+  isFallback && "sidera-media-thumbnail--fallback",
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+---
+
+<span
+  class={classes}
+  data-media-thumbnail
+  data-fallback={isFallback ? "true" : undefined}
+  aria-hidden={decorative ? "true" : undefined}
+>
+  {
+    src ? (
+      <img
+        class="sidera-media-thumbnail__image"
+        src={src}
+        alt={decorative ? "" : alt}
+        width={width}
+        height={height}
+        loading={loading}
+        decoding={decoding}
+        {...imageEditAttributes}
+      />
+    ) : hasMediaSlot ? (
+      <span class="sidera-media-thumbnail__custom"><slot /></span>
+    ) : alt ? (
+      <span
+        class="sidera-media-thumbnail__fallback-label"
+        title={alt}
+        {...fallbackLabelEditAttributes}
+      >
+        {alt}
+      </span>
+    ) : null
+  }
+</span>

@@ -1,0 +1,88 @@
+---
+import RatingStars from "./RatingStars.astro";
+import "../../styles/shared/rating-summary.css";
+
+type RatingSummarySize = "compact" | "standard";
+type RatingSummaryTone = "default" | "inverse";
+
+type Props = {
+  value: number;
+  ratingText: string;
+  ariaLabel: string;
+  max?: number;
+  countText?: string;
+  label?: string;
+  size?: RatingSummarySize;
+  tone?: RatingSummaryTone;
+  class?: string;
+  ratingEditAttributes?: Record<string, string>;
+  countEditAttributes?: Record<string, string>;
+  labelEditAttributes?: Record<string, string>;
+};
+
+const {
+  value,
+  ratingText,
+  ariaLabel,
+  max = 5,
+  countText,
+  label,
+  size = "standard",
+  tone = "default",
+  class: className,
+  ratingEditAttributes,
+  countEditAttributes,
+  labelEditAttributes,
+} = Astro.props as Props;
+
+const classes = [
+  "sidera-rating-summary",
+  `sidera-rating-summary--${size}`,
+  `sidera-rating-summary--${tone}`,
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+---
+
+<span class={classes} role="group" aria-label={ariaLabel}>
+  <span class="sidera-rating-summary__score" aria-hidden="true">
+    <RatingStars
+      value={value}
+      max={max}
+      size={size}
+      tone={tone === "inverse" ? "inverse" : "gold"}
+    />
+    <span class="sidera-rating-summary__value" {...ratingEditAttributes}>{ratingText}</span>
+  </span>
+
+  {
+    countText && (
+      <>
+        <span class="sidera-rating-summary__separator" aria-hidden="true">·</span>
+        <span
+          class="sidera-rating-summary__count"
+          aria-hidden="true"
+          {...countEditAttributes}
+        >
+          {countText}
+        </span>
+      </>
+    )
+  }
+
+  {
+    label && (
+      <>
+        <span class="sidera-rating-summary__separator" aria-hidden="true">·</span>
+        <span
+          class="sidera-rating-summary__label"
+          aria-hidden="true"
+          {...labelEditAttributes}
+        >
+          {label}
+        </span>
+      </>
+    )
+  }
+</span>

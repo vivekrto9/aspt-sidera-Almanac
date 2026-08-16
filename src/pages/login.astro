@@ -1,0 +1,160 @@
+---
+import type { BuilderEditAttributes } from "../builder/builder.ts";
+import { loadPublicPageContent } from "../builder/public-page.ts";
+import AuthLoginForm from "../components/auth/sections/AuthLoginForm.astro";
+import AuthShell from "../components/shared/AuthShell.astro";
+import { localizePath } from "../data/localization-contract.ts";
+import { getAuthLoginFormCopy } from "../data/locale/auth/sections/login-form.ts";
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+export const prerender = false;
+
+const {
+  content,
+  locale,
+  builder,
+  builderPage,
+  chromePage,
+  reviewTargets,
+  builderEdit,
+} = await loadPublicPageContent(Astro, "login");
+const baseFormCopy = getAuthLoginFormCopy(locale);
+const formCopy = {
+  ...baseFormCopy,
+  heading: content.login_form_heading,
+  subheading: content.login_form_subheading,
+  emailLabel: content.login_email_label,
+  emailPlaceholder: content.login_email_placeholder,
+  passwordLabel: content.login_password_label,
+  passwordPlaceholder: content.login_password_placeholder,
+  submitLabel: content.login_submit_label,
+  forgotPasswordLabel: content.login_forgot_password_label,
+  termsPrefix: content.login_terms_prefix,
+  termsLabel: content.login_terms_label,
+  termsGlue: content.login_terms_glue,
+  privacyLabel: content.login_privacy_label,
+  termsSuffix: content.login_terms_suffix,
+  signupPrompt: content.login_signup_prompt,
+  signupLabel: content.login_signup_label,
+};
+const requestUrl = new URL(Astro.request.url);
+const requestedNextHref = requestUrl.searchParams.get("next");
+const fallbackSuccessHref = localizePath("/account", locale);
+const signupHref = localizePath("/signup", locale);
+const forgotPasswordHref = localizePath("/forgot-password", locale);
+const termsHref = localizePath("/terms", locale);
+const privacyHref = localizePath("/privacy", locale);
+const successHref = (() => {
+  if (
+    !requestedNextHref ||
+    !requestedNextHref.startsWith("/") ||
+    requestedNextHref.startsWith("//")
+  ) {
+    return fallbackSuccessHref;
+  }
+
+  const target = new URL(requestedNextHref, requestUrl.origin);
+  return target.origin === requestUrl.origin
+    ? `${target.pathname}${target.search}${target.hash}`
+    : fallbackSuccessHref;
+})();
+
+const componentEditAttributes = (
+  attributes: BuilderEditAttributes,
+): Record<string, string> =>
+  Object.fromEntries(
+    Object.entries(attributes)
+      .filter((entry): entry is [string, string | true] => entry[1] !== undefined)
+      .map(([key, value]) => [key, value === true ? "true" : value]),
+  );
+
+const panelPerks = [
+  {
+    icon: "✦",
+    label: content.login_proof_1_label,
+    labelEditAttributes: componentEditAttributes(
+      builderEdit("login_proof_1_label"),
+    ),
+  },
+  {
+    icon: "✦",
+    label: content.login_proof_2_label,
+    labelEditAttributes: componentEditAttributes(
+      builderEdit("login_proof_2_label"),
+    ),
+  },
+];
+
+const seoContent = {
+  seo_title: content.seo_title,
+  seo_description: content.seo_description,
+  seo_canonical_path: content.seo_canonical_path,
+  seo_robots: content.seo_robots,
+  og_title: content.og_title,
+  og_description: content.og_description,
+  og_image: content.og_image,
+  og_image_alt: content.og_image_alt,
+  twitter_card: content.twitter_card,
+  twitter_title: content.twitter_title,
+  twitter_description: content.twitter_description,
+  twitter_image: content.twitter_image,
+};
+---
+
+<BaseLayout
+  seo={seoContent}
+  bodyClass="sidera-auth-body"
+  builderToolbar={{
+    launcherEnabled: builder.launcherEnabled,
+    studioModeEnabled: builder.studioModeEnabled,
+    collection: builder.collection,
+    entry: builder.entry,
+    locale: builder.locale,
+    csrfToken: builder.csrfToken,
+    canPublish: builder.canPublish,
+    seo: seoContent,
+    hasSavedDraft: builderPage.hasSavedDraft || chromePage.hasSavedDraft,
+    reviewTargets,
+  }}
+>
+  <AuthShell
+    id="login"
+    brandLabel={content.login_brand_label}
+    brandHref="/"
+    brandAriaLabel={content.login_brand_aria_label}
+    backLabel={content.login_back_label}
+    backHref="/"
+    panelKicker={content.login_panel_kicker}
+    panelTitle={content.login_panel_title}
+    panelDescription={content.login_panel_description}
+    perks={panelPerks}
+    formLabel={formCopy.heading}
+    locale={locale}
+    brandEditAttributes={componentEditAttributes(
+      builderEdit("login_brand_label"),
+    )}
+    backEditAttributes={componentEditAttributes(
+      builderEdit("login_back_label"),
+    )}
+    kickerEditAttributes={componentEditAttributes(
+      builderEdit("login_panel_kicker"),
+    )}
+    titleEditAttributes={componentEditAttributes(
+      builderEdit("login_panel_title"),
+    )}
+    descriptionEditAttributes={componentEditAttributes(
+      builderEdit("login_panel_description"),
+    )}
+  >
+    <AuthLoginForm
+      copy={formCopy}
+      successHref={successHref}
+      {signupHref}
+      {forgotPasswordHref}
+      {termsHref}
+      {privacyHref}
+      editAttributes={(field) =>
+        componentEditAttributes(builderEdit(field))}
+    />
+  </AuthShell>
+</BaseLayout>

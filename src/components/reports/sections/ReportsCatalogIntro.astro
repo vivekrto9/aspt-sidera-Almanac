@@ -1,0 +1,52 @@
+---
+import PageIntro from "../../shared/PageIntro.astro";
+import "../../../styles/reports/sections/catalog-intro.css";
+
+type EditAttributes = Record<string, string>;
+
+type Props = {
+  eyebrow: string;
+  titleAccent: string;
+  titleSuffix: string;
+  description: string;
+  eyebrowEditAttributes?: EditAttributes;
+  titleAccentEditAttributes?: EditAttributes;
+  titleSuffixEditAttributes?: EditAttributes;
+  descriptionEditAttributes?: EditAttributes;
+};
+
+const {
+  eyebrow,
+  titleAccent,
+  titleSuffix,
+  description,
+  eyebrowEditAttributes = {},
+  titleAccentEditAttributes = {},
+  titleSuffixEditAttributes = {},
+  descriptionEditAttributes = {},
+} = Astro.props as Props;
+
+const normalizedSuffix = titleSuffix.trim();
+const titleJoiner = /^[.,!?;:]/.test(normalizedSuffix) ? "" : " ";
+const fullTitle = `${titleAccent}${titleJoiner}${normalizedSuffix}`;
+---
+
+<div class="reports-catalog-intro-shell">
+  <PageIntro
+    id="reports-catalog-intro"
+    class="reports-catalog-intro"
+    title={fullTitle}
+    eyebrow={eyebrow}
+    description={description}
+    alignment="center"
+    density="standard"
+    eyebrowEditAttributes={eyebrowEditAttributes}
+    descriptionEditAttributes={descriptionEditAttributes}
+  >
+    <Fragment slot="title">
+      <em {...titleAccentEditAttributes}>{titleAccent}</em>{titleJoiner}<span
+        {...titleSuffixEditAttributes}>{normalizedSuffix}</span
+      >
+    </Fragment>
+  </PageIntro>
+</div>

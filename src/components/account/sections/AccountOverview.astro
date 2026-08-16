@@ -1,0 +1,103 @@
+---
+import Button from "../../shared/Button.astro";
+import EmptyState from "../../shared/EmptyState.astro";
+import "../../../styles/account/sections/account-overview.css";
+
+type EditAttributes = Record<string, string>;
+
+export interface Props {
+  dateLabel: string;
+  greeting: string;
+  greetingField: string;
+  firstName: string;
+  newChartLabel: string;
+  newChartHref: string;
+  stats: readonly number[];
+  statLabels: readonly string[];
+  skyEyebrow: string;
+  positions: readonly { id: string; value: string }[] | null;
+  positionLabels: readonly string[];
+  skyInsight: string;
+  skyActionLabel: string;
+  skyActionHref: string;
+  skyEmptyTitle: string;
+  skyEmptyDescription: string;
+  skyEmptyActionLabel: string;
+  skyEmptyActionHref: string;
+  skyUnavailableTitle: string;
+  skyUnavailableDescription: string;
+  hasBirthProfile: boolean;
+  edit: (field: string) => EditAttributes;
+}
+
+const props = Astro.props as Props;
+---
+
+<section class="account-overview" id="overview" aria-labelledby="account-overview-title">
+  <header class="account-overview__header">
+    <div>
+      <p class="account-overview__date">{props.dateLabel}</p>
+      <h1 class="account-overview__title" id="account-overview-title">
+        <span {...props.edit(props.greetingField)}>{props.greeting}</span>,
+        <em>{props.firstName}</em>.
+      </h1>
+    </div>
+    <Button href={props.newChartHref} variant="primary" size="compact" shape="pill">
+      <span aria-hidden="true">+</span>
+      <span {...props.edit("account_overview_new_chart_label")}>{props.newChartLabel}</span>
+    </Button>
+  </header>
+
+  <div class="account-overview__stats">
+    {props.stats.map((value, index) => (
+      <div class="account-overview__stat">
+        <strong>{value}</strong>
+        <span {...props.edit(`account_overview_stat_${index + 1}_label`)}>
+          {props.statLabels[index]}
+        </span>
+      </div>
+    ))}
+  </div>
+
+  <article class="account-overview__sky">
+      <p class="account-overview__eyebrow" {...props.edit("account_overview_sky_eyebrow")}>
+        {props.skyEyebrow}
+      </p>
+      {props.positions ? (
+        <>
+          <div class="account-overview__positions">
+            {props.positions.map((position, index) => (
+              <div>
+                <strong>{position.value}</strong>
+                <span {...props.edit(`account_overview_position_${index + 1}_label`)}>
+                  {props.positionLabels[index]}
+                </span>
+              </div>
+            ))}
+          </div>
+          <p class="account-overview__insight" {...props.edit("account_overview_sky_insight")}>
+            {props.skyInsight}
+          </p>
+          <a class="account-overview__sky-link" href={props.skyActionHref}>
+            <span {...props.edit("account_overview_sky_action_label")}>{props.skyActionLabel}</span>
+            <span aria-hidden="true">→</span>
+          </a>
+        </>
+      ) : (
+        <EmptyState
+          id="account-overview-sky-empty"
+          class="account-overview__empty account-overview__empty--sky"
+          variant="plain"
+          headingLevel={3}
+          showVisual={false}
+          title={props.hasBirthProfile ? props.skyUnavailableTitle : props.skyEmptyTitle}
+          description={props.hasBirthProfile ? props.skyUnavailableDescription : props.skyEmptyDescription}
+          actionLabel={props.hasBirthProfile ? props.skyActionLabel : props.skyEmptyActionLabel}
+          actionHref={props.hasBirthProfile ? props.skyActionHref : props.skyEmptyActionHref}
+          titleEditAttributes={props.hasBirthProfile ? {} : props.edit("account_overview_sky_empty_title")}
+          descriptionEditAttributes={props.hasBirthProfile ? {} : props.edit("account_overview_sky_empty_description")}
+          actionEditAttributes={props.hasBirthProfile ? props.edit("account_overview_sky_action_label") : props.edit("account_overview_sky_empty_action_label")}
+        />
+      )}
+  </article>
+</section>

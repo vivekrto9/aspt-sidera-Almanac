@@ -1,0 +1,173 @@
+---
+import IconButton from "./IconButton.astro";
+import TextField from "./TextField.astro";
+import "../../styles/shared/search-field.css";
+
+type SearchFieldShape = "pill" | "rounded";
+
+type Props = {
+  id: string;
+  ariaLabel: string;
+  name?: string;
+  value?: string;
+  placeholder?: string;
+  autocomplete?: string;
+  form?: string;
+  required?: boolean;
+  disabled?: boolean;
+  invalid?: boolean;
+  ariaDescribedby?: string;
+  shape?: SearchFieldShape;
+  showSubmit?: boolean;
+  clearable?: boolean;
+  submitLabel?: string;
+  clearLabel?: string;
+  landmarkLabel?: string;
+  class?: string;
+  inputAttributes?: Record<string, string>;
+};
+
+const {
+  id,
+  ariaLabel,
+  name = "search",
+  value = "",
+  placeholder,
+  autocomplete = "off",
+  form,
+  required = false,
+  disabled = false,
+  invalid = false,
+  ariaDescribedby,
+  shape = "pill",
+  showSubmit = true,
+  clearable = true,
+  submitLabel = "Search",
+  clearLabel = "Clear search",
+  landmarkLabel,
+  class: className,
+  inputAttributes,
+} = Astro.props as Props;
+
+const classes = [
+  "sidera-search-field",
+  `sidera-search-field--${shape}`,
+  disabled && "sidera-search-field--disabled",
+  invalid && "sidera-search-field--invalid",
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+
+const hasInitialValue = value.length > 0;
+---
+
+<div
+  class={classes}
+  role="search"
+  aria-label={landmarkLabel ?? ariaLabel}
+  data-sidera-search-field
+>
+  <span class="sidera-search-field__leading-icon" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="none">
+      <circle cx="11" cy="11" r="6.5"></circle>
+      <path d="m16 16 4 4"></path>
+    </svg>
+  </span>
+
+  <TextField
+    {...inputAttributes}
+    class="sidera-search-field__input"
+    type="search"
+    inputmode="search"
+    id={id}
+    name={name}
+    value={value}
+    placeholder={placeholder}
+    autocomplete={autocomplete}
+    form={form}
+    required={required}
+    disabled={disabled}
+    invalid={invalid}
+    ariaLabel={ariaLabel}
+    ariaDescribedby={ariaDescribedby}
+  />
+
+  {
+    clearable && (
+      <span class="sidera-search-field__clear" hidden={!hasInitialValue}>
+        <IconButton
+          ariaLabel={clearLabel}
+          type="button"
+          variant="ghost"
+          size="compact"
+          shape="circle"
+          disabled={disabled || !hasInitialValue}
+        >
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="m7 7 10 10M17 7 7 17"></path>
+          </svg>
+        </IconButton>
+      </span>
+    )
+  }
+
+  {
+    showSubmit && (
+      <span class="sidera-search-field__submit">
+        <IconButton
+          ariaLabel={submitLabel}
+          type="submit"
+          variant="solid"
+          size="compact"
+          shape="circle"
+          form={form}
+          disabled={disabled}
+        >
+          <svg viewBox="0 0 24 24" fill="none">
+            <circle cx="11" cy="11" r="6.5"></circle>
+            <path d="m16 16 4 4"></path>
+          </svg>
+        </IconButton>
+      </span>
+    )
+  }
+</div>
+
+{
+  clearable && (
+    <script>
+      const initializeSearchField = (root: HTMLElement) => {
+        if (root.dataset.sideraSearchFieldReady === "true") return;
+
+        const input = root.querySelector<HTMLInputElement>('input[type="search"]');
+        const clearSlot = root.querySelector<HTMLElement>(".sidera-search-field__clear");
+        const clearButton = clearSlot?.querySelector<HTMLButtonElement>("button");
+
+        if (!input || !clearSlot || !clearButton) return;
+
+        const syncClearAction = () => {
+          const hasValue = input.value.length > 0;
+          clearSlot.hidden = !hasValue;
+          clearButton.disabled = input.disabled || !hasValue;
+          root.dataset.hasValue = hasValue ? "true" : "false";
+        };
+
+        input.addEventListener("input", syncClearAction);
+        clearButton.addEventListener("click", () => {
+          input.value = "";
+          input.dispatchEvent(new Event("input", { bubbles: true }));
+          input.dispatchEvent(new Event("change", { bubbles: true }));
+          input.focus();
+        });
+
+        root.dataset.sideraSearchFieldReady = "true";
+        syncClearAction();
+      };
+
+      document
+        .querySelectorAll<HTMLElement>("[data-sidera-search-field]")
+        .forEach(initializeSearchField);
+    </script>
+  )
+}

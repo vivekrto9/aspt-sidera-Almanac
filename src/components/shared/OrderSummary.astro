@@ -1,0 +1,280 @@
+---
+import Button from "./Button.astro";
+import OrderLineItem from "./OrderLineItem.astro";
+import SummaryRow from "./SummaryRow.astro";
+import "../../styles/shared/order-summary.css";
+
+type OrderSummaryVariant = "cart" | "checkout" | "booking" | "receipt";
+type OrderSummaryTone = "default" | "inverse";
+type SummaryRowVariant = "default" | "muted" | "discount";
+
+type SummaryItem = {
+  id: string;
+  title: string;
+  price: string;
+  meta?: string;
+  href?: string;
+  mediaSrc?: string;
+  mediaAlt?: string;
+  quantity?: number;
+  quantityLabel?: string;
+  priceAriaLabel?: string;
+};
+
+type SummaryEntry = {
+  label: string;
+  value: string;
+  variant?: SummaryRowVariant;
+  valueAriaLabel?: string;
+  labelEditAttributes?: Record<string, string>;
+};
+
+type Props = {
+  id: string;
+  title?: string;
+  headingLevel?: 2 | 3 | 4;
+  landmarkLabel?: string;
+  variant?: OrderSummaryVariant;
+  tone?: OrderSummaryTone;
+  items?: SummaryItem[];
+  rows?: SummaryEntry[];
+  totalLabel: string;
+  totalValue: string;
+  totalAriaLabel?: string;
+  statusMessage?: string;
+  note?: string;
+  actionLabel?: string;
+  actionAriaLabel?: string;
+  actionHref?: string;
+  actionType?: "button" | "submit";
+  actionName?: string;
+  actionValue?: string;
+  form?: string;
+  actionDisabled?: boolean;
+  actionLoading?: boolean;
+  actionLoadingLabel?: string;
+  sticky?: boolean;
+  class?: string;
+  titleEditAttributes?: Record<string, string>;
+  statusEditAttributes?: Record<string, string>;
+  noteEditAttributes?: Record<string, string>;
+  actionEditAttributes?: Record<string, string>;
+  totalLabelEditAttributes?: Record<string, string>;
+};
+
+const {
+  id,
+  title,
+  headingLevel = 2,
+  landmarkLabel,
+  variant = "cart",
+  tone = variant === "receipt" ? "inverse" : "default",
+  items = [],
+  rows = [],
+  totalLabel,
+  totalValue,
+  totalAriaLabel,
+  statusMessage,
+  note,
+  actionLabel,
+  actionAriaLabel,
+  actionHref,
+  actionType = "button",
+  actionName,
+  actionValue,
+  form,
+  actionDisabled = false,
+  actionLoading,
+  actionLoadingLabel,
+  sticky = false,
+  class: className,
+  titleEditAttributes = {},
+  statusEditAttributes = {},
+  noteEditAttributes = {},
+  actionEditAttributes = {},
+  totalLabelEditAttributes = {},
+} = Astro.props as Props;
+
+const WrapperTag = landmarkLabel ? "aside" : "section";
+const HeadingTag = `h${headingLevel}` as "h2" | "h3" | "h4";
+const headingId = title ? `${id}-title` : undefined;
+const hasHeaderSlot = Astro.slots.has("header");
+const hasItemsSlot = Astro.slots.has("items");
+const hasCouponSlot = Astro.slots.has("coupon");
+const hasPaymentSlot = Astro.slots.has("payment");
+const hasBeforeTotalSlot = Astro.slots.has("before-total");
+const hasAfterTotalSlot = Astro.slots.has("after-total");
+const hasFooterSlot = Astro.slots.has("footer");
+const classes = [
+  "sidera-order-summary",
+  `sidera-order-summary--${variant}`,
+  `sidera-order-summary--tone-${tone}`,
+  sticky && "sidera-order-summary--sticky",
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+---
+
+<WrapperTag
+  class={classes}
+  id={id}
+  aria-label={landmarkLabel}
+  aria-labelledby={!landmarkLabel ? headingId : undefined}
+  data-order-summary
+>
+  {
+    hasHeaderSlot || title ? (
+      <header class="sidera-order-summary__header">
+        {hasHeaderSlot ? (
+          <slot name="header" />
+        ) : (
+          <HeadingTag id={headingId} class="sidera-order-summary__title" {...titleEditAttributes}>
+            {title}
+          </HeadingTag>
+        )}
+      </header>
+    ) : null
+  }
+
+  {
+    hasItemsSlot || items.length > 0 ? (
+      <div class="sidera-order-summary__items">
+        {hasItemsSlot ? (
+          <slot name="items" />
+        ) : (
+          items.map((item) => (
+            <OrderLineItem
+              {...item}
+              variant="summary"
+              quantity={item.quantity ?? 1}
+              quantityLabel={item.quantityLabel ?? "Qty"}
+            />
+          ))
+        )}
+      </div>
+    ) : null
+  }
+
+  {
+    rows.length > 0 ? (
+      <div class="sidera-order-summary__rows">
+        {rows.map((row) => (
+          <SummaryRow
+            label={row.label}
+            value={row.value}
+            variant={row.variant}
+            tone={tone}
+            valueAriaLabel={row.valueAriaLabel}
+            labelEditAttributes={row.labelEditAttributes}
+          />
+        ))}
+      </div>
+    ) : null
+  }
+
+  {
+    hasCouponSlot ? (
+      <div class="sidera-order-summary__extension sidera-order-summary__coupon">
+        <slot name="coupon" />
+      </div>
+    ) : null
+  }
+
+  {
+    hasPaymentSlot ? (
+      <div class="sidera-order-summary__extension sidera-order-summary__payment">
+        <slot name="payment" />
+      </div>
+    ) : null
+  }
+
+  {
+    statusMessage && variant !== "booking" ? (
+      <p class="sidera-order-summary__status" {...statusEditAttributes}>
+        <span aria-hidden="true"></span>
+        {statusMessage}
+      </p>
+    ) : null
+  }
+
+  {hasBeforeTotalSlot ? <div class="sidera-order-summary__before-total"><slot name="before-total" /></div> : null}
+
+  <div class="sidera-order-summary__total">
+    <SummaryRow
+      label={totalLabel}
+      value={totalValue}
+      valueAriaLabel={totalAriaLabel}
+      variant="total"
+      tone={tone}
+      labelEditAttributes={totalLabelEditAttributes}
+    />
+  </div>
+
+  {
+    statusMessage && variant === "booking" ? (
+      <p class="sidera-order-summary__status" {...statusEditAttributes}>
+        <span aria-hidden="true"></span>
+        {statusMessage}
+      </p>
+    ) : null
+  }
+
+  {hasAfterTotalSlot ? <div class="sidera-order-summary__after-total"><slot name="after-total" /></div> : null}
+
+  {
+    actionLabel ? (
+      <div class="sidera-order-summary__action" data-order-summary-action>
+        <Button
+          href={actionHref}
+          type={actionType}
+          name={actionName}
+          value={actionValue}
+          form={form}
+          disabled={actionDisabled}
+          loading={actionLoading}
+          loadingLabel={actionLoadingLabel}
+          variant={tone === "inverse" ? "secondary" : "primary"}
+          size="large"
+          shape="rounded"
+          fullWidth
+          ariaLabel={actionAriaLabel}
+          editAttributes={actionEditAttributes}
+        >
+          {actionLabel}
+        </Button>
+      </div>
+    ) : null
+  }
+
+  {note ? <p class="sidera-order-summary__note" {...noteEditAttributes}>{note}</p> : null}
+  {hasFooterSlot ? <footer class="sidera-order-summary__footer"><slot name="footer" /></footer> : null}
+</WrapperTag>
+
+<script>
+  const enhanceOrderSummary = (root: HTMLElement) => {
+    if (root.dataset.orderSummaryBound === "true") return;
+    root.dataset.orderSummaryBound = "true";
+
+    const action = root.querySelector<HTMLButtonElement>("[data-order-summary-action] button");
+    if (!action || action.type === "submit") return;
+
+    action.addEventListener("click", () => {
+      root.dispatchEvent(
+        new CustomEvent("ordersummaryaction", {
+          bubbles: true,
+          detail: { id: root.id },
+        }),
+      );
+    });
+  };
+
+  const enhanceOrderSummaries = () => {
+    document
+      .querySelectorAll<HTMLElement>("[data-order-summary]")
+      .forEach(enhanceOrderSummary);
+  };
+
+  enhanceOrderSummaries();
+  document.addEventListener("astro:page-load", enhanceOrderSummaries);
+</script>

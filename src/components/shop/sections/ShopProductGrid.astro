@@ -1,0 +1,110 @@
+---
+import type { SupportedLocale } from "../../../data/localization-contract.ts";
+import type { ShopProductId } from "../../../data/shop/catalog.ts";
+import CardGrid from "../../shared/CardGrid.astro";
+import ProductCard from "../../shared/ProductCard.astro";
+import "../../../styles/shop/sections/product-grid.css";
+
+type EditAttributes = Record<string, string>;
+
+type Product = {
+  id: ShopProductId;
+  title: string;
+  unit: string;
+  currentPrice: string;
+  imageAlt: string;
+  personalized: boolean;
+  imageSrc: string;
+  imageWidth: number;
+  imageHeight: number;
+};
+
+type Perk = {
+  icon: string;
+  title: string;
+  description: string;
+};
+
+type Props = {
+  locale: SupportedLocale;
+  ariaLabel: string;
+  products: Product[];
+  personalizedLabel: string;
+  viewLabel: string;
+  addLabel: string;
+  perks: Perk[];
+  editAttributes?: (field: string) => EditAttributes;
+};
+
+const {
+  locale,
+  ariaLabel,
+  products,
+  personalizedLabel,
+  viewLabel,
+  addLabel,
+  perks,
+  editAttributes = () => ({}),
+} = Astro.props as Props;
+
+const fieldKey = (id: ShopProductId) => id.replaceAll("-", "_");
+---
+
+<section class="shop-product-grid" data-screen-label="Shop products">
+  <div class="shop-product-grid__inner">
+    <CardGrid
+      class="shop-product-grid__cards"
+      columns={3}
+      tabletColumns={2}
+      mobileColumns={1}
+      gap="loose"
+      align="stretch"
+      ariaLabel={ariaLabel}
+    >
+      {
+        products.map((product) => {
+          const key = fieldKey(product.id);
+          return (
+            <ProductCard
+              id={`shop-product-${product.id}`}
+              class="shop-product-grid__card"
+              variant="catalog"
+              locale={locale}
+              title={product.title}
+              href={`/shop/${product.id}`}
+              unit={product.unit}
+              currentPrice={product.currentPrice}
+              imageAlt={product.imageAlt}
+              imageSrc={product.imageSrc}
+              imageWidth={product.imageWidth}
+              imageHeight={product.imageHeight}
+              personalizationLabel={product.personalized ? personalizedLabel : undefined}
+              viewLabel={viewLabel}
+              addLabel={`${addLabel}: ${product.title}`}
+              productId={product.id}
+              titleEditAttributes={editAttributes(`shop_product_${key}_title`)}
+              metaEditAttributes={editAttributes(`shop_product_${key}_unit`)}
+              imageAltEditAttributes={editAttributes(`shop_product_${key}_fallback_label`)}
+            />
+          );
+        })
+      }
+    </CardGrid>
+
+    <div class="shop-product-grid__perks" aria-label={ariaLabel}>
+      {
+        perks.map((perk, index) => (
+          <article class="shop-product-grid__perk">
+            <span class="shop-product-grid__perk-icon" aria-hidden="true">{perk.icon}</span>
+            <div>
+              <h2 {...editAttributes(`shop_perk_${index + 1}_title`)}>{perk.title}</h2>
+              <p {...editAttributes(`shop_perk_${index + 1}_description`)}>
+                {perk.description}
+              </p>
+            </div>
+          </article>
+        ))
+      }
+    </div>
+  </div>
+</section>

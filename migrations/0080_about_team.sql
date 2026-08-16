@@ -1,0 +1,11 @@
+ALTER TABLE ec_site_about ADD COLUMN about_team_title_accent TEXT;
+ALTER TABLE ec_site_about ADD COLUMN about_team_title_rest TEXT;
+ALTER TABLE ec_site_about ADD COLUMN about_team_aria_label TEXT;
+ALTER TABLE ec_site_about ADD COLUMN about_team_member_1_name TEXT;
+ALTER TABLE ec_site_about ADD COLUMN about_team_member_1_role TEXT;
+ALTER TABLE ec_site_about ADD COLUMN about_team_member_2_name TEXT;
+ALTER TABLE ec_site_about ADD COLUMN about_team_member_2_role TEXT;
+ALTER TABLE ec_site_about ADD COLUMN about_team_member_3_name TEXT;
+ALTER TABLE ec_site_about ADD COLUMN about_team_member_3_role TEXT;
+ALTER TABLE ec_site_about ADD COLUMN about_team_member_4_name TEXT;
+ALTER TABLE ec_site_about ADD COLUMN about_team_member_4_role TEXT;

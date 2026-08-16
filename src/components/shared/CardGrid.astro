@@ -1,0 +1,64 @@
+---
+import "../../styles/shared/card-grid.css";
+
+type CardGridElement = "div" | "ul" | "ol";
+type CardGridColumns = 2 | 3 | 4;
+type CardGridTabletColumns = 1 | 2 | 3;
+type CardGridMobileColumns = 1 | 2;
+type CardGridGap = "compact" | "default" | "loose";
+type CardGridAlignment = "start" | "stretch";
+
+type Props = {
+  as?: CardGridElement;
+  columns?: CardGridColumns;
+  tabletColumns?: CardGridTabletColumns;
+  mobileColumns?: CardGridMobileColumns;
+  gap?: CardGridGap;
+  align?: CardGridAlignment;
+  id?: string;
+  ariaLabel?: string;
+  ariaLabelledby?: string;
+  class?: string;
+  attributes?: Record<string, unknown>;
+};
+
+const {
+  as: Element = "div",
+  columns = 3,
+  tabletColumns = 2,
+  mobileColumns = 1,
+  gap = "default",
+  align = "stretch",
+  id,
+  ariaLabel,
+  ariaLabelledby,
+  class: className,
+  attributes = {},
+} = Astro.props as Props;
+
+const classes = [
+  "sidera-card-grid",
+  `sidera-card-grid--gap-${gap}`,
+  `sidera-card-grid--align-${align}`,
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+
+const responsiveColumns = [
+  `--sidera-card-grid-columns:${columns}`,
+  `--sidera-card-grid-tablet-columns:${tabletColumns}`,
+  `--sidera-card-grid-mobile-columns:${mobileColumns}`,
+].join(";");
+---
+
+<Element
+  {...attributes}
+  id={id}
+  class={classes}
+  style={responsiveColumns}
+  aria-label={ariaLabel}
+  aria-labelledby={ariaLabelledby}
+>
+  <slot />
+</Element>

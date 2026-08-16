@@ -1,0 +1,92 @@
+---
+import Badge from "./Badge.astro";
+import PriceDisplay from "./PriceDisplay.astro";
+import "../../styles/shared/price-block.css";
+
+type PriceBlockSize = "compact" | "standard" | "display";
+type PriceBlockTone = "default" | "inverse";
+type PriceBlockAlignment = "start" | "center";
+type BadgeTone = "neutral" | "accent" | "success" | "warning" | "danger" | "inverse";
+
+type Props = {
+  current: string;
+  original?: string;
+  unit?: string;
+  label?: string;
+  supportingText?: string;
+  badgeLabel?: string;
+  badgeTone?: BadgeTone;
+  size?: PriceBlockSize;
+  tone?: PriceBlockTone;
+  alignment?: PriceBlockAlignment;
+  ariaLabel?: string;
+  originalAriaLabel?: string;
+  class?: string;
+  labelEditAttributes?: Record<string, string>;
+  supportingEditAttributes?: Record<string, string>;
+};
+
+const {
+  current,
+  original,
+  unit,
+  label,
+  supportingText,
+  badgeLabel,
+  badgeTone = "accent",
+  size = "standard",
+  tone = "default",
+  alignment = "start",
+  ariaLabel,
+  originalAriaLabel,
+  class: className,
+  labelEditAttributes = {},
+  supportingEditAttributes = {},
+} = Astro.props as Props;
+
+const priceSize = size === "compact" ? "compact" : size === "display" ? "display" : "large";
+const classes = [
+  "sidera-price-block",
+  `sidera-price-block--${size}`,
+  `sidera-price-block--${tone}`,
+  `sidera-price-block--${alignment}`,
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+---
+
+<div class={classes}>
+  {label || badgeLabel ? (
+    <div class="sidera-price-block__meta">
+      {label ? (
+        <span class="sidera-price-block__label" {...labelEditAttributes}>{label}</span>
+      ) : null}
+      {badgeLabel ? (
+        <Badge
+          tone={tone === "inverse" && badgeTone === "neutral" ? "inverse" : badgeTone}
+          appearance="solid"
+          size="compact"
+        >
+          {badgeLabel}
+        </Badge>
+      ) : null}
+    </div>
+  ) : null}
+
+  <PriceDisplay
+    current={current}
+    original={original}
+    unit={unit}
+    size={priceSize}
+    tone={tone}
+    ariaLabel={ariaLabel}
+    originalAriaLabel={originalAriaLabel}
+  />
+
+  {supportingText ? (
+    <span class="sidera-price-block__supporting" {...supportingEditAttributes}>
+      {supportingText}
+    </span>
+  ) : null}
+</div>

@@ -1,0 +1,192 @@
+---
+import Button from "./Button.astro";
+import IconButton from "./IconButton.astro";
+import "../../styles/shared/date-navigator.css";
+
+type DateNavigatorDensity = "compact" | "standard";
+type DateNavigatorType = "button" | "submit" | "reset";
+
+type Props = {
+  label: string;
+  groupLabel: string;
+  previousLabel: string;
+  nextLabel: string;
+  resetLabel?: string;
+  eyebrow?: string;
+  description?: string;
+  density?: DateNavigatorDensity;
+  showReset?: boolean;
+  disabled?: boolean;
+  previousDisabled?: boolean;
+  nextDisabled?: boolean;
+  resetDisabled?: boolean;
+  previousHref?: string;
+  nextHref?: string;
+  resetHref?: string;
+  type?: DateNavigatorType;
+  actionName?: string;
+  previousValue?: string;
+  nextValue?: string;
+  resetValue?: string;
+  form?: string;
+  id?: string;
+  class?: string;
+  eyebrowEditAttributes?: Record<string, string>;
+  labelEditAttributes?: Record<string, string>;
+  descriptionEditAttributes?: Record<string, string>;
+  resetLabelEditAttributes?: Record<string, string>;
+};
+
+const {
+  label,
+  groupLabel,
+  previousLabel,
+  nextLabel,
+  resetLabel = "Today",
+  eyebrow,
+  description,
+  density = "standard",
+  showReset = true,
+  disabled = false,
+  previousDisabled = false,
+  nextDisabled = false,
+  resetDisabled = false,
+  previousHref,
+  nextHref,
+  resetHref,
+  type = "button",
+  actionName,
+  previousValue = "previous",
+  nextValue = "next",
+  resetValue = "today",
+  form,
+  id,
+  class: className,
+  eyebrowEditAttributes = {},
+  labelEditAttributes = {},
+  descriptionEditAttributes = {},
+  resetLabelEditAttributes = {},
+} = Astro.props as Props;
+
+const classes = [
+  "date-navigator",
+  `date-navigator--${density}`,
+  disabled && "date-navigator--disabled",
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+
+const previousIsDisabled = disabled || previousDisabled;
+const nextIsDisabled = disabled || nextDisabled;
+const resetIsDisabled = disabled || resetDisabled;
+---
+
+<nav
+  class={classes}
+  id={id}
+  aria-label={groupLabel}
+  data-date-navigator
+>
+  <div class="date-navigator__copy">
+    {eyebrow && <span class="date-navigator__eyebrow" {...eyebrowEditAttributes}>{eyebrow}</span>}
+    <span class="date-navigator__label" aria-live="polite" aria-atomic="true" {...labelEditAttributes}>
+      {label}
+    </span>
+    {description && <span class="date-navigator__description" {...descriptionEditAttributes}>{description}</span>}
+  </div>
+
+  <div class="date-navigator__actions">
+    <IconButton
+      class="date-navigator__action date-navigator__action--previous"
+      ariaLabel={previousLabel}
+      href={previousHref}
+      variant="outline"
+      size="standard"
+      shape="rounded"
+      type={type}
+      name={actionName}
+      value={previousValue}
+      form={form}
+      disabled={previousIsDisabled}
+    >
+      <svg viewBox="0 0 20 20" aria-hidden="true">
+        <path d="m12.25 4.5-5.5 5.5 5.5 5.5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" />
+      </svg>
+    </IconButton>
+
+    {showReset && (
+      <Button
+        class="date-navigator__action date-navigator__action--reset"
+        href={resetHref}
+        variant="outline"
+        size="compact"
+        shape="rounded"
+        type={type}
+        name={actionName}
+        value={resetValue}
+        form={form}
+        disabled={resetIsDisabled}
+        editAttributes={resetLabelEditAttributes}
+      >
+        {resetLabel}
+      </Button>
+    )}
+
+    <IconButton
+      class="date-navigator__action date-navigator__action--next"
+      ariaLabel={nextLabel}
+      href={nextHref}
+      variant="outline"
+      size="standard"
+      shape="rounded"
+      type={type}
+      name={actionName}
+      value={nextValue}
+      form={form}
+      disabled={nextIsDisabled}
+    >
+      <svg viewBox="0 0 20 20" aria-hidden="true">
+        <path d="m7.75 4.5 5.5 5.5-5.5 5.5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" />
+      </svg>
+    </IconButton>
+  </div>
+</nav>
+
+<script>
+  type DateNavigatorAction = "previous" | "reset" | "next";
+
+  const enhanceDateNavigator = (root: HTMLElement) => {
+    if (root.dataset.dateNavigatorBound === "true") return;
+    root.dataset.dateNavigatorBound = "true";
+
+    const actions: Array<[string, DateNavigatorAction]> = [
+      [".date-navigator__action--previous", "previous"],
+      [".date-navigator__action--reset", "reset"],
+      [".date-navigator__action--next", "next"],
+    ];
+
+    actions.forEach(([selector, action]) => {
+      const control = root.querySelector<HTMLElement>(selector);
+      if (!control) return;
+
+      control.addEventListener("click", () => {
+        root.dispatchEvent(
+          new CustomEvent("datechange", {
+            bubbles: true,
+            detail: { action },
+          }),
+        );
+      });
+    });
+  };
+
+  const enhanceDateNavigators = () => {
+    document
+      .querySelectorAll<HTMLElement>("[data-date-navigator]")
+      .forEach(enhanceDateNavigator);
+  };
+
+  enhanceDateNavigators();
+  document.addEventListener("astro:page-load", enhanceDateNavigators);
+</script>

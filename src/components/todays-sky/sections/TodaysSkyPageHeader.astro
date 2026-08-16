@@ -1,0 +1,63 @@
+---
+import PageIntro from "../../shared/PageIntro.astro";
+import "../../../styles/todays-sky/sections/todays-sky-page-header.css";
+
+type EditAttributes = Record<string, string>;
+
+type Props = {
+  eyebrow: string;
+  titleAccent: string;
+  titleSuffix: string;
+  metaPrimary: string;
+  metaSecondary: string;
+  eyebrowEditAttributes?: EditAttributes;
+  titleAccentEditAttributes?: EditAttributes;
+  titleSuffixEditAttributes?: EditAttributes;
+  metaPrimaryEditAttributes?: EditAttributes;
+  metaSecondaryEditAttributes?: EditAttributes;
+};
+
+const {
+  eyebrow,
+  titleAccent,
+  titleSuffix,
+  metaPrimary,
+  metaSecondary,
+  eyebrowEditAttributes = {},
+  titleAccentEditAttributes = {},
+  titleSuffixEditAttributes = {},
+  metaPrimaryEditAttributes = {},
+  metaSecondaryEditAttributes = {},
+} = Astro.props as Props;
+---
+
+<PageIntro
+  id="todays-sky-page-header"
+  class="todays-sky-page-header"
+  title={`${titleAccent}${titleSuffix}`}
+  eyebrow={eyebrow}
+  alignment="left"
+  density="standard"
+  eyebrowEditAttributes={eyebrowEditAttributes}
+>
+  <Fragment slot="title">
+    <em {...titleAccentEditAttributes}>{titleAccent}</em><span
+      {...titleSuffixEditAttributes}>{titleSuffix}</span
+    >
+  </Fragment>
+
+  <div slot="action" class="todays-sky-page-header__context">
+    <p
+      class="todays-sky-page-header__context-primary"
+      {...metaPrimaryEditAttributes}
+    >
+      {metaPrimary}
+    </p>
+    <p
+      class="todays-sky-page-header__context-secondary"
+      {...metaSecondaryEditAttributes}
+    >
+      {metaSecondary}
+    </p>
+  </div>
+</PageIntro>

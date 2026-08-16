@@ -1,0 +1,280 @@
+---
+import ChartWheel from "../../shared/ChartWheel.astro";
+import PlanetPositionRow from "../../shared/PlanetPositionRow.astro";
+import { getSkyWheelAspects } from "../../../data/astronomy/sky-aspects.ts";
+import type { SkyBodyPosition } from "../../../data/astronomy/sky-strip-positions.ts";
+import type { SupportedLocale } from "../../../data/localization-contract.ts";
+import {
+  formatSkyCopy,
+  getTodaysSkyWheelCopy,
+} from "../../../data/locale/todays-sky/sections/wheel-reading-positions.ts";
+import "../../../styles/todays-sky/sections/todays-sky-wheel-reading-positions.css";
+
+type Props = {
+  locale: SupportedLocale;
+  selectedDateIso: string;
+  wheelCaption: string;
+  positionsTitle: string;
+  positionsCount: string;
+  positions: SkyBodyPosition[];
+  wheelCaptionEditAttributes?: Record<string, string>;
+  positionsTitleEditAttributes?: Record<string, string>;
+  positionsCountEditAttributes?: Record<string, string>;
+};
+
+const {
+  locale,
+  selectedDateIso,
+  wheelCaption,
+  positionsTitle,
+  positionsCount,
+  positions,
+  wheelCaptionEditAttributes = {},
+  positionsTitleEditAttributes = {},
+  positionsCountEditAttributes = {},
+} = Astro.props as Props;
+
+const copy = getTodaysSkyWheelCopy(locale);
+const selected = positions[0];
+const elementColors = {
+  fire: "#9b5273",
+  earth: "#6c6254",
+  air: "#b07a3c",
+  water: "#1f3a34",
+} as const;
+const chartPlanets = positions.map((position, index) => ({
+  glyph: position.planetGlyph,
+  longitude: position.longitude,
+  label: formatSkyCopy(copy.positionActionTemplate, position),
+  color: elementColors[position.elementId],
+  ring: "outer" as const,
+  selected: index === 0,
+}));
+const chartAspects = getSkyWheelAspects(positions);
+---
+
+<section
+  class="todays-sky-wheel"
+  aria-label={copy.sectionLabel}
+  data-todays-sky-wheel
+  data-locale={locale}
+  data-selected-date={selectedDateIso}
+  data-selected-index="0"
+  data-reading-template={copy.readingTemplate}
+  data-position-action-template={copy.positionActionTemplate}
+  data-initial-positions={JSON.stringify(positions)}
+>
+  <div class="todays-sky-wheel__layout">
+    <div class="todays-sky-wheel__chart-panel">
+      <ChartWheel
+        title={copy.wheelTitle}
+        mode="transit"
+        size="large"
+        planets={chartPlanets}
+        aspects={chartAspects}
+        showHouses={false}
+        showAspects={true}
+        interactive={true}
+        centerGlyph="☉"
+        class="todays-sky-wheel__chart"
+      />
+      <p
+        class="todays-sky-wheel__caption"
+        {...wheelCaptionEditAttributes}
+      >
+        {wheelCaption}
+      </p>
+    </div>
+
+    <div class="todays-sky-wheel__inspector">
+      <article
+        class="todays-sky-wheel__reading"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        <div class="todays-sky-wheel__reading-header">
+          <span class="todays-sky-wheel__reading-glyph" aria-hidden="true">
+            <span data-reading-glyph>{selected.planetGlyph}</span>
+          </span>
+          <div class="todays-sky-wheel__reading-copy">
+            <div class="todays-sky-wheel__reading-title-row">
+              <h2 data-reading-name>{selected.planetName}</h2>
+              <span
+                class="todays-sky-wheel__retrograde"
+                data-reading-retrograde
+                hidden={!selected.motionText}
+              >
+                {copy.retrogradeLabel}
+              </span>
+            </div>
+            <p data-reading-meta>
+              {selected.degreeText} {selected.signName} · {selected.element}
+            </p>
+          </div>
+        </div>
+        <p class="todays-sky-wheel__reading-body" data-reading-body>
+          {formatSkyCopy(copy.readingTemplate, selected)}
+        </p>
+      </article>
+
+      <div class="todays-sky-wheel__positions">
+        <div class="todays-sky-wheel__positions-header">
+          <h2 {...positionsTitleEditAttributes}>{positionsTitle}</h2>
+          <span {...positionsCountEditAttributes}>{positionsCount}</span>
+        </div>
+        <div class="todays-sky-wheel__position-list">
+          {
+            positions.map((position, index) => (
+              <PlanetPositionRow
+                interactive={true}
+                selected={index === 0}
+                size="compact"
+                planetName={position.planetName}
+                planetGlyph={position.planetGlyph}
+                signName={position.signName}
+                signGlyph={position.signGlyph}
+                degreeText={position.degreeText}
+                houseText={position.speedText}
+                motionText={position.motionText}
+                motionTone="accent"
+                ariaLabel={formatSkyCopy(copy.positionActionTemplate, position)}
+                class="todays-sky-wheel__position"
+                data-position-index={index}
+              />
+            ))
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { getSkyWheelAspects } from "../../../data/astronomy/sky-aspects.ts";
+  import type { SkyBodyPosition } from "../../../data/astronomy/sky-strip-positions.ts";
+  import { formatSkyCopy } from "../../../data/locale/todays-sky/sections/wheel-reading-positions.ts";
+
+  const enhanceSkyWheel = (root: HTMLElement) => {
+    if (root.dataset.skyWheelBound === "true") return;
+    root.dataset.skyWheelBound = "true";
+
+    const readingTemplate = root.dataset.readingTemplate || "";
+    const actionTemplate = root.dataset.positionActionTemplate || "";
+    const wheel = root.querySelector<HTMLElement>("[data-chart-wheel]");
+    const rows = Array.from(
+      root.querySelectorAll<HTMLButtonElement>("[data-position-index]"),
+    );
+    const readingGlyph = root.querySelector<HTMLElement>("[data-reading-glyph]");
+    const readingName = root.querySelector<HTMLElement>("[data-reading-name]");
+    const readingRetrograde = root.querySelector<HTMLElement>(
+      "[data-reading-retrograde]",
+    );
+    const readingMeta = root.querySelector<HTMLElement>("[data-reading-meta]");
+    const readingBody = root.querySelector<HTMLElement>("[data-reading-body]");
+    if (
+      !wheel ||
+      !readingGlyph ||
+      !readingName ||
+      !readingRetrograde ||
+      !readingMeta ||
+      !readingBody
+    ) {
+      return;
+    }
+
+    let positions: SkyBodyPosition[] = [];
+    let selectedIndex = Number(root.dataset.selectedIndex || 0);
+    const toPoint = (longitude: number, radius = 184) => {
+      const angle = (180 + longitude) * (Math.PI / 180);
+      return {
+        x: 250 + radius * Math.cos(angle),
+        y: 250 - radius * Math.sin(angle),
+      };
+    };
+
+    const syncAspectLines = () => {
+      const aspects = getSkyWheelAspects(positions, selectedIndex);
+      const lines = wheel.querySelectorAll<SVGLineElement>(
+        ".chart-wheel__aspects line",
+      );
+      lines.forEach((line, index) => {
+        const aspect = aspects[index];
+        if (!aspect) return;
+        const from = toPoint(positions[aspect.from]?.longitude ?? 0);
+        const to = toPoint(positions[aspect.to]?.longitude ?? 0);
+        line.setAttribute("x1", String(from.x));
+        line.setAttribute("y1", String(from.y));
+        line.setAttribute("x2", String(to.x));
+        line.setAttribute("y2", String(to.y));
+        line.setAttribute("stroke", aspect.color);
+        line.setAttribute("stroke-width", String(aspect.weight));
+        line.setAttribute("stroke-dasharray", aspect.dashed ? "5 5" : "");
+        line.style.display = aspect.weight === 0 ? "none" : "";
+        line.style.opacity = aspect.active ? "0.95" : "0.4";
+      });
+    };
+
+    const syncSelection = (nextIndex: number) => {
+      selectedIndex = Math.min(
+        positions.length - 1,
+        Math.max(0, nextIndex),
+      );
+      root.dataset.selectedIndex = String(selectedIndex);
+      const selected = positions[selectedIndex];
+      if (!selected) return;
+
+      wheel
+        .querySelectorAll<SVGGElement>("[data-planet-index]")
+        .forEach((planet, index) => {
+          planet.classList.toggle(
+            "chart-wheel__planet--selected",
+            index === selectedIndex,
+          );
+        });
+      rows.forEach((row, index) => {
+        const isSelected = index === selectedIndex;
+        row.classList.toggle(
+          "sidera-planet-position-row--selected",
+          isSelected,
+        );
+        row.setAttribute("aria-pressed", String(isSelected));
+      });
+
+      readingGlyph.textContent = selected.planetGlyph;
+      readingName.textContent = selected.planetName;
+      readingRetrograde.hidden = !selected.motionText;
+      readingMeta.textContent = `${selected.degreeText} ${selected.signName} · ${selected.element}`;
+      readingBody.textContent = formatSkyCopy(readingTemplate, selected);
+      syncAspectLines();
+    };
+
+    try {
+      const initialPositions = JSON.parse(root.dataset.initialPositions || "[]") as SkyBodyPosition[];
+      if (!initialPositions.length) return;
+      positions = initialPositions;
+      syncSelection(selectedIndex);
+    } catch {
+      return;
+    }
+
+    wheel.addEventListener("planetselect", (event) => {
+      const detail = (event as CustomEvent<{ index: number }>).detail;
+      syncSelection(detail.index);
+    });
+    rows.forEach((row) => {
+      row.addEventListener("click", () => {
+        syncSelection(Number(row.dataset.positionIndex));
+      });
+    });
+  };
+
+  const enhanceSkyWheels = () => {
+    document
+      .querySelectorAll<HTMLElement>("[data-todays-sky-wheel]")
+      .forEach(enhanceSkyWheel);
+  };
+
+  enhanceSkyWheels();
+  document.addEventListener("astro:page-load", enhanceSkyWheels);
+  document.addEventListener("todays-sky:content-replaced", enhanceSkyWheels);
+</script>

@@ -1,0 +1,27 @@
+.account-orders {
+  min-inline-size: 0;
+  margin-block-start: 4rem;
+  scroll-margin-block-start: 6rem;
+}
+
+.account-orders__header {
+  --sidera-section-heading-title-size: 2.125rem;
+  margin-block-end: 1.125rem;
+}
+
+.account-orders__list {
+  overflow: hidden;
+  border: 1px solid rgba(var(--color-text-rgb), 0.1);
+  border-radius: 1rem;
+  background: var(--color-panel);
+}
+
+.account-orders__list .sidera-order-line-item:last-child {
+  border-block-end: 0;
+}
+
+@media (max-width: 40rem) {
+  .account-orders {
+    margin-block-start: 3rem;
+  }
+}

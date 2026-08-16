@@ -1,0 +1,37 @@
+.account-collection-page {
+  view-transition-name: account-collection;
+  inline-size: min(100% - 2rem, 66rem);
+  min-block-size: 60svh;
+  margin-inline: auto;
+  padding-block: 2.25rem 4rem;
+}
+.account-collection-page__back {
+  margin-block-end: 1.25rem;
+  padding-inline: 0;
+}
+.account-collection-page__back .sidera-button__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.account-collection-page__count {
+  margin: 0.75rem 0 1.5rem;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+.account-collection-page .account-people__grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+@media (max-width: 68rem) {
+  .account-collection-page .account-people__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 40rem) {
+  .account-collection-page {
+    padding-block-start: 1.25rem;
+  }
+  .account-collection-page .account-people__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

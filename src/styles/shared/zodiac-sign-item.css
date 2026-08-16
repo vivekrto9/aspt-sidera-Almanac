@@ -1,0 +1,176 @@
+.sidera-zodiac-sign {
+  --sidera-zodiac-accent: var(--color-primary);
+  --sidera-zodiac-selected-text: var(--color-on-dark);
+
+  inline-size: 100%;
+  min-inline-size: 0;
+  max-inline-size: 17rem;
+  min-block-size: 2.75rem;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  border: 1px solid rgba(var(--color-text-rgb), 0.1);
+  border-radius: 1rem;
+  padding: 1.75rem 0.75rem 1.375rem;
+  background: var(--color-panel);
+  color: var(--color-text);
+  cursor: pointer;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  text-align: center;
+  text-decoration: none;
+  transition:
+    border-color 180ms ease,
+    background-color 180ms ease,
+    box-shadow 180ms ease,
+    color 180ms ease,
+    transform 180ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sidera-zodiac-sign:hover {
+  border-color: color-mix(in srgb, var(--sidera-zodiac-accent) 45%, transparent);
+  box-shadow: 0 1.25rem 2.75rem -1.625rem rgba(var(--color-text-rgb), 0.45);
+  transform: translateY(-0.25rem);
+}
+
+.sidera-zodiac-sign:active:not(:disabled):not([aria-disabled="true"]) {
+  transform: translateY(-0.0625rem);
+}
+
+.sidera-zodiac-sign:focus-visible {
+  outline: 0.1875rem solid color-mix(in srgb, var(--sidera-zodiac-accent) 55%, transparent);
+  outline-offset: 0.1875rem;
+}
+
+.sidera-zodiac-sign:disabled,
+.sidera-zodiac-sign[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.48;
+  pointer-events: none;
+}
+
+.sidera-zodiac-sign--selected {
+  border-color: var(--sidera-zodiac-accent);
+  background: var(--sidera-zodiac-accent);
+  box-shadow: 0 0.75rem 1.625rem -0.875rem
+    color-mix(in srgb, var(--sidera-zodiac-accent) 70%, transparent);
+  color: var(--sidera-zodiac-selected-text);
+}
+
+.sidera-zodiac-sign--selected:hover {
+  border-color: var(--sidera-zodiac-accent);
+  background: color-mix(in srgb, var(--sidera-zodiac-accent) 88%, var(--color-text));
+}
+
+.sidera-zodiac-sign--fire {
+  --sidera-zodiac-accent: var(--color-primary);
+}
+
+.sidera-zodiac-sign--earth {
+  --sidera-zodiac-accent: var(--color-muted);
+}
+
+.sidera-zodiac-sign--air {
+  --sidera-zodiac-accent: var(--color-primary-soft);
+}
+
+.sidera-zodiac-sign--water {
+  --sidera-zodiac-accent: var(--color-dark);
+}
+
+.sidera-zodiac-sign__glyph {
+  color: var(--sidera-zodiac-accent);
+  font: 400 2.25rem / 1 Georgia, serif;
+}
+
+.sidera-zodiac-sign--selected .sidera-zodiac-sign__glyph {
+  color: var(--sidera-zodiac-selected-text);
+}
+
+.sidera-zodiac-sign__name {
+  margin-block-start: 0.75rem;
+  font: 400 1.5rem / 1.05 var(--font-serif), Georgia, serif;
+  overflow-wrap: anywhere;
+}
+
+.sidera-zodiac-sign__dates {
+  margin-block-start: 0.1875rem;
+  color: var(--color-muted);
+  font-size: 0.78125rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.sidera-zodiac-sign__element {
+  margin-block-start: 0.5625rem;
+  color: var(--color-muted-soft);
+  font-size: 0.65625rem;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.sidera-zodiac-sign--selected
+  :is(.sidera-zodiac-sign__dates, .sidera-zodiac-sign__element) {
+  color: color-mix(in srgb, var(--sidera-zodiac-selected-text) 82%, transparent);
+}
+
+.sidera-zodiac-sign--compact {
+  max-inline-size: 8rem;
+  border-radius: 0.875rem;
+  padding: 1.125rem 0.5rem 1rem;
+}
+
+.sidera-zodiac-sign--compact .sidera-zodiac-sign__glyph {
+  font-size: 1.625rem;
+}
+
+.sidera-zodiac-sign--compact .sidera-zodiac-sign__name {
+  margin-block-start: 0.5rem;
+  font: 600 0.8125rem / 1.2 var(--font-sans), system-ui, sans-serif;
+}
+
+.sidera-zodiac-sign--compact
+  :is(.sidera-zodiac-sign__dates, .sidera-zodiac-sign__element) {
+  display: none;
+}
+
+@media (max-width: 40rem) {
+  .sidera-zodiac-sign {
+    min-block-size: 2.75rem;
+  }
+
+  .sidera-zodiac-sign--standard {
+    padding-inline: 0.625rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidera-zodiac-sign {
+    transition: none;
+  }
+
+  .sidera-zodiac-sign:hover,
+  .sidera-zodiac-sign:active:not(:disabled):not([aria-disabled="true"]) {
+    transform: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .sidera-zodiac-sign--selected {
+    border-color: Highlight;
+    background: Highlight;
+    color: HighlightText;
+  }
+
+  .sidera-zodiac-sign--selected
+    :is(
+      .sidera-zodiac-sign__glyph,
+      .sidera-zodiac-sign__dates,
+      .sidera-zodiac-sign__element
+    ) {
+    color: HighlightText;
+  }
+}

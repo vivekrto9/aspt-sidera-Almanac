@@ -1,0 +1,145 @@
+.account-people {
+  min-inline-size: 0;
+  margin-block-start: 4rem;
+  scroll-margin-block-start: 6rem;
+}
+
+.account-people__header {
+  --sidera-section-heading-title-size: 2.125rem;
+  margin-block-end: 1.125rem;
+}
+
+.account-people__header > p {
+  margin: 0;
+  color: var(--color-primary);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.account-people__header > h2 {
+  margin: 0.5rem 0 0;
+  color: var(--color-text);
+  font-family: var(--font-serif), Georgia, "Times New Roman", serif;
+  font-size: 2.125rem;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.account-people__grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.account-people__card {
+  position: relative;
+  min-inline-size: 0;
+  border: 1px solid rgba(var(--color-text-rgb), 0.1);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  background: var(--color-panel);
+  text-align: center;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.account-people__profile-badge {
+  position: absolute;
+  inset-block-start: 0.875rem;
+  inset-inline-end: 0.875rem;
+}
+
+.account-people__card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 1.125rem 2.5rem -1.625rem rgba(var(--color-text-rgb), 0.45);
+}
+
+.account-people__chart {
+  inline-size: 7.5rem;
+  block-size: 7.5rem;
+  margin-block-start: 1.125rem;
+  margin-inline: auto;
+}
+
+.account-people__chart .chart-wheel {
+  --chart-wheel-size: 7.5rem;
+}
+
+.account-people__chart--linked {
+  display: block;
+  border-radius: 50%;
+}
+
+.account-people__chart--linked:focus-visible {
+  outline: 0.1875rem solid var(--color-primary);
+  outline-offset: 0.1875rem;
+}
+
+.account-people__chart--empty {
+  --sidera-button-background: rgba(239, 231, 218, 0.62);
+  --sidera-button-border: rgba(var(--color-text-rgb), 0.16);
+  --sidera-button-color: var(--color-muted);
+  --sidera-button-hover-background: #e6dbcd;
+  --sidera-button-hover-border: rgba(var(--color-text-rgb), 0.3);
+  --sidera-button-hover-color: var(--color-primary);
+  --sidera-button-active-background: #ddd0c0;
+
+  display: flex;
+  padding: 0.75rem;
+  border-radius: 50%;
+  text-align: center;
+  white-space: normal;
+  line-height: 1.15;
+}
+
+.account-people__card h3 {
+  margin: 0.75rem 0 0;
+  color: var(--color-text);
+  font-family: var(--font-serif), Georgia, "Times New Roman", serif;
+  font-size: 1.1875rem;
+  font-weight: 400;
+  line-height: 1.15;
+}
+
+.account-people__card > p {
+  min-block-size: 2.1em;
+  margin: 0.125rem 0 0;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.account-people__card .sidera-button {
+  margin-block-start: 0.875rem;
+}
+
+@media (max-width: 68rem) {
+  .account-people__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 40rem) {
+  .account-people {
+    margin-block-start: 3rem;
+  }
+
+  .account-people__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .account-people__card {
+    transition: none;
+  }
+
+  .account-people__card:hover {
+    transform: none;
+  }
+}

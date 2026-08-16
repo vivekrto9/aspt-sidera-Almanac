@@ -1,0 +1,49 @@
+---
+import "../../styles/shared/brand-logo.css";
+
+type BrandLogoTone = "default" | "inverse";
+type BrandLogoSize = "standard" | "compact";
+
+type Props = {
+  label: string;
+  href?: string;
+  ariaLabel?: string;
+  tone?: BrandLogoTone;
+  size?: BrandLogoSize;
+  class?: string;
+  editAttributes?: Record<string, string>;
+};
+
+const {
+  label,
+  href,
+  ariaLabel,
+  tone = "default",
+  size = "standard",
+  class: className,
+  editAttributes = {},
+} = Astro.props as Props;
+
+const classes = [
+  "brand-logo",
+  `brand-logo--${tone}`,
+  `brand-logo--${size}`,
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+---
+
+{
+  href ? (
+    <a class={classes} href={href} aria-label={ariaLabel ?? label}>
+      <span class="brand-logo__mark" aria-hidden="true">✦</span>
+      <span class="brand-logo__name" {...editAttributes}>{label}</span>
+    </a>
+  ) : (
+    <span class={classes}>
+      <span class="brand-logo__mark" aria-hidden="true">✦</span>
+      <span class="brand-logo__name" {...editAttributes}>{label}</span>
+    </span>
+  )
+}

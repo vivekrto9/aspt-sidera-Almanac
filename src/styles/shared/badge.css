@@ -1,0 +1,106 @@
+.sidera-badge {
+  --badge-background: #e8ded0;
+  --badge-border: rgba(var(--color-text-rgb), 0.12);
+  --badge-color: var(--color-muted);
+  --badge-solid-background: var(--color-dark);
+  --badge-solid-border: var(--color-dark);
+  --badge-solid-color: var(--color-surface);
+
+  max-inline-size: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  border: 1px solid var(--badge-border);
+  border-radius: 999px;
+  background: var(--badge-background);
+  color: var(--badge-color);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 0.71875rem;
+  font-weight: 600;
+  letter-spacing: 0.015em;
+  line-height: 1.25;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.sidera-badge--compact {
+  gap: 0.25rem;
+  padding: 0.1875rem 0.5rem;
+  font-size: 0.65625rem;
+}
+
+.sidera-badge--standard {
+  padding: 0.3125rem 0.75rem;
+}
+
+.sidera-badge--uppercase {
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sidera-badge--accent {
+  --badge-background: #efe3d7;
+  --badge-border: rgba(var(--color-primary-rgb), 0.2);
+  --badge-color: #8d432f;
+  --badge-solid-background: var(--color-primary);
+  --badge-solid-border: var(--color-primary);
+}
+
+.sidera-badge--success {
+  --badge-background: #e3eee5;
+  --badge-border: rgba(49, 109, 70, 0.2);
+  --badge-color: var(--color-success);
+  --badge-solid-background: var(--color-success);
+  --badge-solid-border: var(--color-success);
+}
+
+.sidera-badge--warning {
+  --badge-background: #f2e8d3;
+  --badge-border: rgba(151, 103, 34, 0.2);
+  --badge-color: #80591f;
+  --badge-solid-background: #956621;
+  --badge-solid-border: #956621;
+}
+
+.sidera-badge--danger {
+  --badge-background: #f3dfda;
+  --badge-border: rgba(154, 61, 44, 0.2);
+  --badge-color: var(--color-primary-strong);
+  --badge-solid-background: var(--color-primary-strong);
+  --badge-solid-border: var(--color-primary-strong);
+}
+
+.sidera-badge--inverse {
+  --badge-background: rgba(59, 33, 25, 0.82);
+  --badge-border: rgba(240, 230, 214, 0.2);
+  --badge-color: var(--color-surface);
+  --badge-solid-background: var(--color-dark-strong);
+  --badge-solid-border: var(--color-dark-strong);
+}
+
+.sidera-badge--solid {
+  border-color: var(--badge-solid-border);
+  background: var(--badge-solid-background);
+  color: var(--badge-solid-color);
+}
+
+.sidera-badge__icon {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.sidera-badge__label {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 40rem) {
+  .sidera-badge {
+    line-height: 1.35;
+  }
+}

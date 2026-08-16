@@ -1,0 +1,248 @@
+---
+import type { BuilderEditAttributes } from "../../builder/builder.ts";
+import { loadPublicPageContent } from "../../builder/public-page.ts";
+import ShopFlowClient from "../../components/shop/common/ShopFlowClient.astro";
+import ShopProductDetail from "../../components/shop/sections/ShopProductDetail.astro";
+import Footer from "../../components/shared/Footer.astro";
+import Header from "../../components/shared/Header.astro";
+import {
+  activeLocales,
+  defaultLocale,
+  localizePath,
+  type SupportedLocale,
+} from "../../data/localization-contract.ts";
+import { createSharedFooterProps } from "../../data/shared-footer-navigation.ts";
+import type { ShopProductId } from "../../data/shop/catalog.ts";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import {
+  getShopProductBySlug,
+  listShopProducts,
+} from "../../server/aggregator/shop-catalog.ts";
+import { getRuntimeEnv } from "../../server/generated-site/request.ts";
+import "../../styles/shop/shop.css";
+
+export const prerender = false;
+
+const {
+  content,
+  locale,
+  builder,
+  builderPage,
+  chromePage,
+  reviewTargets,
+  builderEdit,
+  chromeEdit,
+} = await loadPublicPageContent(Astro, "shop");
+const runtimeEnv = await getRuntimeEnv(Astro);
+const slug = Astro.params.slug ?? "";
+const [product, catalogProducts] = await Promise.all([
+  getShopProductBySlug(runtimeEnv, slug, locale),
+  listShopProducts(runtimeEnv, locale),
+]);
+if (!product) {
+  return Astro.redirect(localizePath("/shop", locale));
+}
+
+const editAttributes = (
+  attributes: BuilderEditAttributes,
+): Record<string, string> =>
+  Object.fromEntries(
+    Object.entries(attributes)
+      .filter((entry): entry is [string, string | true] => entry[1] !== undefined)
+      .map(([key, value]) => [key, value === true ? "true" : value]),
+  );
+
+const localeHref = (targetLocale: SupportedLocale) => {
+  const url = new URL(Astro.request.url);
+  if (targetLocale === defaultLocale) url.searchParams.delete("locale");
+  else url.searchParams.set("locale", targetLocale);
+  return `${url.pathname}${url.search}${url.hash}`;
+};
+
+const navigation: Array<{
+  label: string;
+  href: string;
+  current?: boolean;
+  editAttributes: Record<string, string>;
+}> = [
+  ["nav_todays_sky", "/todays-sky"],
+  ["nav_charts", "/birth-chart"],
+  ["nav_compatibility", "/synastry"],
+  ["nav_moon", "/moon-calendar"],
+  ["nav_horoscope", "/daily-horoscope"],
+  ["nav_astrologers", "/astrologers"],
+].map(([field, path]) => ({
+  label: content[field],
+  href: localizePath(path, locale),
+  editAttributes: editAttributes(chromeEdit(field)),
+}));
+navigation.push({
+  label: content.catalog_nav_shop_label,
+  href: localizePath("/shop", locale),
+  current: true,
+  editAttributes: editAttributes(builderEdit("catalog_nav_shop_label")),
+});
+
+const actions = [
+  {
+    id: "sign-in",
+    label: content.action_sign_in,
+    href: localizePath("/login", locale),
+    variant: "ghost" as const,
+    editAttributes: editAttributes(chromeEdit("action_sign_in")),
+  },
+  {
+    id: "cart",
+    label: content.catalog_cart_label,
+    href: localizePath("/shop?view=cart", locale),
+    variant: "primary" as const,
+    editAttributes: editAttributes(builderEdit("catalog_cart_label")),
+  },
+];
+
+const languageOptions = activeLocales.map((item) => ({
+  code: item.code,
+  label: content[`language_option_${item.code}_label`] || item.nativeName,
+  href: localeHref(item.code),
+  lang: item.code,
+  hreflang: item.hreflang,
+  editAttributes: editAttributes(chromeEdit(`language_option_${item.code}_label`)),
+}));
+
+const footerProps = createSharedFooterProps({
+  content,
+  locale,
+  editAttributes: (field) => editAttributes(chromeEdit(field)),
+});
+
+const keyFor = (id: ShopProductId) => id.replaceAll("-", "_");
+const productKey = keyFor(product.id);
+const detailPrefix = `shop_detail_${productKey}`;
+const categoryLabel = content[`catalog_category_${product.category}`];
+const productTitle = content[`shop_product_${productKey}_title`];
+const variantOptions = product.variant
+  ? Array.from(
+      { length: product.variant.optionCount },
+      (_, index) => content[`${detailPrefix}_variant_option_${index + 1}`],
+    )
+  : undefined;
+const related = catalogProducts
+  .filter((item) => item.id !== product.id)
+  .slice(0, 4)
+  .map((item) => {
+    const key = keyFor(item.id);
+    return {
+      id: item.id,
+      title: content[`shop_product_${key}_title`],
+      unit: content[`shop_product_${key}_unit`],
+      price: item.priceLabel,
+      imageAlt: content[`shop_product_${key}_fallback_label`],
+      imageSrc: item.imageUrl,
+    };
+  });
+const detailProduct = {
+  id: product.id,
+  title: productTitle,
+  category: categoryLabel,
+  price: product.price,
+  priceLabel: product.priceLabel,
+  rating: product.rating,
+  reviews: product.reviews,
+  imageAlt: content[`shop_product_${productKey}_fallback_label`],
+  imageSrc: product.imageUrl,
+  personalized: Boolean(product.personalized),
+  description: content[`${detailPrefix}_description`],
+  shipNote: content[`${detailPrefix}_ship_note`],
+  includes: [1, 2, 3, 4].map((index) => content[`${detailPrefix}_include_${index}`]),
+  variantLabel: product.variant ? content[`${detailPrefix}_variant_label`] : undefined,
+  variantOptions,
+};
+const defaultVariants = Object.fromEntries(
+  catalogProducts.flatMap((item) => {
+    if (!item.variant) return [];
+    const key = keyFor(item.id);
+    return [[item.id, content[`shop_detail_${key}_variant_option_1`]]];
+  }),
+);
+const cartHref = localizePath("/shop?view=cart", locale);
+
+const seoContent = {
+  seo_title: `${productTitle} | Sidera`,
+  seo_description: detailProduct.description,
+  seo_canonical_path: `/shop/${product.id}`,
+  seo_robots: "index,follow",
+  og_title: productTitle,
+  og_description: detailProduct.description,
+  og_image: content.og_image,
+  og_image_alt: detailProduct.imageAlt,
+  twitter_card: content.twitter_card,
+  twitter_title: productTitle,
+  twitter_description: detailProduct.description,
+  twitter_image: content.twitter_image,
+};
+---
+
+<BaseLayout
+  seo={seoContent}
+  bodyClass="shop-body"
+  builderToolbar={{
+    launcherEnabled: builder.launcherEnabled,
+    studioModeEnabled: builder.studioModeEnabled,
+    collection: builder.collection,
+    entry: builder.entry,
+    locale: builder.locale,
+    csrfToken: builder.csrfToken,
+    canPublish: builder.canPublish,
+    seo: seoContent,
+    hasSavedDraft: builderPage.hasSavedDraft || chromePage.hasSavedDraft,
+    reviewTargets,
+  }}
+>
+  <Header
+    id="shop-detail-header"
+    brandLabel={content.brand_name}
+    brandHref={localizePath("/", locale)}
+    brandAriaLabel={content.brand_aria_label}
+    navigationLabel={content.primary_navigation_label}
+    chromeNavigation={{ content, edit: chromeEdit }}
+    navigation={navigation}
+    actions={actions}
+    language={{
+      activeLocale: locale,
+      options: languageOptions,
+      triggerLabel: content.language_trigger_label,
+      menuLabel: content.language_menu_label,
+    }}
+    mobileUtilityActionId="cart"
+    menuLabel={content.menu_open_label}
+    closeMenuLabel={content.menu_close_label}
+    brandEditAttributes={editAttributes(chromeEdit("brand_name"))}
+  />
+
+  <main class="shop-page">
+    <ShopProductDetail
+      locale={locale}
+      product={detailProduct}
+      shopLabel={content.catalog_nav_shop_label}
+      breadcrumbLabel={content.shop_detail_breadcrumb_label}
+      reviewsLabel={content.shop_detail_reviews_label}
+      personalizedEyebrow={content.shop_detail_personalized_eyebrow}
+      personalizedChartLabel={content.shop_detail_personalized_chart_label}
+      addLabel={content.shop_detail_add_label}
+      shippingStatusLabel={content.shop_detail_shipping_status_label}
+      inBoxLabel={content.shop_detail_in_box_label}
+      relatedLabel={content.shop_detail_related_label}
+      quantityLabel={content.shop_detail_quantity_label}
+      quantityValueLabel={content.shop_detail_quantity_value_label}
+      decrementLabel={content.shop_detail_decrement_label}
+      incrementLabel={content.shop_detail_increment_label}
+      related={related}
+      viewLabel={content.shop_view_label}
+      addToCartLabel={content.shop_add_label}
+      editAttributes={(field) => editAttributes(builderEdit(field))}
+    />
+  </main>
+
+  <Footer {...footerProps} />
+  <ShopFlowClient cartHref={cartHref} defaultVariants={defaultVariants} />
+</BaseLayout>

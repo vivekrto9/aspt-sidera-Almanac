@@ -1,0 +1,264 @@
+---
+import type { SupportedLocale } from "../../../data/localization-contract.ts";
+import type { ShopCheckoutFlowCopy } from "../../../data/locale/shop/sections/checkout-flow.ts";
+import {
+  getShopCommerceTotals,
+  shopFreeShippingThreshold,
+  shopReviewCart,
+  type ShopCartItem,
+} from "../../../data/shop/commerce.ts";
+import type { ShopProductId } from "../../../data/shop/catalog.ts";
+import Button from "../../shared/Button.astro";
+import OrderLineItem from "../../shared/OrderLineItem.astro";
+import OrderSummary from "../../shared/OrderSummary.astro";
+import "../../../styles/shop/sections/cart.css";
+
+type EditAttributes = Record<string, string>;
+type CartProduct = {
+  id: ShopProductId;
+  title: string;
+  unit: string;
+  imageAlt: string;
+  imageSrc: string;
+  price: number;
+  defaultVariant?: string;
+};
+type Props = {
+  locale: SupportedLocale;
+  products: CartProduct[];
+  copy: ShopCheckoutFlowCopy;
+  shopHref: string;
+  checkoutHref: string;
+  editAttributes?: (field: string) => EditAttributes;
+};
+
+const {
+  locale,
+  products,
+  copy,
+  shopHref,
+  checkoutHref,
+  editAttributes = () => ({}),
+} = Astro.props as Props;
+
+const money = new Intl.NumberFormat(locale, {
+  style: "currency",
+  currency: "USD",
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 2,
+});
+const initialItems = shopReviewCart;
+const initialTotals = getShopCommerceTotals(initialItems);
+const productById = new Map(products.map((product) => [product.id, product]));
+const initialQuantity = (id: ShopProductId) =>
+  initialItems.find((item) => item.id === id)?.quantity ?? 1;
+const initialMeta = (product: CartProduct) =>
+  initialItems.find((item) => item.id === product.id)?.variant
+  ?? product.defaultVariant
+  ?? product.unit;
+---
+
+<section
+  class="shop-cart"
+  data-screen-label="Cart"
+  data-shop-cart
+  data-products={JSON.stringify(products)}
+  data-default-cart={JSON.stringify(initialItems)}
+  data-free-shipping-threshold={shopFreeShippingThreshold}
+  data-shipping-free-label={copy.shippingFreeLabel}
+  data-locale={locale}
+>
+  <div class="shop-cart__inner">
+    <a class="shop-flow-back" href={shopHref}>
+      <span aria-hidden="true">‹</span>
+      <span {...editAttributes("shop_cart_continue_label")}>{copy.cartContinueLabel}</span>
+    </a>
+    <h1 {...editAttributes("shop_cart_title")}>{copy.cartTitle}</h1>
+
+    <div class="shop-cart__empty" data-shop-cart-empty hidden>
+      <span class="shop-cart__empty-mark" aria-hidden="true">✦</span>
+      <h2 {...editAttributes("shop_cart_empty_title")}>{copy.cartEmptyTitle}</h2>
+      <p {...editAttributes("shop_cart_empty_description")}>{copy.cartEmptyDescription}</p>
+      <Button href={shopHref} shape="pill">
+        <span {...editAttributes("shop_cart_browse_label")}>{copy.cartBrowseLabel}</span>
+      </Button>
+    </div>
+
+    <div class="shop-cart__layout" data-shop-cart-full>
+      <div class="shop-cart__lines" aria-live="polite">
+        {products.map((product) => {
+          const initialItem = initialItems.find((item) => item.id === product.id);
+          const key = product.id.replaceAll("-", "_");
+          return (
+            <div data-shop-cart-line data-product-id={product.id} hidden={!initialItem}>
+              <OrderLineItem
+                id={product.id}
+                title={product.title}
+                price={money.format(product.price * initialQuantity(product.id))}
+                meta={initialMeta(product)}
+                mediaAlt={product.imageAlt}
+                mediaSrc={product.imageSrc}
+                quantity={initialQuantity(product.id)}
+                quantityName={`quantity-${product.id}`}
+                quantityLabel={copy.quantityLabel}
+                decrementLabel={copy.decrementLabel}
+                incrementLabel={copy.incrementLabel}
+                removeLabel={copy.removeLabel}
+                titleEditAttributes={editAttributes(`shop_product_${key}_title`)}
+                metaEditAttributes={initialItem?.variant ? {} : editAttributes(`shop_product_${key}_unit`)}
+                removeEditAttributes={editAttributes("shop_cart_remove_label")}
+              />
+            </div>
+          );
+        })}
+      </div>
+
+      <OrderSummary
+        id="shop-cart-summary"
+        class="shop-cart__summary"
+        landmarkLabel={copy.orderSummaryTitle}
+        title={copy.orderSummaryTitle}
+        variant="cart"
+        rows={[
+          { label: copy.subtotalLabel, value: money.format(initialTotals.subtotal), labelEditAttributes: editAttributes("shop_order_subtotal_label") },
+          { label: copy.shippingLabel, value: money.format(initialTotals.shipping), labelEditAttributes: editAttributes("shop_order_shipping_label") },
+        ]}
+        totalLabel={copy.totalLabel}
+        totalValue={money.format(initialTotals.cartTotal)}
+        actionLabel={copy.checkoutLabel}
+        actionHref={checkoutHref}
+        note={copy.secureCheckoutNote}
+        titleEditAttributes={editAttributes("shop_order_summary_title")}
+        totalLabelEditAttributes={editAttributes("shop_order_total_label")}
+        actionEditAttributes={editAttributes("shop_cart_checkout_label")}
+        noteEditAttributes={editAttributes("shop_cart_secure_note")}
+        sticky
+      >
+        <p slot="before-total" class="shop-cart__shipping-hint" data-shop-shipping-hint>
+          <span {...editAttributes("shop_order_free_shipping_prefix")}>{copy.freeShippingPrefix}</span>{" "}
+          <strong data-shop-free-shipping-gap>{money.format(Math.max(0, shopFreeShippingThreshold - initialTotals.subtotal))}</strong>{" "}
+          <span {...editAttributes("shop_order_free_shipping_suffix")}>{copy.freeShippingSuffix}</span>
+        </p>
+      </OrderSummary>
+    </div>
+  </div>
+</section>
+
+<script>
+  import {
+    getShopCommerceTotals,
+    normalizeShopCart,
+    shopCartStorageKey,
+  } from "../../../data/shop/commerce.ts";
+
+  type ClientProduct = {
+    id: string;
+    title: string;
+    unit: string;
+    price: number;
+    defaultVariant?: string;
+  };
+
+  const initializeShopCart = (root: HTMLElement) => {
+    if (root.dataset.shopCartBound === "true") return;
+    root.dataset.shopCartBound = "true";
+
+    const products = JSON.parse(root.dataset.products ?? "[]") as ClientProduct[];
+    const defaultCart = normalizeShopCart(JSON.parse(root.dataset.defaultCart ?? "[]"));
+    const productById = new Map(products.map((product) => [product.id, product]));
+    const locale = root.dataset.locale || document.documentElement.lang || "en";
+    const money = new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    });
+
+    const readCart = () => {
+      try {
+        const stored = sessionStorage.getItem(shopCartStorageKey);
+        if (stored) return normalizeShopCart(JSON.parse(stored));
+      } catch {}
+      return defaultCart;
+    };
+    let cart = readCart();
+
+    const saveCart = () => {
+      try {
+        sessionStorage.setItem(shopCartStorageKey, JSON.stringify(cart));
+      } catch {}
+      document.dispatchEvent(new CustomEvent("shopcartchange", { detail: { cart } }));
+    };
+
+    const updateStepper = (line: HTMLElement, quantity: number) => {
+      const stepper = line.querySelector<HTMLElement>("[data-quantity-stepper]");
+      const output = line.querySelector<HTMLOutputElement>("[data-quantity-value]");
+      const input = line.querySelector<HTMLInputElement>("[data-quantity-input]");
+      const decrement = line.querySelector<HTMLButtonElement>(".quantity-stepper__decrement");
+      if (output) {
+        output.value = String(quantity);
+        output.textContent = String(quantity);
+      }
+      if (input) input.value = String(quantity);
+      if (decrement) decrement.disabled = quantity <= Number(stepper?.dataset.min ?? 1);
+    };
+
+    const render = () => {
+      const full = root.querySelector<HTMLElement>("[data-shop-cart-full]");
+      const empty = root.querySelector<HTMLElement>("[data-shop-cart-empty]");
+      if (full) full.hidden = cart.length === 0;
+      if (empty) empty.hidden = cart.length > 0;
+
+      root.querySelectorAll<HTMLElement>("[data-shop-cart-line]").forEach((line) => {
+        const item = cart.find((entry) => entry.id === line.dataset.productId);
+        line.hidden = !item;
+        if (!item) return;
+        const product = productById.get(item.id);
+        if (!product) return;
+        const meta = line.querySelector<HTMLElement>(".sidera-order-line-item__meta");
+        const price = line.querySelector<HTMLElement>(".sidera-price-display__current");
+        if (meta) meta.textContent = item.variant || product.defaultVariant || product.unit;
+        if (price) price.textContent = money.format(product.price * item.quantity);
+        updateStepper(line, item.quantity);
+      });
+
+      const totals = getShopCommerceTotals(cart);
+      const summaryValues = root.querySelectorAll<HTMLElement>(".sidera-order-summary__rows .summary-row__value");
+      if (summaryValues[0]) summaryValues[0].textContent = money.format(totals.subtotal);
+      if (summaryValues[1]) summaryValues[1].textContent = totals.shipping === 0
+        ? root.dataset.shippingFreeLabel || money.format(0)
+        : money.format(totals.shipping);
+      const total = root.querySelector<HTMLElement>(".sidera-order-summary__total .sidera-price-display__current");
+      if (total) total.textContent = money.format(totals.cartTotal);
+      const hint = root.querySelector<HTMLElement>("[data-shop-shipping-hint]");
+      const gap = root.querySelector<HTMLElement>("[data-shop-free-shipping-gap]");
+      if (hint) hint.hidden = totals.subtotal === 0 || totals.subtotal >= Number(root.dataset.freeShippingThreshold);
+      if (gap) gap.textContent = money.format(Math.max(0, Number(root.dataset.freeShippingThreshold) - totals.subtotal));
+    };
+
+    root.addEventListener("quantitychange", (event) => {
+      const line = (event.target as Element).closest<HTMLElement>("[data-shop-cart-line]");
+      const item = cart.find((entry) => entry.id === line?.dataset.productId);
+      if (!item) return;
+      item.quantity = Math.max(1, Number((event as CustomEvent<{ value: number }>).detail?.value ?? item.quantity));
+      saveCart();
+      render();
+    });
+    root.addEventListener("orderitemremove", (event) => {
+      const id = (event as CustomEvent<{ id?: string }>).detail?.id;
+      cart = cart.filter((item) => item.id !== id);
+      saveCart();
+      render();
+    });
+
+    root.dataset.shippingFreeLabel = root.dataset.shippingFreeLabel || "";
+    saveCart();
+    render();
+  };
+
+  const initializeShopCarts = () => {
+    document.querySelectorAll<HTMLElement>("[data-shop-cart]").forEach(initializeShopCart);
+  };
+  initializeShopCarts();
+  document.addEventListener("astro:page-load", initializeShopCarts);
+</script>

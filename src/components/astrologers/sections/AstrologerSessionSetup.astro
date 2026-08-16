@@ -1,0 +1,610 @@
+---
+import type { BrowseAstrologer } from "../../../data/astrologers/browse.ts";
+import type { AstrologerSessionSetupCopy } from "../../../data/locale/astrologers/sections/session-setup.ts";
+import ChoiceChips from "../../shared/ChoiceChips.astro";
+import FormField from "../../shared/FormField.astro";
+import OrderSummary from "../../shared/OrderSummary.astro";
+import ProfileSummary from "../../shared/ProfileSummary.astro";
+import TextArea from "../../shared/TextArea.astro";
+import "../../../styles/astrologers/sections/session-setup.css";
+
+type EditAttributes = Record<string, string>;
+type Props = {
+  astrologer: BrowseAstrologer;
+  copy: AstrologerSessionSetupCopy;
+  locale: string;
+  profileHref: string;
+  chartHref: string;
+  nextHref: string;
+  csrfToken?: string;
+  astrologerSlug?: string;
+  profileId?: string;
+  loginHref?: string;
+  editAttributes?: (field: string) => EditAttributes;
+};
+
+const {
+  astrologer,
+  copy,
+  locale,
+  profileHref,
+  chartHref,
+  nextHref,
+  csrfToken = "",
+  astrologerSlug = astrologer.slug,
+  profileId = "",
+  loginHref = "",
+  editAttributes = () => ({}),
+} = Astro.props as Props;
+const firstName = astrologer.name.split(" ")[0];
+const withName = (value: string) => value.replaceAll("{name}", firstName);
+const currency = new Intl.NumberFormat(locale, {
+  style: "currency",
+  currency: "USD",
+  minimumFractionDigits: 2,
+});
+const sessionTypes = [
+  ["chat", copy.liveChat, copy.liveChatDescription, astrologer.rate],
+  ["voice", copy.voiceCall, copy.voiceCallDescription, astrologer.rate + 0.6],
+  ["video", copy.videoCall, copy.videoCallDescription, astrologer.rate + 1.2],
+  ["written", copy.writtenQuestion, copy.writtenQuestionDescription, 19],
+] as const;
+const slots = [
+  ["today-1830", copy.slotOne, "setup_slot_one"],
+  ["today-2000", copy.slotTwo, "setup_slot_two"],
+  ["tomorrow-1100", copy.slotThree, "setup_slot_three"],
+  ["tomorrow-1630", copy.slotFour, "setup_slot_four"],
+  ["thursday-1900", copy.slotFive, "setup_slot_five"],
+  ["friday-1300", copy.slotSix, "setup_slot_six"],
+].map(([value, label, field]) => ({
+  value,
+  label,
+  editAttributes: editAttributes(field),
+}));
+const durations = [
+  ["15", copy.durationFifteen, "setup_duration_fifteen"],
+  ["30", copy.durationThirty, "setup_duration_thirty"],
+  ["45", copy.durationFortyFive, "setup_duration_forty_five"],
+  ["60", copy.durationSixty, "setup_duration_sixty"],
+].map(([value, label, field]) => ({
+  value,
+  label,
+  editAttributes: editAttributes(field),
+}));
+const topics = [
+  ["love", copy.topicLove, "setup_topic_love"],
+  ["career", copy.topicCareer, "setup_topic_career"],
+  ["timing", copy.topicTiming, "setup_topic_timing"],
+  ["life-path", copy.topicLifePath, "setup_topic_life_path"],
+].map(([value, label, field]) => ({
+  value,
+  label,
+  editAttributes: editAttributes(field),
+}));
+---
+
+<section
+  class="astrologer-setup"
+  aria-labelledby="astrologer-setup-title"
+  data-session-setup
+  data-chat-rate={currency.format(astrologer.rate)}
+  data-chat-rate-unit={`${currency.format(astrologer.rate)}/min`}
+  data-voice-rate={currency.format(astrologer.rate + 0.6)}
+  data-voice-rate-unit={`${currency.format(astrologer.rate + 0.6)}/min`}
+  data-video-rate={currency.format(astrologer.rate + 1.2)}
+  data-video-rate-unit={`${currency.format(astrologer.rate + 1.2)}/min`}
+  data-written-rate={currency.format(19)}
+  data-written-rate-unit={`${currency.format(19)} ${copy.flatRateLabel}`}
+  data-now-label={copy.talkNow}
+  data-written-when-label={copy.withinDayLabel}
+  data-start-action={copy.startNow}
+  data-written-action={copy.sendQuestion}
+  data-confirm-action={copy.confirmBooking}
+  data-per-minute-label={copy.perMinuteLabel}
+  data-estimated-label={copy.estimatedLabel}
+  data-total-label={copy.totalLabel}
+  data-locale={locale}
+  data-chat-rate-value={astrologer.rate}
+  data-voice-rate-value={astrologer.rate + 0.6}
+  data-video-rate-value={astrologer.rate + 1.2}
+  data-written-rate-value="19"
+  data-csrf-token={csrfToken}
+  data-astrologer-slug={astrologerSlug}
+  data-profile-id={profileId}
+  data-login-href={loginHref}
+  data-chart-href={chartHref}
+>
+  <div class="astrologer-setup__inner">
+    <a class="astrologer-setup__back" href={profileHref}>
+      <span aria-hidden="true">‹</span>
+      <span {...editAttributes("setup_back_label")}>{withName(copy.backLabel)}</span>
+    </a>
+    <h1 id="astrologer-setup-title" {...editAttributes("setup_title")}>{copy.title}</h1>
+    <p class="astrologer-setup__lede" {...editAttributes("setup_description")}>
+      {withName(copy.description)}
+    </p>
+
+    <form
+      id="astrologer-session-form"
+      class="astrologer-setup__layout"
+      action={nextHref}
+      method="get"
+    >
+      <input type="hidden" name="book" value="1" />
+      <input type="hidden" name="session" value="1" data-session-destination />
+      <input type="hidden" name="summary" value="booked" data-summary-destination disabled />
+      <div class="astrologer-setup__steps">
+        <fieldset class="astrologer-setup__panel astrologer-setup__connect">
+          <legend>
+            <span>1</span>
+            <strong {...editAttributes("setup_connect_title")}>{copy.connectTitle}</strong>
+          </legend>
+          <div class="astrologer-setup__type-grid">
+            {
+              sessionTypes.map(([value, label, description, rate], index) => (
+                <label class="astrologer-setup__type">
+                  <input
+                    type="radio"
+                    name="sessionType"
+                    value={value}
+                    checked={index === 0}
+                    disabled={value === "voice" || value === "video"}
+                  />
+                  <span class="astrologer-setup__type-card">
+                    <i aria-hidden="true">
+                      {
+                        value === "chat" ? (
+                          <svg viewBox="0 0 24 24">
+                            <path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 9 9 0 0 1-3.8-.8L3 21l1.3-4.3A8.38 8.38 0 0 1 3.5 12 8.5 8.5 0 0 1 12 3.5a8.5 8.5 0 0 1 9 8z" />
+                          </svg>
+                        ) : value === "voice" ? (
+                          <svg viewBox="0 0 24 24">
+                            <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z" />
+                          </svg>
+                        ) : value === "video" ? (
+                          <svg viewBox="0 0 24 24">
+                            <path d="M23 7l-7 5 7 5V7z" />
+                            <rect x="1" y="5" width="15" height="14" rx="2" />
+                          </svg>
+                        ) : (
+                          <svg viewBox="0 0 24 24">
+                            <rect x="3" y="5" width="18" height="14" rx="2" />
+                            <path d="M3 7l9 6 9-6" />
+                          </svg>
+                        )
+                      }
+                    </i>
+                    <span>
+                      <strong {...editAttributes(`setup_${value}_label`)}>{label}</strong>
+                      <small {...editAttributes(`setup_${value}_description`)}>{description}</small>
+                    </span>
+                    <b>{value === "written" ? currency.format(rate) : `${currency.format(rate)}/min`}</b>
+                  </span>
+                </label>
+              ))
+            }
+          </div>
+        </fieldset>
+
+        <fieldset class="astrologer-setup__panel astrologer-setup__when" data-when-panel>
+          <legend>
+            <span>2</span>
+            <strong {...editAttributes("setup_when_title")}>{copy.whenTitle}</strong>
+          </legend>
+          <div class="astrologer-setup__mode-grid">
+            <label class="astrologer-setup__mode">
+              <input type="radio" name="sessionWhen" value="now" checked />
+              <span>
+                <strong><i aria-hidden="true"></i><span {...editAttributes("setup_talk_now")}>{copy.talkNow}</span></strong>
+                <small {...editAttributes("setup_talk_now_description")}>{copy.talkNowDescription}</small>
+              </span>
+            </label>
+            <label class="astrologer-setup__mode">
+              <input type="radio" name="sessionWhen" value="later" />
+              <span>
+                <strong>◴ <span {...editAttributes("setup_schedule_later")}>{copy.scheduleLater}</span></strong>
+                <small {...editAttributes("setup_schedule_later_description")}>{copy.scheduleLaterDescription}</small>
+              </span>
+            </label>
+          </div>
+          <div class="astrologer-setup__schedule" data-schedule-fields hidden>
+            <ChoiceChips
+              id="session-slot"
+              name="slot"
+              label={copy.chooseSlot}
+              options={slots}
+              mode="single"
+              value="today-1830"
+              shape="rounded"
+              size="compact"
+              required
+              form="astrologer-session-form"
+              labelEditAttributes={editAttributes("setup_choose_slot")}
+            />
+            <ChoiceChips
+              id="session-duration"
+              name="duration"
+              label={copy.sessionLength}
+              options={durations}
+              mode="single"
+              value="30"
+              shape="rounded"
+              size="compact"
+              required
+              form="astrologer-session-form"
+              labelEditAttributes={editAttributes("setup_session_length")}
+            />
+          </div>
+        </fieldset>
+
+        <div class="astrologer-setup__panel astrologer-setup__question">
+          <div class="astrologer-setup__step-heading">
+            <span data-question-step>3</span>
+            <h2 {...editAttributes("setup_question_title")}>{copy.questionTitle}</h2>
+          </div>
+          <p {...editAttributes("setup_question_description")}>
+            {withName(copy.questionDescription)}
+          </p>
+          <ChoiceChips
+            id="session-topic"
+            name="topic"
+            label={copy.questionTitle}
+            options={topics}
+            mode="single"
+            size="compact"
+            hideLabel
+            form="astrologer-session-form"
+          />
+          <FormField
+            label={copy.questionTitle}
+            controlId="session-question"
+            labelHidden
+          >
+            <TextArea
+              id="session-question"
+              name="question"
+              rows={3}
+              maxlength={800}
+              placeholder={copy.questionPlaceholder}
+              form="astrologer-session-form"
+              data-builder-placeholder
+              {...editAttributes("setup_question_placeholder")}
+            />
+          </FormField>
+        </div>
+
+        <div class="astrologer-setup__chart">
+          <span class="astrologer-setup__chart-wheel" aria-hidden="true">✦</span>
+          <div>
+            <p {...editAttributes("setup_chart_shared")}>{withName(copy.chartShared)}</p>
+            <strong>{copy.chartOwner} · {copy.chartLabel}</strong>
+          </div>
+          <a href={chartHref} {...editAttributes("setup_edit_chart")}>{copy.editChart}</a>
+        </div>
+      </div>
+
+      <div class="astrologer-setup__summary">
+        <OrderSummary
+          id="astrologer-session-summary"
+          landmarkLabel={copy.summaryLabel}
+          variant="booking"
+          rows={[
+            {
+              label: copy.sessionLabel,
+              value: copy.liveChat,
+              labelEditAttributes: editAttributes("setup_session_label"),
+            },
+            {
+              label: copy.whenLabel,
+              value: copy.talkNow,
+              labelEditAttributes: editAttributes("setup_when_label"),
+            },
+            {
+              label: copy.rateLabel,
+              value: `${currency.format(astrologer.rate)}/min`,
+              labelEditAttributes: editAttributes("setup_rate_label"),
+            },
+          ]}
+          totalLabel={copy.perMinuteLabel}
+          totalValue={currency.format(astrologer.rate)}
+          statusMessage={copy.freeMinutes}
+          actionLabel={copy.startNow}
+          actionType="submit"
+          actionLoading={false}
+          actionLoadingLabel={copy.startNow}
+          form="astrologer-session-form"
+          note={copy.secureNote}
+          statusEditAttributes={editAttributes("setup_free_minutes")}
+          actionEditAttributes={editAttributes("setup_start_now")}
+          noteEditAttributes={editAttributes("setup_secure_note")}
+          totalLabelEditAttributes={editAttributes("setup_per_minute_label")}
+        >
+          <ProfileSummary
+            slot="header"
+            name={astrologer.name}
+            subtitle={astrologer.tradition}
+            size="compact"
+            avatarSrc={astrologer.imageUrl}
+            avatarAlt={astrologer.name}
+            avatarInitials={astrologer.name.split(" ").map((part) => part[0]).join("")}
+            avatarFallback="placeholder"
+          />
+        </OrderSummary>
+        <p class="astrologer-setup__error" data-session-error role="alert" hidden></p>
+      </div>
+    </form>
+  </div>
+</section>
+
+<script>
+  import { setActionLoading } from "../../../scripts/action-loading.ts";
+
+  const setup = document.querySelector<HTMLElement>("[data-session-setup]");
+  if (setup && setup.dataset.ready !== "true") {
+    const form = setup.querySelector<HTMLFormElement>("#astrologer-session-form");
+    const whenPanel = setup.querySelector<HTMLElement>("[data-when-panel]");
+    const schedule = setup.querySelector<HTMLElement>("[data-schedule-fields]");
+    const questionStep = setup.querySelector<HTMLElement>("[data-question-step]");
+    const summary = setup.querySelector<HTMLElement>("#astrologer-session-summary");
+    const values = summary?.querySelectorAll<HTMLElement>(".summary-row__value");
+    const total = summary?.querySelector<HTMLElement>(".sidera-price-display__current");
+    const totalLabel = summary?.querySelector<HTMLElement>(
+      ".sidera-order-summary__total .summary-row__label",
+    );
+    const action = summary?.querySelector<HTMLElement>(".sidera-button__label");
+    const status = summary?.querySelector<HTMLElement>(".sidera-order-summary__status");
+    const errorMessage = setup.querySelector<HTMLElement>("[data-session-error]");
+    const submitButton = summary?.querySelector<HTMLButtonElement>(
+      "[data-order-summary-action] button",
+    );
+    const rates = {
+      chat: {
+        total: setup.dataset.chatRate ?? "",
+        unit: setup.dataset.chatRateUnit ?? "",
+      },
+      voice: {
+        total: setup.dataset.voiceRate ?? "",
+        unit: setup.dataset.voiceRateUnit ?? "",
+      },
+      video: {
+        total: setup.dataset.videoRate ?? "",
+        unit: setup.dataset.videoRateUnit ?? "",
+      },
+      written: {
+        total: setup.dataset.writtenRate ?? "",
+        unit: setup.dataset.writtenRateUnit ?? "",
+      },
+    };
+
+    const sync = () => {
+      if (!form || !whenPanel || !schedule || !questionStep || !values || !total || !totalLabel || !action || !status) return;
+      const type = form.querySelector<HTMLInputElement>('input[name="sessionType"]:checked')?.value ?? "chat";
+      const when = form.querySelector<HTMLInputElement>('input[name="sessionWhen"]:checked')?.value ?? "now";
+      const typeInput = form.querySelector<HTMLInputElement>(`input[name="sessionType"][value="${type}"]`);
+      const typeCard = typeInput?.nextElementSibling;
+      const label = typeCard?.querySelector("strong")?.textContent?.trim() ?? "";
+      const isWritten = type === "written";
+      const slot =
+        form.querySelector<HTMLInputElement>('input[name="slot"]:checked')
+          ?.nextElementSibling?.textContent?.trim() ?? "";
+      const duration =
+        form.querySelector<HTMLInputElement>('input[name="duration"]:checked')
+          ?.value ?? "30";
+      const numericRate = Number(
+        setup.dataset[`${type}RateValue` as keyof DOMStringMap] ?? "0",
+      );
+      const estimated = new Intl.NumberFormat(setup.dataset.locale ?? "en", {
+        style: "currency",
+        currency: "USD",
+        maximumFractionDigits: 0,
+      }).format(numericRate * Number(duration));
+      whenPanel.hidden = isWritten;
+      questionStep.textContent = isWritten ? "2" : "3";
+      schedule.hidden = isWritten || when !== "later";
+      values[0].textContent = label;
+      values[1].textContent = isWritten
+        ? setup.dataset.writtenWhenLabel ?? ""
+        : when === "later"
+          ? `${slot} · ${duration} min`
+          : setup.dataset.nowLabel ?? "";
+      values[2].textContent = rates[type as keyof typeof rates].unit;
+      totalLabel.textContent = isWritten
+        ? setup.dataset.totalLabel ?? ""
+        : when === "later"
+          ? setup.dataset.estimatedLabel ?? ""
+          : setup.dataset.perMinuteLabel ?? "";
+      total.textContent = isWritten
+        ? rates.written.total
+        : when === "later"
+          ? estimated
+          : rates[type as keyof typeof rates].total;
+      action.textContent = isWritten
+        ? setup.dataset.writtenAction ?? ""
+        : when === "later"
+          ? setup.dataset.confirmAction ?? ""
+          : setup.dataset.startAction ?? "";
+      status.hidden = isWritten;
+    };
+    form?.addEventListener("change", sync);
+    const request = async (url: string, body: Record<string, unknown>, requestKey?: string) => {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-csrf-token": setup.dataset.csrfToken ?? "",
+          ...(requestKey ? { "x-idempotency-key": requestKey } : {}),
+        },
+        body: JSON.stringify(body),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload?.message || "The session could not be prepared. Please try again.");
+      }
+      return payload;
+    };
+
+    const showError = (message: string) => {
+      if (!errorMessage) return;
+      errorMessage.textContent = message;
+      errorMessage.hidden = false;
+    };
+
+    const setBusy = (busy: boolean) => {
+      setActionLoading(submitButton, busy, action?.textContent?.trim());
+      form?.setAttribute("aria-busy", String(busy));
+    };
+
+    const loadAvailability = async () => {
+      if (!form) return;
+      const when = form.querySelector<HTMLInputElement>('input[name="sessionWhen"]:checked')?.value;
+      if (when !== "later") return;
+      const duration = form.querySelector<HTMLInputElement>('input[name="duration"]:checked')?.value || "30";
+      const params = new URLSearchParams({
+        astrologerSlug: setup.dataset.astrologerSlug || "",
+        durationMinutes: duration,
+        startAt: new Date(Date.now() + 5 * 60_000).toISOString(),
+        days: "14",
+      });
+      try {
+        const response = await fetch(`/api/astro-chat/calendly-availability?${params}`);
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(payload?.message || "Availability could not be loaded.");
+        const slots = Array.isArray(payload?.data?.slots) ? payload.data.slots : [];
+        const inputs = [...form.querySelectorAll<HTMLInputElement>('input[name="slot"]')];
+        inputs.forEach((slotInput, index) => {
+          const slot = slots[index];
+          const label = slotInput.nextElementSibling as HTMLElement | null;
+          slotInput.disabled = !slot;
+          if (slot) {
+            slotInput.value = String(slot.startAt);
+            if (label) label.textContent = new Intl.DateTimeFormat(setup.dataset.locale || "en", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(slot.startAt));
+          }
+        });
+        const firstAvailable = inputs.find((item) => !item.disabled);
+        if (firstAvailable) firstAvailable.checked = true;
+        else showError("No Calendly times are available in the next 14 days.");
+        sync();
+      } catch (error) {
+        showError(error instanceof Error ? error.message : "Availability could not be loaded.");
+      }
+    };
+
+    form?.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!form || form.dataset.submitting === "true") return;
+      if (!setup.dataset.csrfToken) {
+        window.location.assign(setup.dataset.loginHref || "/login");
+        return;
+      }
+      if (!setup.dataset.profileId) {
+        showError("Add a birth profile before starting a session.");
+        return;
+      }
+      const data = new FormData(form);
+      const sessionType = String(data.get("sessionType") || "chat");
+      const deliveryMode = String(data.get("sessionWhen") || "now");
+      const durationMinutes = sessionType === "written"
+        ? null
+        : Number(data.get("duration") || 30);
+      if (sessionType === "written" && !String(data.get("question") || "").trim()) {
+        showError("Enter your written question before continuing to payment.");
+        return;
+      }
+      const checkoutKey = form.dataset.checkoutKey || `checkout:${crypto.randomUUID()}`;
+      form.dataset.checkoutKey = checkoutKey;
+      errorMessage?.setAttribute("hidden", "");
+      form.dataset.submitting = "true";
+      setBusy(true);
+      try {
+        const payload = await request(
+          "/api/astropages/generated-site/session-checkout-intents",
+          {
+            astrologerSlug: setup.dataset.astrologerSlug,
+            sessionType,
+            deliveryMode,
+            durationMinutes,
+            locale: setup.dataset.locale,
+          },
+          checkoutKey,
+        );
+        const entitlementId = String(payload?.data?.entitlementId || "");
+        const checkoutUrl = String(payload?.data?.checkoutUrl || "");
+        if (!entitlementId || !checkoutUrl) throw new Error("Checkout did not return a payment link.");
+        sessionStorage.setItem(
+          `sidera.session.checkout.${entitlementId}`,
+          JSON.stringify({
+            astrologerSlug: setup.dataset.astrologerSlug,
+            profileId: setup.dataset.profileId,
+            questionTopic: data.get("topic"),
+            writtenQuestion: data.get("question"),
+            sessionType,
+            deliveryMode,
+            startAt: deliveryMode === "later" ? data.get("slot") : null,
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
+          }),
+        );
+        window.location.assign(checkoutUrl);
+      } catch (error) {
+        form.dataset.submitting = "false";
+        setBusy(false);
+        showError(error instanceof Error ? error.message : "The session could not be prepared.");
+      }
+    });
+
+    const completePaymentReturn = async () => {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("payment") !== "success") return;
+      const entitlementId = params.get("entitlementId") || "";
+      const attemptId = params.get("attemptId") || "";
+      const stripeSessionId = params.get("session_id") || "";
+      const stored = sessionStorage.getItem(`sidera.session.checkout.${entitlementId}`);
+      const checkout = stored ? JSON.parse(stored) : null;
+      if (!entitlementId || !attemptId || !stripeSessionId || !checkout) {
+        showError("Payment was received, but the session details could not be restored. Open your account sessions to continue.");
+        return;
+      }
+      setBusy(true);
+      try {
+        await request(
+          "/api/astropages/generated-site/payments/stripe/session-confirm",
+          { entitlementId, attemptId, sessionId: stripeSessionId },
+        );
+        const created = await request(checkout.deliveryMode === "later"
+          ? "/api/astro-chat/create-scheduled-session"
+          : "/api/astro-chat/create-session", {
+          entitlementId,
+          profileId: checkout.profileId,
+          astrologerSlug: checkout.astrologerSlug,
+          questionTopic: checkout.questionTopic,
+          writtenQuestion: checkout.writtenQuestion,
+          startAt: checkout.startAt,
+          timezone: checkout.timezone,
+        });
+        sessionStorage.removeItem(`sidera.session.checkout.${entitlementId}`);
+        const sessionId = String(created?.data?.session?.id || created?.data?.booking?.id || "");
+        if (!sessionId) throw new Error("The paid session could not be opened.");
+        const destination = new URL(window.location.pathname, window.location.origin);
+        if (checkout.deliveryMode === "later") {
+          destination.searchParams.set("summary", "booked");
+          destination.searchParams.set("sessionType", "chat");
+        } else if (checkout.sessionType === "written") {
+          destination.searchParams.set("summary", "sent");
+          destination.searchParams.set("sessionType", "written");
+        } else {
+          destination.searchParams.set("sessionId", sessionId);
+        }
+        window.location.replace(`${destination.pathname}${destination.search}`);
+      } catch (error) {
+        setBusy(false);
+        showError(error instanceof Error ? error.message : "The paid session could not be opened.");
+      }
+    };
+    sync();
+    form?.addEventListener("change", (event) => {
+      const target = event.target as HTMLInputElement;
+      if (target.name === "sessionWhen" || target.name === "duration") void loadAvailability();
+    });
+    setup.dataset.ready = "true";
+    void completePaymentReturn();
+  }
+</script>

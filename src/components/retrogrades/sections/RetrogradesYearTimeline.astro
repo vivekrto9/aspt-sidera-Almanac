@@ -1,0 +1,110 @@
+---
+import CardGrid from "../../shared/CardGrid.astro";
+import type { PreparedRetrogradeTimelineRow } from "../../../data/retrogrades/results.ts";
+import "../../../styles/retrogrades/sections/year-timeline.css";
+
+type EditAttributes = Record<string, string>;
+
+type TimelineTip = {
+  title: string;
+  description: string;
+  titleEditAttributes?: EditAttributes;
+  descriptionEditAttributes?: EditAttributes;
+};
+
+type Props = {
+  headingPrefix: string;
+  year: number;
+  months: { short: string; full: string }[];
+  rows: PreparedRetrogradeTimelineRow[];
+  tips: TimelineTip[];
+  headingPrefixEditAttributes?: EditAttributes;
+};
+
+const {
+  headingPrefix,
+  year,
+  months,
+  rows,
+  tips,
+  headingPrefixEditAttributes = {},
+} = Astro.props as Props;
+---
+
+<section
+  class="retrogrades-year-timeline"
+  aria-labelledby="retrogrades-year-timeline-title"
+  data-screen-label="Retrogrades · 2026"
+>
+  <div class="retrogrades-year-timeline__inner">
+    <h2
+      id="retrogrades-year-timeline-title"
+      class="retrogrades-year-timeline__heading"
+    >
+      <span {...headingPrefixEditAttributes}>{headingPrefix}</span>{" "}
+      <em>{year}</em>
+    </h2>
+
+    <div class="retrogrades-year-timeline__panel">
+      <div class="retrogrades-year-timeline__header" aria-hidden="true">
+        <span class="retrogrades-year-timeline__label-spacer"></span>
+        <div class="retrogrades-year-timeline__months">
+          {
+            months.map((month) => (
+              <abbr title={month.full}>{month.short}</abbr>
+            ))
+          }
+        </div>
+      </div>
+
+      <div class="retrogrades-year-timeline__rows">
+        {
+          rows.map((row) => (
+            <div class="retrogrades-year-timeline__row">
+              <div
+                class="retrogrades-year-timeline__planet"
+                style={`--timeline-color:${row.color}`}
+              >
+                <span
+                  class="retrogrades-year-timeline__glyph"
+                  aria-hidden="true"
+                >
+                  {row.glyph}
+                </span>
+                <span>{row.name}</span>
+              </div>
+              <div class="retrogrades-year-timeline__track">
+                {row.segments.map((segment) => (
+                  <span
+                    class="retrogrades-year-timeline__bar"
+                    role="img"
+                    aria-label={segment.label}
+                    style={`--timeline-left:${segment.left}%;--timeline-width:${segment.width}%;--timeline-color:${row.color}`}
+                  />
+                ))}
+              </div>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+
+    <CardGrid
+      columns={3}
+      tabletColumns={3}
+      mobileColumns={1}
+      gap="default"
+      align="start"
+      class="retrogrades-year-timeline__tips"
+    >
+      {
+        tips.map((tip) => (
+          <article class="retrogrades-year-timeline__tip">
+            <h3 {...tip.titleEditAttributes}>{tip.title}</h3>
+            <p {...tip.descriptionEditAttributes}>{tip.description}</p>
+          </article>
+        ))
+      }
+    </CardGrid>
+  </div>
+</section>

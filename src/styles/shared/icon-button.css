@@ -1,0 +1,173 @@
+.icon-button {
+  --icon-button-size: 2.625rem;
+  --icon-button-radius: 0.75rem;
+  --icon-button-icon-size: 1.125rem;
+  --icon-button-background: #ffffff;
+  --icon-button-border: rgba(var(--color-text-rgb), 0.2);
+  --icon-button-color: var(--color-text);
+  --icon-button-hover-background: #ffffff;
+  --icon-button-hover-border: var(--color-primary);
+  --icon-button-hover-color: var(--color-primary);
+  --icon-button-active-background: var(--color-surface);
+  --icon-button-focus: rgba(var(--color-primary-rgb), 0.5);
+
+  position: relative;
+  inline-size: var(--icon-button-size);
+  block-size: var(--icon-button-size);
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--icon-button-border);
+  border-radius: var(--icon-button-radius);
+  padding: 0;
+  background: var(--icon-button-background);
+  color: var(--icon-button-color);
+  cursor: pointer;
+  font: inherit;
+  line-height: 1;
+  text-decoration: none;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.icon-button:hover {
+  border-color: var(--icon-button-hover-border);
+  background: var(--icon-button-hover-background);
+  color: var(--icon-button-hover-color);
+}
+
+.icon-button:active:not(:disabled):not([aria-disabled="true"]) {
+  background: var(--icon-button-active-background);
+  transform: translateY(1px);
+}
+
+.icon-button:focus-visible {
+  outline: 0.1875rem solid var(--icon-button-focus);
+  outline-offset: 0.1875rem;
+}
+
+.icon-button:disabled,
+.icon-button[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.48;
+  pointer-events: none;
+}
+
+.icon-button[data-loading="true"] {
+  cursor: wait;
+  opacity: 0.64;
+  pointer-events: none;
+}
+
+.icon-button__loading-indicator {
+  display: none;
+}
+
+.icon-button__loading-indicator .sidera-loading-indicator__label {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.icon-button[data-loading="true"] .icon-button__icon {
+  visibility: hidden;
+}
+
+.icon-button[data-loading="true"] .icon-button__loading-indicator {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+.icon-button[aria-pressed="true"] {
+  --icon-button-background: var(--color-dark);
+  --icon-button-border: var(--color-dark);
+  --icon-button-color: var(--color-on-dark);
+  --icon-button-hover-background: #7e5040;
+  --icon-button-hover-border: #7e5040;
+  --icon-button-hover-color: #ffffff;
+  --icon-button-active-background: var(--color-dark);
+}
+
+.icon-button--solid {
+  --icon-button-background: var(--color-dark);
+  --icon-button-border: var(--color-dark);
+  --icon-button-color: var(--color-surface);
+  --icon-button-hover-background: var(--color-text);
+  --icon-button-hover-border: var(--color-text);
+  --icon-button-hover-color: #ffffff;
+  --icon-button-active-background: var(--color-text);
+}
+
+.icon-button--ghost {
+  --icon-button-background: transparent;
+  --icon-button-border: transparent;
+  --icon-button-color: var(--color-text);
+  --icon-button-hover-background: var(--color-surface);
+  --icon-button-hover-border: transparent;
+  --icon-button-hover-color: var(--color-primary);
+  --icon-button-active-background: #e4d9c8;
+}
+
+.icon-button--danger {
+  --icon-button-background: var(--color-primary);
+  --icon-button-border: var(--color-primary);
+  --icon-button-color: var(--color-surface);
+  --icon-button-hover-background: var(--color-primary-strong);
+  --icon-button-hover-border: var(--color-primary-strong);
+  --icon-button-hover-color: #ffffff;
+  --icon-button-active-background: #663124;
+}
+
+.icon-button--compact {
+  --icon-button-size: 2rem;
+  --icon-button-radius: 50%;
+  --icon-button-icon-size: 1rem;
+}
+
+.icon-button--large {
+  --icon-button-size: 3.125rem;
+  --icon-button-radius: 0.875rem;
+  --icon-button-icon-size: 1.25rem;
+}
+
+.icon-button--circle {
+  --icon-button-radius: 50%;
+}
+
+.icon-button__icon {
+  inline-size: var(--icon-button-icon-size);
+  block-size: var(--icon-button-icon-size);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--icon-button-icon-size);
+  line-height: 1;
+}
+
+.icon-button__icon :where(svg) {
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+@media (max-width: 40rem) {
+  .icon-button--compact,
+  .icon-button--standard {
+    --icon-button-size: 2.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .icon-button {
+    transition: none;
+  }
+}

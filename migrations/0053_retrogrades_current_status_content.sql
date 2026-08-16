@@ -1,0 +1,10 @@
+ALTER TABLE ec_site_retrogrades ADD COLUMN status_section_label TEXT;
+ALTER TABLE ec_site_retrogrades ADD COLUMN status_badge_label TEXT;
+ALTER TABLE ec_site_retrogrades ADD COLUMN status_shadow_to_label TEXT;
+ALTER TABLE ec_site_retrogrades ADD COLUMN status_shadow_from_label TEXT;
+ALTER TABLE ec_site_retrogrades ADD COLUMN status_mercury_title TEXT;
+ALTER TABLE ec_site_retrogrades ADD COLUMN status_mercury_description TEXT;
+ALTER TABLE ec_site_retrogrades ADD COLUMN status_saturn_title TEXT;
+ALTER TABLE ec_site_retrogrades ADD COLUMN status_saturn_description TEXT;
+ALTER TABLE ec_site_retrogrades ADD COLUMN status_neptune_title TEXT;
+ALTER TABLE ec_site_retrogrades ADD COLUMN status_neptune_description TEXT;

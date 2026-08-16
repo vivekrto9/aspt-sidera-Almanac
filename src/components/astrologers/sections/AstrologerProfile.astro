@@ -1,0 +1,352 @@
+---
+import type { BrowseAstrologer } from "../../../data/astrologers/browse.ts";
+import type { AstrologerProfilePickerCopy } from "../../../data/locale/astrologers/sections/browse.ts";
+import { getAstrologerReviewerProfiles } from "../../../data/astrologers/reviewers.ts";
+import type { AstrologerProfileCopy } from "../../../data/locale/astrologers/sections/profile.ts";
+import type { SynastrySetupCopy } from "../../../data/locale/synastry/sections/two-profile-setup.ts";
+import type { SupportedLocale } from "../../../data/localization-contract.ts";
+import AstrologerProfilePicker from "../shared/AstrologerProfilePicker.astro";
+import Badge from "../../shared/Badge.astro";
+import Button from "../../shared/Button.astro";
+import ChartWheel from "../../shared/ChartWheel.astro";
+import ProfileSummary from "../../shared/ProfileSummary.astro";
+import "../../../styles/astrologers/sections/profile.css";
+
+type EditAttributes = Record<string, string>;
+type CustomerProfile = {
+  id: string;
+  profileName: string;
+  birthDate: string;
+  birthPlace: string;
+  isDefault: boolean;
+};
+type CustomerChart = {
+  profileName: string;
+  summary: string;
+  href: string;
+  rotation: number;
+  planets: Array<{
+    glyph: string;
+    longitude: number;
+    label: string;
+    color: string;
+  }>;
+};
+
+type Props = {
+  astrologer: BrowseAstrologer;
+  copy: AstrologerProfileCopy;
+  pickerCopy: AstrologerProfilePickerCopy;
+  profileFormCopy: SynastrySetupCopy;
+  customerProfiles?: CustomerProfile[];
+  customerChart?: CustomerChart;
+  authenticated?: boolean;
+  csrfToken?: string;
+  locale: SupportedLocale;
+  browseHref: string;
+  bookingHref: string;
+  chatHref: string;
+  loginHref: string;
+  availabilityLabels: Record<BrowseAstrologer["availability"], string>;
+  editAttributes?: (field: string) => EditAttributes;
+};
+
+const {
+  astrologer,
+  copy,
+  pickerCopy,
+  profileFormCopy,
+  customerProfiles = [],
+  customerChart,
+  authenticated = false,
+  csrfToken = "",
+  locale,
+  browseHref,
+  bookingHref,
+  chatHref,
+  loginHref,
+  availabilityLabels,
+  editAttributes = () => ({}),
+} = Astro.props as Props;
+
+const number = new Intl.NumberFormat(locale, { notation: "compact", maximumFractionDigits: 1 });
+const currency = new Intl.NumberFormat(locale, {
+  style: "currency",
+  currency: "USD",
+  minimumFractionDigits: 2,
+});
+const firstName = astrologer.name.split(" ")[0];
+const statusLabel =
+  astrologer.availability === "online"
+    ? copy.talkNow
+    : astrologer.availability === "busy"
+      ? copy.bookNextSlot
+      : copy.schedule;
+const availabilityLabel = availabilityLabels[astrologer.availability];
+const availabilityField =
+  astrologer.availability === "online"
+    ? "online_now"
+    : astrologer.availability === "busy"
+      ? "busy_label"
+      : "offline_label";
+const freeMinutesNote = copy.freeMinutesNote.replaceAll("{name}", firstName);
+const loginHrefFor = (next: string) =>
+  `${loginHref}${loginHref.includes("?") ? "&" : "?"}next=${encodeURIComponent(next)}`;
+const profilePickerId = "astrologer-profile-picker";
+const expectationFields = [
+  ["profile_expectation_one", copy.expectationOne],
+  ["profile_expectation_two", copy.expectationTwo],
+  ["profile_expectation_three", copy.expectationThree],
+  ["profile_expectation_four", copy.expectationFour],
+];
+const reviewerProfiles = getAstrologerReviewerProfiles(astrologer.slug);
+const fallbackReviewer = reviewerProfiles[0]!;
+const reviewCopy = [
+  { value: 5, dateField: "profile_review_one_date", date: copy.reviewOneDate, textField: "profile_review_one_text", text: copy.reviewOneText },
+  { value: 5, dateField: "profile_review_two_date", date: copy.reviewTwoDate, textField: "profile_review_two_text", text: copy.reviewTwoText },
+  { value: 4, dateField: "profile_review_three_date", date: copy.reviewThreeDate, textField: "profile_review_three_text", text: copy.reviewThreeText },
+];
+const reviews = reviewCopy.map((review, index) => ({
+  ...review,
+  ...(reviewerProfiles[index] ?? fallbackReviewer),
+}));
+---
+
+<section class="astrologer-profile" aria-labelledby="astrologer-profile-title">
+  <div class="astrologer-profile__inner">
+    <a class="astrologer-profile__back" href={browseHref}>
+      <span aria-hidden="true">‹</span>
+      <span {...editAttributes("profile_back_label")}>{copy.backLabel}</span>
+    </a>
+
+    <div class="astrologer-profile__layout">
+      <div class="astrologer-profile__main">
+        <ProfileSummary
+          name={astrologer.name}
+          subtitle={astrologer.tradition}
+          size="large"
+          nameTag="h2"
+          avatarSrc={astrologer.imageUrl}
+          avatarAlt={astrologer.name}
+          avatarInitials={astrologer.name.split(" ").map((part) => part[0]).join("")}
+          avatarFallback="placeholder"
+          ratingValue={astrologer.rating}
+          ratingText={astrologer.rating.toFixed(1)}
+          ratingLabel={`${astrologer.name}: ${astrologer.rating.toFixed(1)} / 5`}
+          reviewsText={`${number.format(astrologer.reviews)} ${copy.reviewsSuffix}`}
+          class="astrologer-profile__summary"
+          id="astrologer-profile-title"
+        />
+
+        <dl class="astrologer-profile__stats">
+          <div>
+            <dt>{astrologer.yearsReading}</dt>
+            <dd {...editAttributes("profile_years_reading")}>{copy.yearsReading}</dd>
+          </div>
+          <div>
+            <dt>{number.format(astrologer.sessions)}</dt>
+            <dd {...editAttributes("profile_sessions")}>{copy.sessions}</dd>
+          </div>
+          <div>
+            <dt>{astrologer.languages}</dt>
+            <dd {...editAttributes("profile_languages")}>{copy.languages}</dd>
+          </div>
+        </dl>
+
+        <div class="astrologer-profile__section">
+          <h2 {...editAttributes("profile_about")}>{copy.about}</h2>
+          <p>{astrologer.biography}</p>
+        </div>
+
+        <div class="astrologer-profile__section">
+          <h2 {...editAttributes("profile_specialties")}>{copy.specialties}</h2>
+          <div class="astrologer-profile__specialties">
+            {astrologer.specialties.map((specialty) => <Badge size="standard">{specialty}</Badge>)}
+          </div>
+        </div>
+
+        <div class="astrologer-profile__section">
+          <h2 {...editAttributes("profile_what_to_expect")}>{copy.whatToExpect}</h2>
+          <ul class="astrologer-profile__expectations">
+            {expectationFields.map(([field, expectation]) => (
+              <li>
+                <span aria-hidden="true">✦</span>
+                <span {...editAttributes(field)}>{expectation}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div
+          class="astrologer-profile__section astrologer-profile__reviews"
+          id="astrologer-reviews"
+          tabindex="-1"
+        >
+          <div class="astrologer-profile__reviews-heading">
+            <h2 {...editAttributes("profile_recent_reviews")}>{copy.recentReviews}</h2>
+            <p>
+              {astrologer.rating.toFixed(1)} <span {...editAttributes("profile_average")}>{copy.average}</span>
+              {" · "}{number.format(astrologer.reviews)} <span {...editAttributes("profile_reviews_suffix")}>{copy.reviewsSuffix}</span>
+            </p>
+          </div>
+          <div class="astrologer-profile__review-list">
+            {reviews.map((review) => (
+              <article class="astrologer-profile__review">
+                <header>
+                  <span class="astrologer-profile__review-avatar" aria-hidden="true">
+                    <img src={review.imageUrl} alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" />
+                  </span>
+                  <strong>{review.name}</strong>
+                  <span class="astrologer-profile__review-stars" aria-label={`${review.value} / 5`}>
+                    {"★".repeat(review.value)}
+                  </span>
+                  <time {...editAttributes(review.dateField)}>{review.date}</time>
+                </header>
+                <p {...editAttributes(review.textField)}>{review.text}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <aside class="astrologer-profile__rail" aria-label={`${astrologer.name} booking`}>
+        <div class="astrologer-profile__booking">
+          <div class="astrologer-profile__booking-meta">
+            <span class={`astrologer-profile__status astrologer-profile__status--${astrologer.availability}`}>
+              <i aria-hidden="true"></i><span {...editAttributes(availabilityField)}
+                >{availabilityLabel}</span
+              >
+            </span>
+            <span class="astrologer-profile__rate">
+              <strong>{currency.format(astrologer.rate)}</strong>
+              <span {...editAttributes("profile_rate_unit")}>{copy.rateUnit}</span>
+            </span>
+          </div>
+          <div class="astrologer-profile__actions">
+            <Button
+              href={
+                astrologer.availability !== "online"
+                  ? bookingHref
+                  : authenticated
+                    ? undefined
+                    : loginHrefFor(chatHref)
+              }
+              type="button"
+              variant="secondary"
+              shape="rounded"
+              fullWidth
+              data-dialog-open={
+                authenticated && astrologer.availability === "online"
+                  ? profilePickerId
+                  : undefined
+              }
+              data-chat-booking-href={
+                authenticated && astrologer.availability === "online"
+                  ? chatHref
+                  : undefined
+              }
+              data-chat-astrologer-slug={
+                authenticated && astrologer.availability === "online"
+                  ? astrologer.slug
+                  : undefined
+              }
+              data-chat-profile-type={
+                authenticated && astrologer.availability === "online"
+                  ? astrologer.chatProfileType
+                  : undefined
+              }
+              data-chat-csrf-token={
+                authenticated && astrologer.availability === "online"
+                  ? csrfToken
+                  : undefined
+              }
+              editAttributes={editAttributes(
+                astrologer.availability === "online"
+                  ? "profile_talk_now"
+                  : astrologer.availability === "busy"
+                    ? "profile_book_next_slot"
+                    : "profile_schedule",
+              )}
+            >{statusLabel}</Button>
+            <Button
+              href="#astrologer-reviews"
+              variant="outline"
+              shape="rounded"
+              fullWidth
+              data-review-scroll
+              editAttributes={editAttributes("profile_written_question")}
+            >
+              {copy.checkReviews}
+            </Button>
+          </div>
+          <p class="astrologer-profile__free-note">
+            <span aria-hidden="true">✦</span>
+            <span {...editAttributes("profile_free_minutes_note")}>
+              {freeMinutesNote}
+            </span>
+          </p>
+        </div>
+
+        {customerChart ? (
+          <div class="astrologer-profile__chart">
+            <h2 {...editAttributes("profile_chart_ready")}>{copy.chartReady}</h2>
+            <a
+              class="astrologer-profile__chart-content"
+              href={customerChart.href}
+              aria-label={`${copy.chartReady}: ${customerChart.profileName}`}
+            >
+              <ChartWheel
+                title={`${customerChart.profileName}: ${customerChart.summary}`}
+                description={customerChart.summary}
+                mode="natal"
+                size="compact"
+                rotation={customerChart.rotation}
+                planets={customerChart.planets}
+                showAspects={false}
+                class="astrologer-profile__chart-wheel"
+              />
+              <div>
+                <strong>{customerChart.profileName}</strong>
+                <p>{customerChart.summary}</p>
+              </div>
+              <span class="astrologer-profile__chart-arrow" aria-hidden="true">→</span>
+            </a>
+          </div>
+        ) : null}
+      </aside>
+    </div>
+  </div>
+
+  {authenticated && astrologer.availability === "online" ? (
+    <AstrologerProfilePicker
+      id={profilePickerId}
+      copy={pickerCopy}
+      customerProfiles={customerProfiles}
+      csrfToken={csrfToken}
+      profileFormCopy={profileFormCopy}
+      locale={locale}
+      editAttributes={editAttributes}
+    />
+  ) : null}
+</section>
+
+<script>
+  document.querySelectorAll<HTMLElement>("[data-review-scroll]").forEach((trigger) => {
+    if (trigger.dataset.reviewScrollReady === "true") return;
+    trigger.dataset.reviewScrollReady = "true";
+    trigger.addEventListener("click", (event) => {
+      const target = document.querySelector<HTMLElement>("#astrologer-reviews");
+      if (!target) return;
+      event.preventDefault();
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      target.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+      target.focus({ preventScroll: true });
+      target.classList.add("astrologer-profile__reviews--focused");
+      window.history.replaceState(null, "", "#astrologer-reviews");
+      window.setTimeout(
+        () => target.classList.remove("astrologer-profile__reviews--focused"),
+        reduceMotion ? 0 : 900,
+      );
+    });
+  });
+</script>

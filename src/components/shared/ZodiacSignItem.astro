@@ -1,0 +1,122 @@
+---
+import "../../styles/shared/zodiac-sign-item.css";
+
+type ZodiacSignSize = "compact" | "standard";
+type ZodiacElementTone = "fire" | "earth" | "air" | "water";
+type ButtonType = "button" | "submit" | "reset";
+
+type Props = {
+  sign: string;
+  glyph: string;
+  dates?: string;
+  element?: string;
+  elementTone?: ZodiacElementTone;
+  size?: ZodiacSignSize;
+  href?: string;
+  selected?: boolean;
+  disabled?: boolean;
+  type?: ButtonType;
+  name?: string;
+  value?: string;
+  form?: string;
+  ariaLabel?: string;
+  class?: string;
+  id?: string;
+  signEditAttributes?: Record<string, string>;
+  datesEditAttributes?: Record<string, string>;
+  elementEditAttributes?: Record<string, string>;
+};
+
+const {
+  sign,
+  glyph,
+  dates,
+  element,
+  elementTone = "fire",
+  size = "standard",
+  href,
+  selected = false,
+  disabled = false,
+  type = "button",
+  name,
+  value,
+  form,
+  ariaLabel,
+  class: className,
+  id,
+  signEditAttributes = {},
+  datesEditAttributes = {},
+  elementEditAttributes = {},
+} = Astro.props as Props;
+
+const classes = [
+  "sidera-zodiac-sign",
+  `sidera-zodiac-sign--${size}`,
+  `sidera-zodiac-sign--${elementTone}`,
+  selected && "sidera-zodiac-sign--selected",
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+const textGlyph = `${glyph.replace(/[\uFE0E\uFE0F]/g, "")}\uFE0E`;
+---
+
+{
+  href ? (
+    <a
+      id={id}
+      class={classes}
+      href={disabled ? undefined : href}
+      aria-label={ariaLabel}
+      aria-current={selected ? "page" : undefined}
+      aria-disabled={disabled ? "true" : undefined}
+      tabindex={disabled ? -1 : undefined}
+    >
+      <span class="sidera-zodiac-sign__glyph" aria-hidden="true">{textGlyph}</span>
+      <span class="sidera-zodiac-sign__name" {...signEditAttributes}>{sign}</span>
+      {
+        dates ? (
+          <span class="sidera-zodiac-sign__dates" {...datesEditAttributes}>
+            {dates}
+          </span>
+        ) : null
+      }
+      {
+        element ? (
+          <span class="sidera-zodiac-sign__element" {...elementEditAttributes}>
+            {element}
+          </span>
+        ) : null
+      }
+    </a>
+  ) : (
+    <button
+      id={id}
+      class={classes}
+      type={type}
+      name={name}
+      value={value}
+      form={form}
+      disabled={disabled}
+      aria-label={ariaLabel}
+      aria-pressed={selected}
+    >
+      <span class="sidera-zodiac-sign__glyph" aria-hidden="true">{textGlyph}</span>
+      <span class="sidera-zodiac-sign__name" {...signEditAttributes}>{sign}</span>
+      {
+        dates ? (
+          <span class="sidera-zodiac-sign__dates" {...datesEditAttributes}>
+            {dates}
+          </span>
+        ) : null
+      }
+      {
+        element ? (
+          <span class="sidera-zodiac-sign__element" {...elementEditAttributes}>
+            {element}
+          </span>
+        ) : null
+      }
+    </button>
+  )
+}

@@ -1,0 +1,11 @@
+.synastry-body {
+  margin: 0;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.synastry-main {
+  inline-size: 100%;
+  max-inline-size: none;
+  margin: 0;
+}

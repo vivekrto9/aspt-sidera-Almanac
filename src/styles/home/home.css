@@ -1,0 +1,292 @@
+.sidera-home-body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+}
+
+.sidera-home {
+  inline-size: 100%;
+  margin: 0;
+}
+
+.sidera-home :where(.sidera-section-heading__eyebrow) {
+  color: var(--color-primary);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.sidera-home :where(.sidera-section-heading__title) {
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-weight: 650;
+  letter-spacing: -0.045em;
+}
+
+.sidera-home :where(.sidera-section-heading__title em) {
+  color: var(--color-primary);
+  font-family: var(--font-serif);
+  font-weight: 400;
+}
+
+/* Nocturne homepage composition: preserve all runtime-backed components while
+   mapping their surfaces to the Theme 4 night-sky system. */
+.sidera-home .home-hero {
+  min-block-size: clamp(38rem, 76vh, 49rem);
+  display: grid;
+  place-items: center;
+  isolation: isolate;
+  padding-block: 7.5rem 6rem;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(71, 55, 119, 0.34), transparent 34%),
+    radial-gradient(circle at 14% 12%, rgba(95, 194, 214, 0.12), transparent 23%),
+    linear-gradient(160deg, #171429 0%, #13111f 54%, #0b0914 100%);
+  color: var(--color-on-dark);
+}
+
+.sidera-home .home-hero::before,
+.sidera-home .home-hero::after {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  content: "";
+  pointer-events: none;
+}
+
+.sidera-home .home-hero::before {
+  opacity: 0.7;
+  background-image:
+    radial-gradient(circle, rgba(243, 240, 255, 0.75) 0 1px, transparent 1.4px),
+    radial-gradient(circle, rgba(95, 194, 214, 0.55) 0 1px, transparent 1.4px);
+  background-position: 0 0, 3.75rem 2.5rem;
+  background-size: 7rem 7rem, 9rem 9rem;
+  mask-image: linear-gradient(to bottom, #000, transparent 88%);
+}
+
+.sidera-home .home-hero::after {
+  background: linear-gradient(to bottom, transparent 70%, rgba(11, 9, 20, 0.6));
+}
+
+.sidera-home .home-hero__inner,
+.sidera-home .home-hero__content {
+  position: relative;
+  z-index: 2;
+}
+
+.sidera-home .home-hero__content {
+  max-inline-size: 58rem;
+}
+
+.sidera-home .home-hero__kicker {
+  color: var(--color-success);
+}
+
+.sidera-home .home-hero h1 {
+  max-inline-size: 12ch;
+  color: var(--color-on-dark-strong);
+  font-family: var(--font-sans);
+  font-size: clamp(3.75rem, 8vw, 7.5rem);
+  font-weight: 650;
+  letter-spacing: -0.065em;
+}
+
+.sidera-home .home-hero h1 em {
+  color: var(--color-primary-soft);
+  font-family: var(--font-serif);
+  font-weight: 400;
+}
+
+.sidera-home .home-hero__body,
+.sidera-home .home-hero__proofs {
+  color: var(--color-on-dark-muted);
+}
+
+.sidera-home .home-hero__proofs li > span:first-child {
+  color: var(--color-success);
+}
+
+.sidera-home .home-hero__button.sidera-button--outline {
+  --sidera-button-border: rgba(237, 234, 248, 0.34);
+  --sidera-button-color: var(--color-on-dark-strong);
+  --sidera-button-hover-background: rgba(237, 234, 248, 0.08);
+  --sidera-button-hover-border: rgba(198, 171, 250, 0.72);
+  --sidera-button-hover-color: var(--color-on-dark-strong);
+}
+
+.sidera-home .home-hero__zodiac {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  z-index: 0;
+  inline-size: min(70rem, 86vw);
+  aspect-ratio: 1;
+  border: 1px solid rgba(198, 171, 250, 0.13);
+  border-radius: 50%;
+  box-shadow:
+    inset 0 0 0 4.5rem rgba(176, 140, 240, 0.015),
+    inset 0 0 0 4.6rem rgba(95, 194, 214, 0.08),
+    inset 0 0 0 15rem rgba(176, 140, 240, 0.015),
+    inset 0 0 0 15.1rem rgba(198, 171, 250, 0.07);
+  opacity: 0.76;
+  transform: translate(-50%, -50%);
+  animation: nocturne-zodiac-drift 180s linear infinite;
+  pointer-events: none;
+}
+
+.sidera-home .home-hero__zodiac::before,
+.sidera-home .home-hero__zodiac::after,
+.sidera-home .home-hero__zodiac i {
+  position: absolute;
+  inset: 50%;
+  border: 1px solid rgba(95, 194, 214, 0.13);
+  border-radius: 50%;
+  content: "";
+  transform: translate(-50%, -50%);
+}
+
+.sidera-home .home-hero__zodiac::before { inline-size: 74%; aspect-ratio: 1; }
+.sidera-home .home-hero__zodiac::after { inline-size: 34%; aspect-ratio: 1; }
+.sidera-home .home-hero__zodiac i { inline-size: 8%; aspect-ratio: 1; background: rgba(176, 140, 240, 0.12); }
+
+.sidera-home .home-hero__zodiac > span {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  color: rgba(237, 234, 248, 0.5);
+  font: 400 clamp(1rem, 2vw, 1.5rem) / 1 var(--font-serif);
+  transform: rotate(calc(var(--zodiac-index) * 30deg)) translateY(clamp(-31.5rem, -39vw, -20rem)) rotate(calc(var(--zodiac-index) * -30deg));
+  transform-origin: 0 0;
+}
+
+.sidera-home .home-today-sky,
+.sidera-home .home-transit,
+.sidera-home .home-daily-horoscope,
+.sidera-home .home-shop {
+  background: var(--color-bg);
+}
+
+.sidera-home .home-today-sky__inner {
+  border-color: rgba(var(--color-text-rgb), 0.08);
+  border-radius: 1.25rem;
+  background: rgba(250, 249, 255, 0.78);
+  box-shadow: 0 1.75rem 4rem -3rem rgba(var(--color-dark-rgb), 0.3);
+}
+
+.sidera-home .home-today-sky__position,
+.sidera-home .home-transit__item,
+.sidera-home .home-transit__unavailable {
+  background: var(--color-panel);
+}
+
+.sidera-home .home-birth-chart,
+.sidera-home .home-synastry,
+.sidera-home .home-reports {
+  background:
+    radial-gradient(circle at 85% 20%, rgba(95, 194, 214, 0.08), transparent 28%),
+    var(--color-dark);
+  color: var(--color-on-dark);
+}
+
+.sidera-home :is(.home-birth-chart__heading, .home-synastry__heading, .home-reports__heading) {
+  --sidera-section-heading-ink: var(--color-on-dark-strong);
+  --sidera-section-heading-muted: var(--color-on-dark-muted);
+  --sidera-section-heading-accent: var(--color-primary-soft);
+}
+
+.sidera-home :is(.home-birth-chart, .home-synastry, .home-reports) .sidera-section-heading__title {
+  color: var(--color-on-dark-strong);
+}
+
+.sidera-home .home-birth-chart__workbench,
+.sidera-home .home-synastry__visual {
+  border-color: rgba(198, 171, 250, 0.16);
+  background: rgba(237, 234, 248, 0.055);
+  box-shadow: 0 1.5rem 3.75rem -2.125rem rgba(0, 0, 0, 0.65);
+}
+
+.sidera-home .home-birth-chart__feature h3 {
+  color: var(--color-on-dark-strong);
+}
+
+.sidera-home .home-birth-chart__feature p {
+  color: var(--color-on-dark-muted);
+}
+
+.sidera-home .home-birth-chart__extended-fields {
+  background: rgba(237, 234, 248, 0.06);
+}
+
+.sidera-home .home-birth-chart__wheel .chart-wheel {
+  --chart-disc-outer: rgba(237, 234, 248, 0.04);
+  --chart-disc-signs: rgba(176, 140, 240, 0.08);
+  --chart-disc-inner: rgba(237, 234, 248, 0.035);
+  --chart-line: rgba(237, 234, 248, 0.2);
+  --chart-line-soft: rgba(237, 234, 248, 0.12);
+  --chart-glyph: var(--color-primary-soft);
+  --chart-caption: var(--color-on-dark-muted);
+}
+
+.sidera-home .home-synastry__profile {
+  --profile-summary-name: var(--color-on-dark-strong);
+  --profile-summary-copy: var(--color-on-dark-muted);
+  --profile-summary-muted: var(--color-on-dark-muted);
+}
+
+.sidera-home .home-synastry__resonance {
+  background: var(--color-primary);
+  color: var(--color-dark-strong);
+}
+
+.sidera-home .home-moon-calendar,
+.sidera-home .home-final-cta {
+  background: var(--color-dark-strong);
+}
+
+.sidera-home .home-daily-horoscope__reading {
+  background: var(--color-dark);
+}
+
+.sidera-home .home-astrologers,
+.sidera-home .home-blog {
+  background: var(--color-surface);
+}
+
+.sidera-home .home-reports__card {
+  box-shadow: 0 1.5rem 3rem -2rem rgba(0, 0, 0, 0.7);
+}
+
+.sidera-home .home-reports__action .sidera-button--outline {
+  --sidera-button-border: rgba(237, 234, 248, 0.32);
+  --sidera-button-color: var(--color-on-dark-strong);
+  --sidera-button-hover-background: rgba(237, 234, 248, 0.08);
+  --sidera-button-hover-border: var(--color-primary-soft);
+  --sidera-button-hover-color: var(--color-on-dark-strong);
+}
+
+@keyframes nocturne-zodiac-drift {
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@media (max-width: 40rem) {
+  .sidera-home .home-hero {
+    min-block-size: 42rem;
+    padding-block: 5.5rem 4rem;
+  }
+
+  .sidera-home .home-hero h1 {
+    font-size: clamp(3.25rem, 16vw, 5rem);
+  }
+
+  .sidera-home .home-hero__zodiac {
+    inline-size: 38rem;
+  }
+
+  .sidera-home .home-hero__zodiac > span {
+    transform: rotate(calc(var(--zodiac-index) * 30deg)) translateY(-17.25rem) rotate(calc(var(--zodiac-index) * -30deg));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidera-home .home-hero__zodiac {
+    animation: none;
+  }
+}

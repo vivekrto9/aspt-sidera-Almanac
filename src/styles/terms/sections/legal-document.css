@@ -1,0 +1,9 @@
+.terms-legal-document {
+  min-block-size: calc(100svh - 4.75rem);
+}
+
+@supports (min-block-size: 100dvh) {
+  .terms-legal-document {
+    min-block-size: calc(100dvh - 4.75rem);
+  }
+}

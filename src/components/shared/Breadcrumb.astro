@@ -1,0 +1,87 @@
+---
+import {
+  defaultLocale,
+  localizePath,
+  type SupportedLocale,
+} from "../../data/localization-contract.ts";
+import "../../styles/shared/breadcrumb.css";
+
+type BreadcrumbSeparator = "chevron" | "slash";
+
+type BreadcrumbItem = {
+  label: string;
+  href?: string;
+  current?: boolean;
+  editAttributes?: Record<string, string>;
+};
+
+type Props = {
+  items: BreadcrumbItem[];
+  ariaLabel: string;
+  locale?: SupportedLocale;
+  separator?: BreadcrumbSeparator;
+  class?: string;
+  id?: string;
+};
+
+const {
+  items,
+  ariaLabel,
+  locale = defaultLocale,
+  separator = "chevron",
+  class: className,
+  id,
+} = Astro.props as Props;
+
+const classes = [
+  "breadcrumb",
+  `breadcrumb--${separator}`,
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+
+const visibleItems = items.filter((item) => item.label.trim().length > 0);
+const separatorText = separator === "slash" ? "/" : "›";
+---
+
+{
+  visibleItems.length > 0 && (
+    <nav class={classes} id={id} aria-label={ariaLabel}>
+      <ol class="breadcrumb__list">
+        {visibleItems.map((item, index) => {
+          const isLast = index === visibleItems.length - 1;
+          const isCurrent = item.current ?? (isLast || !item.href);
+          const href = item.href ? localizePath(item.href, locale) : undefined;
+
+          return (
+            <li class="breadcrumb__item">
+              {index > 0 && (
+                <span class="breadcrumb__separator" aria-hidden="true">
+                  {separatorText}
+                </span>
+              )}
+              {href && !isCurrent ? (
+                <a
+                  class="breadcrumb__link"
+                  href={href}
+                  {...item.editAttributes}
+                >
+                  {item.label}
+                </a>
+              ) : (
+                <span
+                  class="breadcrumb__current"
+                  aria-current={isCurrent ? "page" : undefined}
+                  {...item.editAttributes}
+                >
+                  {item.label}
+                </span>
+              )}
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
+  )
+}

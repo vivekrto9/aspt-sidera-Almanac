@@ -1,0 +1,225 @@
+.shop-checkout {
+  min-block-size: 40rem;
+  padding: 2.125rem clamp(1rem, 3vw, 2.125rem) 5.625rem;
+  background: var(--color-surface);
+  color: var(--color-text);
+  animation: shop-flow-in 300ms ease both;
+}
+
+.shop-checkout__inner {
+  inline-size: min(100%, 67.5rem);
+  margin-inline: auto;
+}
+
+.shop-checkout h1 {
+  max-inline-size: none;
+  margin: 0.375rem 0 0;
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: clamp(2rem, 4.2vw, 3rem);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.015em;
+}
+
+.shop-checkout__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(18rem, 1fr);
+  align-items: start;
+  gap: 1.875rem;
+  margin-block-start: 1.875rem;
+}
+
+.shop-checkout__layout > *,
+.shop-checkout__fields > * {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+
+.shop-checkout__form {
+  min-inline-size: 0;
+  display: grid;
+  gap: 1.25rem;
+}
+
+.shop-checkout__group {
+  inline-size: 100%;
+  max-inline-size: 100%;
+  min-inline-size: 0;
+  box-sizing: border-box;
+  margin: 0;
+  border: 1px solid rgba(var(--color-text-rgb), 0.1);
+  border-radius: 1.25rem;
+  padding: 1.625rem 1.75rem;
+  background: var(--color-panel);
+}
+
+.shop-checkout__semantic-legend {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.shop-checkout__step-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6875rem;
+  margin: 0 0 1.125rem;
+  min-inline-size: 0;
+  color: var(--color-text);
+}
+
+.shop-checkout__step-title {
+  min-inline-size: 0;
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 1.375rem;
+  overflow-wrap: anywhere;
+}
+
+.shop-checkout__step-number {
+  flex: none;
+  inline-size: 1.625rem;
+  block-size: 1.625rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-dark);
+  color: var(--color-surface);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.shop-checkout__step-header--payment {
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+}
+
+.shop-checkout__step-heading {
+  min-inline-size: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.6875rem;
+}
+
+.shop-checkout__encrypted {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-inline-start: auto;
+  color: var(--color-muted);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 0.75rem;
+}
+
+.shop-checkout__encrypted > span:first-child {
+  color: var(--color-success);
+}
+
+.shop-checkout__fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.shop-checkout__field--full {
+  grid-column: 1 / -1;
+}
+
+.shop-checkout__stripe-note {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 1rem 1.125rem;
+  border: 1px solid rgba(var(--color-text-rgb), 0.12);
+  border-radius: 0.875rem;
+  background: #f5efe5;
+  color: #6b5144;
+}
+
+.shop-checkout__stripe-note > span {
+  flex: none;
+  inline-size: 2rem;
+  block-size: 2rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #635bff;
+  color: white;
+  font-weight: 700;
+}
+
+.shop-checkout__stripe-note p {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.shop-checkout__summary {
+  inline-size: 100%;
+  max-inline-size: 100%;
+  min-inline-size: 0;
+}
+
+.shop-checkout__place-order {
+  margin-block-start: 0.25rem;
+}
+
+.shop-checkout__status {
+  min-block-size: 1.25rem;
+  margin: 0.5rem 0 0;
+  color: var(--color-primary);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
+@media (max-width: 52rem) {
+  .shop-checkout__layout {
+    grid-template-columns: 1fr;
+  }
+
+  .shop-checkout__summary {
+    grid-row: 1;
+  }
+}
+
+@media (max-width: 40rem) {
+  .shop-checkout {
+    min-block-size: 0;
+    padding-block-start: 0.75rem;
+    padding-block-end: 4rem;
+  }
+
+  .shop-checkout__layout {
+    margin-block-start: 1.375rem;
+  }
+
+  .shop-checkout__group {
+    padding: 1.25rem;
+  }
+
+  .shop-checkout__fields {
+    grid-template-columns: 1fr;
+  }
+
+  .shop-checkout__field--full {
+    grid-column: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shop-checkout {
+    animation: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .shop-checkout__group {
+    border-color: CanvasText;
+  }
+}

@@ -1,0 +1,79 @@
+.sidera-text-field {
+  --text-field-background: #ffffff;
+  --text-field-border: rgba(var(--color-text-rgb), 0.18);
+  --text-field-color: var(--color-text);
+  --text-field-placeholder: var(--color-muted-soft);
+  --text-field-hover-border: rgba(var(--color-text-rgb), 0.34);
+  --text-field-focus-border: var(--color-primary);
+  --text-field-focus-ring: rgba(var(--color-primary-rgb), 0.16);
+
+  inline-size: 100%;
+  min-block-size: 2.875rem;
+  border: 1px solid var(--text-field-border);
+  border-radius: 0.6875rem;
+  padding: 0.75rem 0.875rem;
+  background: var(--text-field-background);
+  color: var(--text-field-color);
+  font: 400 0.9375rem / 1.4 var(--font-sans), system-ui, sans-serif;
+  outline: none;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    color 160ms ease;
+}
+
+.sidera-text-field::placeholder {
+  color: var(--text-field-placeholder);
+  opacity: 1;
+}
+
+.sidera-text-field:hover:not(:disabled):not([readonly]) {
+  border-color: var(--text-field-hover-border);
+}
+
+.sidera-text-field:focus-visible {
+  border-color: var(--text-field-focus-border);
+  box-shadow: 0 0 0 0.1875rem var(--text-field-focus-ring);
+}
+
+.sidera-text-field[aria-invalid="true"] {
+  --text-field-border: var(--color-primary);
+  --text-field-focus-border: var(--color-primary-strong);
+  --text-field-focus-ring: rgba(168, 77, 54, 0.18);
+}
+
+.sidera-text-field[readonly] {
+  --text-field-background: var(--color-panel);
+  --text-field-color: var(--color-muted);
+
+  cursor: default;
+}
+
+.sidera-text-field:disabled {
+  --text-field-background: var(--color-surface-soft);
+  --text-field-border: rgba(var(--color-text-rgb), 0.1);
+  --text-field-color: var(--color-muted-soft);
+  --text-field-placeholder: #a89789;
+
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+.sidera-text-field:-webkit-autofill {
+  -webkit-text-fill-color: var(--text-field-color);
+  box-shadow: 0 0 0 1000px var(--text-field-background) inset;
+}
+
+@media (max-width: 40rem) {
+  .sidera-text-field {
+    min-block-size: 3rem;
+    font-size: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidera-text-field {
+    transition: none;
+  }
+}

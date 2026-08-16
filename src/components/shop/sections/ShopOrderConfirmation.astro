@@ -1,0 +1,230 @@
+---
+import type { SupportedLocale } from "../../../data/localization-contract.ts";
+import type { ShopCheckoutFlowCopy } from "../../../data/locale/shop/sections/checkout-flow.ts";
+import {
+  getShopCommerceTotals,
+  shopReviewCart,
+} from "../../../data/shop/commerce.ts";
+import type { ShopProductId } from "../../../data/shop/catalog.ts";
+import type { CommerceOrder } from "../../../server/aggregator/commerce-orders.ts";
+import Button from "../../shared/Button.astro";
+import MediaThumbnail from "../../shared/MediaThumbnail.astro";
+import OrderSummary from "../../shared/OrderSummary.astro";
+import "../../../styles/shop/sections/order-confirmation.css";
+
+type EditAttributes = Record<string, string>;
+type ConfirmationProduct = {
+  id: ShopProductId;
+  title: string;
+  unit: string;
+  imageAlt: string;
+  imageSrc: string;
+  price: number;
+  defaultVariant?: string;
+};
+type Props = {
+  locale: SupportedLocale;
+  products: ConfirmationProduct[];
+  copy: ShopCheckoutFlowCopy;
+  shopHref: string;
+  homeHref: string;
+  order?: CommerceOrder | null;
+  attemptId?: string;
+  stripeSessionId?: string;
+  csrfToken?: string;
+  editAttributes?: (field: string) => EditAttributes;
+};
+
+const {
+  locale,
+  products,
+  copy,
+  shopHref,
+  homeHref,
+  order,
+  attemptId = "",
+  stripeSessionId = "",
+  csrfToken = "",
+  editAttributes = () => ({}),
+} = Astro.props as Props;
+const money = new Intl.NumberFormat(locale, {
+  style: "currency",
+  currency: "USD",
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 2,
+});
+const runtimeCart = order?.lines.map((line) => ({ id: line.productSlug as ShopProductId, quantity: line.quantity, variant: line.variantLabel || undefined })) ?? shopReviewCart;
+const totals = order ? { grandTotal: order.totalCents / 100 } : getShopCommerceTotals(runtimeCart);
+const initialQuantity = (id: ShopProductId) =>
+  runtimeCart.find((item) => item.id === id)?.quantity ?? 1;
+const initialMeta = (product: ConfirmationProduct) =>
+  runtimeCart.find((item) => item.id === product.id)?.variant
+  ?? product.defaultVariant
+  ?? product.unit;
+---
+
+<main
+  class="shop-confirmation"
+  data-screen-label="Order Confirmed"
+  data-shop-confirmation
+  data-products={JSON.stringify(products)}
+  data-default-cart={JSON.stringify(shopReviewCart)}
+  data-order={JSON.stringify(order ?? null)}
+  data-attempt-id={attemptId}
+  data-stripe-session-id={stripeSessionId}
+  data-csrf-token={csrfToken}
+  data-default-first-name={copy.defaultFirstName}
+  data-locale={locale}
+>
+  <div class="shop-confirmation__stars" aria-hidden="true"></div>
+  <div class="shop-confirmation__inner">
+    <header class="shop-confirmation__header">
+      <span class="shop-confirmation__check" aria-hidden="true">✓</span>
+      <p class="shop-confirmation__eyebrow" {...editAttributes("shop_confirmation_eyebrow")}>{copy.confirmationEyebrow}</p>
+      <h1 {...editAttributes("shop_confirmation_title")}>{copy.confirmationTitle}</h1>
+      <p class="shop-confirmation__message">
+        <span {...editAttributes("shop_confirmation_thanks_prefix")}>{copy.confirmationThanksPrefix}</span>{" "}
+        <strong data-shop-confirmation-name>{order?.customerName.split(" ")[0] || copy.defaultFirstName}</strong>.
+        <span {...editAttributes("shop_confirmation_thanks_suffix")}>{copy.confirmationThanksSuffix}</span>
+      </p>
+    </header>
+
+    <OrderSummary
+      id="shop-confirmation-receipt"
+      class="shop-confirmation__receipt"
+      landmarkLabel={copy.confirmationEyebrow}
+      variant="receipt"
+      tone="inverse"
+      totalLabel={copy.totalPaidLabel}
+      totalValue={money.format(totals.grandTotal)}
+      totalLabelEditAttributes={editAttributes("shop_confirmation_total_paid_label")}
+    >
+      <div slot="header" class="shop-confirmation__receipt-header">
+        <div>
+          <span {...editAttributes("shop_confirmation_order_number_label")}>{copy.orderNumberLabel}</span>
+          <strong data-shop-confirmation-order>{order?.orderNumber || "—"}</strong>
+        </div>
+        <div>
+          <span {...editAttributes("shop_confirmation_arrives_label")}>{copy.arrivesLabel}</span>
+          <strong {...editAttributes("shop_confirmation_arrival_label")}>{copy.arrivalLabel}</strong>
+        </div>
+      </div>
+      <div slot="items" class="shop-confirmation__items">
+        {products.map((product) => {
+          const initialItem = runtimeCart.find((item) => item.id === product.id);
+          const key = product.id.replaceAll("-", "_");
+          return (
+            <article data-shop-confirmation-item data-product-id={product.id} hidden={!initialItem}>
+              <MediaThumbnail
+                src={product.imageSrc}
+                alt={product.imageAlt}
+                width={1122}
+                height={1402}
+                size="compact"
+                decorative
+              />
+              <div>
+                <h2 {...editAttributes(`shop_product_${key}_title`)}>{product.title}</h2>
+                <p>
+                  <span data-shop-confirmation-meta>{initialMeta(product)}</span>
+                  <span aria-hidden="true"> · </span>
+                  <span {...editAttributes("shop_cart_quantity_label")}>{copy.quantityLabel}</span>{" "}
+                  <span data-shop-confirmation-quantity>{initialQuantity(product.id)}</span>
+                </p>
+              </div>
+              <strong data-shop-confirmation-price>{money.format(product.price * initialQuantity(product.id))}</strong>
+            </article>
+          );
+        })}
+      </div>
+    </OrderSummary>
+
+    <div class="shop-confirmation__actions">
+      <Button href={shopHref} variant="secondary" size="large" shape="rounded" fullWidth data-shop-confirmation-continue>
+        <span {...editAttributes("shop_confirmation_continue_label")}>{copy.continueShoppingLabel}</span>
+      </Button>
+      <Button href={homeHref} variant="outline" size="large" shape="rounded" fullWidth class="shop-confirmation__home">
+        <span {...editAttributes("shop_confirmation_home_label")}>{copy.returnHomeLabel}</span>
+      </Button>
+    </div>
+  </div>
+</main>
+
+<script>
+  import { shopCartStorageKey } from "../../../data/shop/commerce.ts";
+
+  type ClientProduct = { id: string; unit: string; price: number; defaultVariant?: string };
+  type RuntimeOrder = { id: string; orderNumber: string; customerName: string; totalCents: number; currency: string; status: string; lines: Array<{ productSlug: string; variantLabel?: string; quantity: number; unitCents: number }> };
+
+  const initializeShopConfirmation = (root: HTMLElement) => {
+    if (root.dataset.shopConfirmationBound === "true") return;
+    root.dataset.shopConfirmationBound = "true";
+    const products = JSON.parse(root.dataset.products ?? "[]") as ClientProduct[];
+    const productById = new Map(products.map((product) => [product.id, product]));
+    const order = JSON.parse(root.dataset.order ?? "null") as RuntimeOrder | null;
+    if (!order) return;
+    const items = order.lines.map((line) => ({ id: line.productSlug, quantity: line.quantity, variant: line.variantLabel }));
+    const firstName = order.customerName.split(" ")[0] || root.dataset.defaultFirstName || "Sidera";
+    const orderNumber = order.orderNumber;
+    const locale = root.dataset.locale || document.documentElement.lang || "en";
+    const money = new Intl.NumberFormat(locale, { style: "currency", currency: "USD", minimumFractionDigits: 0, maximumFractionDigits: 2 });
+
+    const name = root.querySelector<HTMLElement>("[data-shop-confirmation-name]");
+    const number = root.querySelector<HTMLElement>("[data-shop-confirmation-order]");
+    if (name) name.textContent = firstName;
+    if (number) number.textContent = orderNumber;
+
+    root.querySelectorAll<HTMLElement>("[data-shop-confirmation-item]").forEach((row) => {
+      const item = items.find((entry) => entry.id === row.dataset.productId);
+      row.hidden = !item;
+      if (!item) return;
+      const product = productById.get(item.id);
+      if (!product) return;
+      const meta = row.querySelector<HTMLElement>("[data-shop-confirmation-meta]");
+      const quantity = row.querySelector<HTMLElement>("[data-shop-confirmation-quantity]");
+      const price = row.querySelector<HTMLElement>("[data-shop-confirmation-price]");
+      if (meta) meta.textContent = item.variant || product.defaultVariant || product.unit;
+      if (quantity) quantity.textContent = String(item.quantity);
+      if (price) price.textContent = money.format(product.price * item.quantity);
+    });
+    const total = root.querySelector<HTMLElement>(".sidera-order-summary__total .sidera-price-display__current");
+    if (total) total.textContent = money.format(order.totalCents / 100);
+    const confirmPayment = async () => {
+      if (order.status === "paid") {
+        try {
+          sessionStorage.removeItem(shopCartStorageKey);
+          sessionStorage.removeItem("sidera-shop-checkout-request-v1");
+        } catch {}
+        return;
+      }
+      if (!root.dataset.attemptId || !root.dataset.stripeSessionId) return;
+      const response = await fetch("/api/astropages/generated-site/payments/stripe/commerce-confirm", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "content-type": "application/json", "x-astropages-customer-csrf": root.dataset.csrfToken || "" },
+        body: JSON.stringify({ orderId: order.id, attemptId: root.dataset.attemptId, sessionId: root.dataset.stripeSessionId }),
+      });
+      if (!response.ok) {
+        window.location.assign("/shop?view=failed");
+        return;
+      }
+      try {
+        sessionStorage.removeItem(shopCartStorageKey);
+        sessionStorage.removeItem("sidera-shop-checkout-request-v1");
+      } catch {}
+    };
+    void confirmPayment();
+    root.querySelector("[data-shop-confirmation-continue]")?.addEventListener("click", () => {
+      try {
+        sessionStorage.removeItem(shopCartStorageKey);
+        sessionStorage.removeItem("sidera-shop-checkout-request-v1");
+      } catch {}
+    });
+  };
+
+  const initializeShopConfirmations = () => document
+    .querySelectorAll<HTMLElement>("[data-shop-confirmation]")
+    .forEach(initializeShopConfirmation);
+  initializeShopConfirmations();
+  document.addEventListener("astro:page-load", initializeShopConfirmations);
+</script>

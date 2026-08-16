@@ -1,0 +1,113 @@
+.sidera-text-area {
+  --text-area-background: #ffffff;
+  --text-area-border: rgba(var(--color-text-rgb), 0.18);
+  --text-area-color: var(--color-text);
+  --text-area-placeholder: var(--color-muted-soft);
+  --text-area-hover-border: rgba(var(--color-text-rgb), 0.34);
+  --text-area-focus-border: var(--color-primary);
+  --text-area-focus-ring: rgba(var(--color-primary-rgb), 0.16);
+
+  inline-size: 100%;
+  min-block-size: 5.5rem;
+  resize: vertical;
+  border: 1px solid var(--text-area-border);
+  border-radius: 0.75rem;
+  padding: 0.875rem 1rem;
+  background: var(--text-area-background);
+  color: var(--text-area-color);
+  font: 400 0.875rem / 1.55 var(--font-sans), system-ui, sans-serif;
+  outline: none;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    color 160ms ease;
+}
+
+.sidera-text-area--compact {
+  min-block-size: 4.375rem;
+  padding-block: 0.8125rem;
+}
+
+.sidera-text-area--inverse {
+  --text-area-background: rgba(240, 230, 214, 0.05);
+  --text-area-border: rgba(240, 230, 214, 0.2);
+  --text-area-color: var(--color-surface-soft);
+  --text-area-placeholder: #cdb9a7;
+  --text-area-hover-border: rgba(240, 230, 214, 0.38);
+  --text-area-focus-border: var(--color-primary-soft);
+  --text-area-focus-ring: rgba(214, 154, 106, 0.2);
+}
+
+.sidera-text-area::placeholder {
+  color: var(--text-area-placeholder);
+  opacity: 1;
+}
+
+.sidera-text-area:hover:not(:disabled):not([readonly]) {
+  border-color: var(--text-area-hover-border);
+}
+
+.sidera-text-area:focus-visible {
+  border-color: var(--text-area-focus-border);
+  box-shadow: 0 0 0 0.1875rem var(--text-area-focus-ring);
+}
+
+.sidera-text-area[aria-invalid="true"] {
+  --text-area-border: var(--color-primary);
+  --text-area-focus-border: var(--color-primary-strong);
+  --text-area-focus-ring: rgba(168, 77, 54, 0.18);
+}
+
+.sidera-text-area--inverse[aria-invalid="true"] {
+  --text-area-border: #e1a077;
+  --text-area-focus-border: #f2bd91;
+  --text-area-focus-ring: rgba(242, 189, 145, 0.2);
+}
+
+.sidera-text-area[readonly] {
+  --text-area-background: var(--color-panel);
+  --text-area-color: var(--color-muted);
+
+  cursor: default;
+}
+
+.sidera-text-area--inverse[readonly] {
+  --text-area-background: rgba(240, 230, 214, 0.08);
+  --text-area-color: #ddcdbd;
+}
+
+.sidera-text-area:disabled {
+  --text-area-background: var(--color-surface-soft);
+  --text-area-border: rgba(var(--color-text-rgb), 0.1);
+  --text-area-color: var(--color-muted-soft);
+  --text-area-placeholder: #a89789;
+
+  cursor: not-allowed;
+  opacity: 0.72;
+  resize: none;
+}
+
+.sidera-text-area--inverse:disabled {
+  --text-area-background: rgba(240, 230, 214, 0.04);
+  --text-area-border: rgba(240, 230, 214, 0.12);
+  --text-area-color: #bca998;
+  --text-area-placeholder: #a99482;
+}
+
+@media (max-width: 40rem) {
+  .sidera-text-area {
+    min-block-size: 6rem;
+    font-size: 1rem;
+  }
+
+  .sidera-text-area--compact {
+    min-block-size: 5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidera-text-area {
+    transition: none;
+  }
+}

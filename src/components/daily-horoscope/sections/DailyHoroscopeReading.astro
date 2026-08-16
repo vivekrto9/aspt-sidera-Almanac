@@ -1,0 +1,284 @@
+---
+import Breadcrumb from "../../shared/Breadcrumb.astro";
+import LoadingIndicator from "../../shared/LoadingIndicator.astro";
+import type { DailyHoroscopeFixture, DailyHoroscopePeriodId } from "../../../data/daily-horoscope/dummy-readings.ts";
+import type { DailyHoroscopeReadingCopy } from "../../../data/locale/daily-horoscope/sections/reading.ts";
+import type { DailyHoroscopeSign } from "../../../data/locale/daily-horoscope/sections/choose-sign.ts";
+import type { SupportedLocale } from "../../../data/localization-contract.ts";
+import "../../../styles/daily-horoscope/sections/daily-horoscope-reading.css";
+
+type SignLink = Pick<DailyHoroscopeSign, "name" | "glyph" | "slug"> & {
+  href: string;
+};
+
+type Props = {
+  locale: SupportedLocale;
+  sign: DailyHoroscopeSign;
+  fixture: DailyHoroscopeFixture;
+  providerSections?: string[];
+  providerSource?: "provider" | "cache";
+  copy: DailyHoroscopeReadingCopy;
+  activePeriod: DailyHoroscopePeriodId;
+  pickerHref: string;
+  todaySkyHref: string;
+  periodHrefs: Record<DailyHoroscopePeriodId, string>;
+  previousSign: SignLink;
+  nextSign: SignLink;
+  editAttributes?: (field: string) => Record<string, string>;
+};
+
+const {
+  locale,
+  sign,
+  fixture,
+  providerSections,
+  providerSource,
+  copy,
+  activePeriod,
+  pickerHref,
+  todaySkyHref,
+  periodHrefs,
+  previousSign,
+  nextSign,
+  editAttributes = () => ({}),
+} = Astro.props as Props;
+
+const activePeriodCopy =
+  copy.periods.find((period) => period.id === activePeriod) ?? copy.periods[1];
+const themeGlyphs = ["♡", "♃", "☼"] as const;
+const themeTones = ["rose", "gold", "green"] as const;
+const themeItems = copy.themeLabels
+  .map((label, index) => ({
+    label,
+    text: providerSections ? providerSections[index] : copy.themeTexts[index],
+    index,
+  }))
+  .filter((item) => Boolean(item.text));
+---
+
+<section
+  class="daily-horoscope-reading"
+  aria-labelledby="daily-horoscope-reading-title"
+  data-screen-label="Daily Horoscope Reading"
+  data-horoscope-source={providerSource ?? "editorial-fallback"}
+>
+  <div class="daily-horoscope-reading__loading" data-daily-horoscope-loading hidden>
+    <LoadingIndicator label={`${sign.name} horoscope`} size="large" layout="stacked" />
+  </div>
+  <div class="daily-horoscope-reading__inner">
+    <Breadcrumb
+      items={[
+        {
+          label: copy.breadcrumbLabel,
+          href: "/daily-horoscope",
+          editAttributes: editAttributes("reading_breadcrumb_label"),
+        },
+        { label: sign.name, current: true },
+      ]}
+      ariaLabel={copy.breadcrumbAriaLabel}
+      locale={locale}
+      separator="slash"
+      class="daily-horoscope-reading__breadcrumb"
+    />
+
+    <header class="daily-horoscope-reading__header">
+      <span class="daily-horoscope-reading__sign-glyph" aria-hidden="true">
+        {sign.glyph}
+      </span>
+      <div class="daily-horoscope-reading__identity">
+        <h1 id="daily-horoscope-reading-title" tabindex="-1">{sign.name}</h1>
+        <p>
+          {sign.dates} · {sign.element}{" "}
+          <span {...editAttributes("reading_sign_label")}>{copy.signLabel}</span>
+          {" "}·{" "}
+          <span {...editAttributes("reading_ruled_by_label")}>
+            {copy.ruledByLabel}
+          </span>{" "}
+          {fixture.ruler}
+        </p>
+      </div>
+      <div class="daily-horoscope-reading__header-action">
+        <p>{fixture.keyword}</p>
+        <a href={pickerHref} {...editAttributes("reading_change_sign")}>
+          {copy.changeSign}
+        </a>
+      </div>
+    </header>
+
+    <nav class="daily-horoscope-reading__periods" aria-label={copy.periodsLabel}>
+      {
+        copy.periods.map((period) => (
+          <a
+            href={periodHrefs[period.id]}
+            aria-current={period.id === activePeriod ? "page" : undefined}
+            data-daily-horoscope-navigation="period"
+          >
+            <span {...editAttributes(`reading_period_${period.id}_label`)}>
+              {period.label}
+            </span>
+          </a>
+        ))
+      }
+    </nav>
+
+    <div class="daily-horoscope-reading__layout">
+      <div class="daily-horoscope-reading__primary">
+        <article class="daily-horoscope-reading__lead">
+          <p class="daily-horoscope-reading__overline">{activePeriodCopy.overline}</p>
+          <p class="daily-horoscope-reading__headline">
+            {fixture.headlines[activePeriod]}
+          </p>
+        </article>
+
+        <div class="daily-horoscope-reading__themes">
+          {
+            themeItems.map(({ label, text, index }) => (
+              <article class="daily-horoscope-reading__theme">
+                <div>
+                  <span
+                    class:list={[
+                      "daily-horoscope-reading__theme-glyph",
+                      `daily-horoscope-reading__theme-glyph--${themeTones[index]}`,
+                    ]}
+                    aria-hidden="true"
+                  >
+                    {themeGlyphs[index]}
+                  </span>
+                  <h2 {...editAttributes(`reading_theme_${index + 1}_label`)}>
+                    {label}
+                  </h2>
+                </div>
+                <p {...(providerSections ? {} : editAttributes(`reading_theme_${index + 1}_text`))}>
+                  {text}
+                </p>
+              </article>
+            ))
+          }
+        </div>
+
+        <nav class="daily-horoscope-reading__sign-browser" aria-label={copy.browseSigns}>
+          <a href={previousSign.href} data-daily-horoscope-navigation="sign">
+            <span class="daily-horoscope-reading__chevron" aria-hidden="true">‹</span>
+            {previousSign.name}
+          </a>
+          <span {...editAttributes("reading_browse_signs")}>{copy.browseSigns}</span>
+          <a href={nextSign.href} data-daily-horoscope-navigation="sign">
+            {nextSign.name}
+            <span class="daily-horoscope-reading__chevron" aria-hidden="true">›</span>
+          </a>
+        </nav>
+      </div>
+
+      <aside class="daily-horoscope-reading__sky-link" aria-label={copy.skyBehind}>
+        <p {...editAttributes("reading_sky_behind_label")}>{copy.skyBehind}</p>
+        <a href={todaySkyHref} {...editAttributes("reading_full_sky_label")}>
+          {copy.fullSky}
+        </a>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<script>
+  const navigationDocument = document.documentElement;
+
+  if (navigationDocument.dataset.dailyHoroscopeNavigationReady !== "true") {
+    navigationDocument.dataset.dailyHoroscopeNavigationReady = "true";
+    let navigationPending = false;
+
+    const replaceReading = async (
+      href: string,
+      navigationType: string,
+      updateHistory = true,
+    ) => {
+      if (navigationPending) return;
+      navigationPending = true;
+
+      const currentReading = document.querySelector<HTMLElement>(
+        "[data-screen-label='Daily Horoscope Reading']",
+      );
+      const loadingIndicator = currentReading?.querySelector<HTMLElement>(
+        "[data-daily-horoscope-loading]",
+      );
+      currentReading?.setAttribute("aria-busy", "true");
+      currentReading?.setAttribute("data-loading", "true");
+      if (loadingIndicator) loadingIndicator.hidden = false;
+      const scrollPosition = window.scrollY;
+
+      try {
+        const response = await fetch(href, {
+          headers: { "X-Sidera-Partial-Navigation": "daily-horoscope" },
+        });
+        if (!response.ok) throw new Error("Daily Horoscope navigation failed");
+
+        const nextDocument = new DOMParser().parseFromString(
+          await response.text(),
+          "text/html",
+        );
+        const nextReading = nextDocument.querySelector<HTMLElement>(
+          "[data-screen-label='Daily Horoscope Reading']",
+        );
+        if (!currentReading || !nextReading) {
+          window.location.assign(href);
+          return;
+        }
+
+        currentReading.replaceWith(nextReading);
+        if (updateHistory) history.pushState({ dailyHoroscope: true }, "", href);
+
+        requestAnimationFrame(() => {
+          window.scrollTo(0, scrollPosition);
+          const focusTarget =
+            navigationType === "period"
+              ? nextReading.querySelector<HTMLElement>(
+                  "[data-daily-horoscope-navigation='period'][aria-current='page']",
+                )
+              : nextReading.querySelector<HTMLElement>(
+                  "#daily-horoscope-reading-title",
+                );
+          focusTarget?.focus({ preventScroll: true });
+        });
+      } catch {
+        window.location.assign(href);
+      } finally {
+        navigationPending = false;
+        currentReading?.removeAttribute("aria-busy");
+        currentReading?.removeAttribute("data-loading");
+        if (loadingIndicator) loadingIndicator.hidden = true;
+      }
+    };
+
+    document.addEventListener("click", (event) => {
+      if (
+        event.defaultPrevented ||
+        event.button !== 0 ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey ||
+        document.body.hasAttribute("data-builder-edit-mode")
+      ) {
+        return;
+      }
+
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const link = target.closest<HTMLAnchorElement>(
+        "a[data-daily-horoscope-navigation]",
+      );
+      if (!link || link.target === "_blank" || link.origin !== window.location.origin) {
+        return;
+      }
+
+      event.preventDefault();
+      void replaceReading(
+        link.href,
+        link.dataset.dailyHoroscopeNavigation ?? "sign",
+      );
+    });
+
+    window.addEventListener("popstate", () => {
+      void replaceReading(window.location.href, "history", false);
+    });
+  }
+</script>

@@ -1,0 +1,9 @@
+ALTER TABLE ec_site_wallet ADD COLUMN transactions TEXT;
+ALTER TABLE ec_site_wallet ADD COLUMN recharge_title TEXT;
+ALTER TABLE ec_site_wallet ADD COLUMN amount TEXT;
+ALTER TABLE ec_site_wallet ADD COLUMN current_balance TEXT;
+ALTER TABLE ec_site_wallet ADD COLUMN recharge_amount TEXT;
+ALTER TABLE ec_site_wallet ADD COLUMN after_recharge TEXT;
+ALTER TABLE ec_site_wallet ADD COLUMN add_amount TEXT;
+ALTER TABLE ec_site_wallet ADD COLUMN recent TEXT;
+ALTER TABLE ec_site_wallet ADD COLUMN view_all TEXT;

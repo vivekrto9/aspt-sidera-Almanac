@@ -1,0 +1,17 @@
+{
+  "siteSettings": {
+    "brandName": "Sidera",
+    "primaryColor": "#9F2F1F",
+    "contactEmail": "hello@sidera.example",
+    "defaultLocale": "en",
+    "timezone": "Asia/Kolkata",
+    "seoTitle": "Sidera | Modern Astrology, Warmly Guided",
+    "seoDescription": "Discover thoughtful modern astrology and grounded guidance with Sidera.",
+    "navigationMode": "single-page",
+    "tone": "warm-modern",
+    "typography": "editorial",
+    "buttonStyle": "rounded",
+    "enableAnnouncementBanner": false,
+    "announcementText": ""
+  }
+}

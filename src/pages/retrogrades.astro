@@ -1,0 +1,382 @@
+---
+import type { BuilderEditAttributes } from "../builder/builder.ts";
+import { loadPublicPageContent } from "../builder/public-page.ts";
+import RetrogradesCurrentStatus from "../components/retrogrades/sections/RetrogradesCurrentStatus.astro";
+import RetrogradesFinalCta from "../components/retrogrades/sections/RetrogradesFinalCta.astro";
+import RetrogradesIntro from "../components/retrogrades/sections/RetrogradesIntro.astro";
+import RetrogradesYearTimeline from "../components/retrogrades/sections/RetrogradesYearTimeline.astro";
+import Footer from "../components/shared/Footer.astro";
+import Header from "../components/shared/Header.astro";
+import EmptyState from "../components/shared/EmptyState.astro";
+import {
+  activeLocales,
+  defaultLocale,
+  localizePath,
+  type SupportedLocale,
+} from "../data/localization-contract.ts";
+import { getProviderUnavailableCopy } from "../data/provider-unavailable.ts";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { getRetrogrades } from "../server/aggregator/retrogrades-api.ts";
+import { getRuntimeEnv } from "../server/generated-site/request.ts";
+import "../styles/retrogrades/retrogrades.css";
+
+export const prerender = false;
+
+const {
+  content,
+  locale,
+  builder,
+  builderPage,
+  chromePage,
+  reviewTargets,
+  builderEdit,
+  chromeEdit,
+} = await loadPublicPageContent(Astro, "retrogrades");
+
+const seoContent = {
+  seo_title: content.seo_title,
+  seo_description: content.seo_description,
+  seo_canonical_path: content.seo_canonical_path,
+  seo_robots: content.seo_robots,
+  og_title: content.og_title,
+  og_description: content.og_description,
+  og_image: content.og_image,
+  og_image_alt: content.og_image_alt,
+  twitter_card: content.twitter_card,
+  twitter_title: content.twitter_title,
+  twitter_description: content.twitter_description,
+  twitter_image: content.twitter_image,
+};
+
+const componentEditAttributes = (
+  attributes: BuilderEditAttributes,
+): Record<string, string> =>
+  Object.fromEntries(
+    Object.entries(attributes)
+      .filter((entry): entry is [string, string | true] => entry[1] !== undefined)
+      .map(([key, value]) => [key, value === true ? "true" : value]),
+  );
+
+const localeHref = (targetLocale: SupportedLocale) => {
+  const url = new URL(Astro.request.url);
+  if (targetLocale === defaultLocale) {
+    if (locale === defaultLocale) {
+      url.searchParams.delete("locale");
+    } else {
+      url.searchParams.set("locale", defaultLocale);
+    }
+  } else {
+    url.searchParams.set("locale", targetLocale);
+  }
+  return `${url.pathname}${url.search}${url.hash}`;
+};
+
+const navigation = [
+  {
+    label: content.nav_todays_sky,
+    href: localizePath("/todays-sky", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_todays_sky")),
+  },
+  {
+    label: content.nav_charts,
+    href: localizePath("/birth-chart", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_charts")),
+  },
+  {
+    label: content.nav_compatibility,
+    href: localizePath("/synastry", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_compatibility")),
+  },
+  {
+    label: content.nav_moon,
+    href: localizePath("/moon-calendar", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_moon")),
+  },
+  {
+    label: content.nav_horoscope,
+    href: localizePath("/daily-horoscope", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_horoscope")),
+  },
+  {
+    label: content.nav_astrologers,
+    href: localizePath("/astrologers", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_astrologers")),
+  },
+  {
+    label: content.nav_blog,
+    href: localizePath("/blog", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_blog")),
+  },
+];
+
+const actions = [
+  {
+    id: "sign-in",
+    label: content.action_sign_in,
+    href: localizePath("/login", locale),
+    variant: "ghost" as const,
+    editAttributes: componentEditAttributes(chromeEdit("action_sign_in")),
+  },
+  {
+    id: "get-chart",
+    label: content.action_get_chart,
+    href: localizePath("/birth-chart", locale),
+    variant: "primary" as const,
+    editAttributes: componentEditAttributes(chromeEdit("action_get_chart")),
+  },
+];
+
+const languageOptions = activeLocales.map((item) => {
+  const field = `language_option_${item.code}_label`;
+  return {
+    code: item.code,
+    label: content[field] || item.nativeName,
+    href: localeHref(item.code),
+    lang: item.code,
+    hreflang: item.hreflang,
+    editAttributes: componentEditAttributes(chromeEdit(field)),
+  };
+});
+
+const footerGroups = [
+  {
+    label: content.footer_group_charts,
+    labelEditAttributes: componentEditAttributes(
+      chromeEdit("footer_group_charts"),
+    ),
+    links: [
+      ["footer_link_birth_chart", "/birth-chart"],
+      ["footer_link_transit", "/transit"],
+      ["footer_link_synastry", "/synastry"],
+    ].map(([field, path]) => ({
+      label: content[field],
+      href: localizePath(path, locale),
+      editAttributes: componentEditAttributes(chromeEdit(field)),
+    })),
+  },
+  {
+    label: content.footer_group_tools,
+    labelEditAttributes: componentEditAttributes(
+      chromeEdit("footer_group_tools"),
+    ),
+    links: [
+      ["footer_link_todays_sky", "/todays-sky"],
+      ["footer_link_moon_calendar", "/moon-calendar"],
+      ["footer_link_retrogrades", "/retrogrades"],
+      ["footer_link_reports", "/reports"],
+    ].map(([field, path]) => ({
+      label: content[field],
+      href: localizePath(path, locale),
+      editAttributes: componentEditAttributes(chromeEdit(field)),
+    })),
+  },
+  {
+    label: content.footer_group_learn,
+    labelEditAttributes: componentEditAttributes(
+      chromeEdit("footer_group_learn"),
+    ),
+    links: [
+      ["footer_link_blog", "/blog"],
+      ["footer_link_daily_horoscope", "/daily-horoscope"],
+      ["footer_link_glossary", "/glossary"],
+      ["footer_link_faq", "/faq"],
+    ].map(([field, path]) => ({
+      label: content[field],
+      href: localizePath(path, locale),
+      editAttributes: componentEditAttributes(chromeEdit(field)),
+    })),
+  },
+  {
+    label: content.footer_group_company,
+    labelEditAttributes: componentEditAttributes(
+      chromeEdit("footer_group_company"),
+    ),
+    links: [
+      ["footer_link_about", "/about"],
+      ["footer_link_account", "/account"],
+      ["footer_link_shop", "/shop"],
+    ].map(([field, path]) => ({
+      label: content[field],
+      href: localizePath(path, locale),
+      editAttributes: componentEditAttributes(chromeEdit(field)),
+    })),
+  },
+];
+
+const footerLegalLinks = [
+  ["footer_link_privacy", "/privacy"],
+  ["footer_link_terms", "/terms"],
+].map(([field, path]) => ({
+  label: content[field],
+  href: localizePath(path, locale),
+  editAttributes: componentEditAttributes(chromeEdit(field)),
+}));
+
+const retrogradeYear = new Date().getUTCFullYear();
+const providerRetrogrades = await getRetrogrades({
+  env: await getRuntimeEnv(Astro),
+  year: retrogradeYear,
+  locale,
+}).catch(() => null);
+const providerUnavailable = getProviderUnavailableCopy(locale);
+const preparedStatuses = providerRetrogrades?.current ?? [];
+const currentStatusCards = preparedStatuses.map(
+  (status) => {
+    const titleField = `status_${status.id}_title`;
+    const descriptionField = `status_${status.id}_description`;
+    const shadowLabel =
+      status.shadowKind === "to"
+        ? content.status_shadow_to_label
+        : status.shadowKind === "from"
+          ? content.status_shadow_from_label
+          : undefined;
+    const shadowField =
+      status.shadowKind === "to"
+        ? "status_shadow_to_label"
+        : status.shadowKind === "from"
+          ? "status_shadow_from_label"
+          : undefined;
+
+    return {
+      ...status,
+      title: content[titleField] || `${status.id[0].toUpperCase()}${status.id.slice(1)} Rx`,
+      description: content[descriptionField] || "Review this planet’s themes while its apparent motion turns inward.",
+      shadowLabel,
+      titleEditAttributes: componentEditAttributes(builderEdit(titleField)),
+      descriptionEditAttributes: componentEditAttributes(
+        builderEdit(descriptionField),
+      ),
+      shadowLabelEditAttributes: shadowField
+        ? componentEditAttributes(builderEdit(shadowField))
+        : undefined,
+    };
+  },
+);
+
+const timeline = providerRetrogrades?.timeline;
+const timelineTips = [1, 2, 3].map((tipNumber) => {
+  const titleField = `timeline_tip_${tipNumber}_title`;
+  const descriptionField = `timeline_tip_${tipNumber}_description`;
+
+  return {
+    title: content[titleField],
+    description: content[descriptionField],
+    titleEditAttributes: componentEditAttributes(builderEdit(titleField)),
+    descriptionEditAttributes: componentEditAttributes(
+      builderEdit(descriptionField),
+    ),
+  };
+});
+---
+
+<BaseLayout
+  seo={seoContent}
+  bodyClass="retrogrades-body"
+  builderToolbar={{
+    launcherEnabled: builder.launcherEnabled,
+    studioModeEnabled: builder.studioModeEnabled,
+    collection: builder.collection,
+    entry: builder.entry,
+    locale: builder.locale,
+    csrfToken: builder.csrfToken,
+    canPublish: builder.canPublish,
+    seo: seoContent,
+    hasSavedDraft: builderPage.hasSavedDraft || chromePage.hasSavedDraft,
+    reviewTargets,
+  }}
+>
+  <Header
+    id="retrogrades-header"
+    brandLabel={content.brand_name}
+    brandHref={localizePath("/", locale)}
+    brandAriaLabel={content.brand_aria_label}
+    navigationLabel={content.primary_navigation_label}
+    chromeNavigation={{ content, edit: chromeEdit }}
+    navigation={navigation}
+    actions={actions}
+    language={{
+      activeLocale: locale,
+      options: languageOptions,
+      triggerLabel: content.language_trigger_label,
+      menuLabel: content.language_menu_label,
+    }}
+    mobileUtilityActionId="sign-in"
+    menuLabel={content.menu_open_label}
+    closeMenuLabel={content.menu_close_label}
+    brandEditAttributes={componentEditAttributes(chromeEdit("brand_name"))}
+  />
+
+  <main class="retrogrades-page">
+    <RetrogradesIntro
+      eyebrow={content.intro_eyebrow}
+      titleLead={content.intro_title_lead}
+      titleAccent={content.intro_title_accent}
+      titleSuffix={content.intro_title_suffix}
+      description={content.intro_description}
+      eyebrowEditAttributes={componentEditAttributes(
+        builderEdit("intro_eyebrow"),
+      )}
+      titleLeadEditAttributes={componentEditAttributes(
+        builderEdit("intro_title_lead"),
+      )}
+      titleAccentEditAttributes={componentEditAttributes(
+        builderEdit("intro_title_accent"),
+      )}
+      titleSuffixEditAttributes={componentEditAttributes(
+        builderEdit("intro_title_suffix"),
+      )}
+      descriptionEditAttributes={componentEditAttributes(
+        builderEdit("intro_description"),
+      )}
+    />
+    {providerRetrogrades && timeline ? <>
+    <RetrogradesCurrentStatus
+      sectionLabel={content.status_section_label}
+      retrogradeNowLabel={content.status_badge_label}
+      cards={currentStatusCards}
+      statusEditAttributes={componentEditAttributes(
+        builderEdit("status_badge_label"),
+      )}
+    />
+    <RetrogradesYearTimeline
+      headingPrefix={content.timeline_heading_prefix}
+      year={timeline.year}
+      months={timeline.months}
+      rows={timeline.rows}
+      tips={timelineTips}
+      headingPrefixEditAttributes={componentEditAttributes(
+        builderEdit("timeline_heading_prefix"),
+      )}
+    />
+    </> : <EmptyState title={providerUnavailable.title} description={providerUnavailable.description} variant="panel" actionLabel={providerUnavailable.retry} actionHref={Astro.url.pathname + Astro.url.search} ariaLive="polite" />}
+    <RetrogradesFinalCta
+      copy={{
+        titleAccent: content.final_cta_title_accent,
+        titleRest: content.final_cta_title_rest,
+        actionLabel: content.final_cta_action_label,
+      }}
+      locale={locale}
+      editAttributes={(field) =>
+        componentEditAttributes(builderEdit(`final_cta_${field}`))}
+    />
+  </main>
+  <Footer
+    brandLabel={content.footer_brand_name}
+    brandHref={localizePath("/", locale)}
+    description={content.footer_about}
+    groups={footerGroups}
+    legalLinks={footerLegalLinks}
+    copyrightText={content.footer_copyright}
+    navigationLabel={content.footer_navigation_label}
+    legalNavigationLabel={content.footer_legal_navigation_label}
+    brandEditAttributes={componentEditAttributes(
+      chromeEdit("footer_brand_name"),
+    )}
+    descriptionEditAttributes={componentEditAttributes(
+      chromeEdit("footer_about"),
+    )}
+    copyrightEditAttributes={componentEditAttributes(
+      chromeEdit("footer_copyright"),
+    )}
+  />
+</BaseLayout>

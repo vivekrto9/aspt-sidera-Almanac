@@ -1,0 +1,86 @@
+---
+import Button from "../../shared/Button.astro";
+import SectionHeading from "../../shared/SectionHeading.astro";
+import type { HomeTransitCopy } from "../../../data/locale/home/sections/transit.ts";
+import "../../../styles/home/sections/home-transit.css";
+
+type EditAttributes = Record<string, string>;
+
+type Props = {
+  copy: HomeTransitCopy;
+  actionHref: string;
+  unavailableTitle: string;
+  unavailableDescription: string;
+  editAttributes?: (field: string) => EditAttributes;
+};
+
+const {
+  copy,
+  actionHref,
+  unavailableTitle,
+  unavailableDescription,
+  editAttributes = () => ({}),
+} = Astro.props as Props;
+---
+
+<section class="home-transit" id="transit" aria-labelledby="home-transit-title">
+  <div class="home-transit__inner">
+    <div class="home-transit__introduction">
+      <SectionHeading
+        title={`${copy.titleAccent}${copy.titleRest}`}
+        eyebrow={copy.eyebrow}
+        description={copy.description}
+        headingId="home-transit-title"
+        class="home-transit__heading"
+        eyebrowEditAttributes={editAttributes("eyebrow")}
+        descriptionEditAttributes={editAttributes("description")}
+      >
+        <Fragment slot="title">
+          <em {...editAttributes("title_accent")}>{copy.titleAccent}</em>{" "}<span
+            {...editAttributes("title_rest")}>{copy.titleRest}</span
+          >
+        </Fragment>
+      </SectionHeading>
+
+      <Button
+        href={actionHref}
+        variant="outline"
+        size="compact"
+        class="home-transit__cta"
+        editAttributes={editAttributes("cta")}
+      >
+        {copy.ctaLabel}
+        <span slot="trailing-icon">→</span>
+      </Button>
+    </div>
+
+    {
+      copy.items.length > 0 ? (
+        <ol class="home-transit__list" aria-label={copy.eyebrow}>
+          {copy.items.map((item, index) => (
+            <li
+              class="home-transit__item"
+              style={`--home-transit-item-index:${index}`}
+            >
+              <div class="home-transit__marker">
+                <span class="home-transit__glyph" aria-hidden="true">
+                  {item.glyph}
+                </span>
+                <span class="home-transit__date">{item.date}</span>
+              </div>
+              <div class="home-transit__detail">
+                <h3 class="home-transit__aspect">{item.aspect}</h3>
+                <p class="home-transit__note">{item.note}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <div class="home-transit__unavailable" role="status">
+          <h3>{unavailableTitle}</h3>
+          <p>{unavailableDescription}</p>
+        </div>
+      )
+    }
+  </div>
+</section>

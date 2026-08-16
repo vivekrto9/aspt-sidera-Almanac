@@ -1,0 +1,61 @@
+.sidera-page-intro {
+  --sidera-page-intro-background: var(--color-surface);
+  --sidera-page-intro-meta: var(--color-muted);
+
+  inline-size: 100%;
+  min-inline-size: 0;
+  padding: 4.75rem 2.125rem 2.5rem;
+  background: var(--sidera-page-intro-background);
+}
+
+.sidera-page-intro--inverse {
+  --sidera-page-intro-background: var(--color-dark-strong);
+  --sidera-page-intro-meta: var(--color-line);
+}
+
+.sidera-page-intro--compact {
+  padding-block: 4.375rem 1.875rem;
+}
+
+.sidera-page-intro__inner {
+  inline-size: min(100%, 70rem);
+  min-inline-size: 0;
+  margin-inline: auto;
+}
+
+.sidera-page-intro--compact .sidera-page-intro__inner {
+  inline-size: min(100%, 47.5rem);
+}
+
+.sidera-page-intro__breadcrumb {
+  margin-block-end: 1.25rem;
+}
+
+.sidera-page-intro--center .sidera-page-intro__breadcrumb {
+  display: flex;
+  justify-content: center;
+}
+
+.sidera-page-intro__meta {
+  margin: 0.75rem 0 0;
+  color: var(--sidera-page-intro-meta);
+  font: 400 0.8125rem / 1.45 var(--font-sans), system-ui, sans-serif;
+  overflow-wrap: anywhere;
+}
+
+.sidera-page-intro--center .sidera-page-intro__meta {
+  text-align: center;
+}
+
+@media (max-width: 40rem) {
+  .sidera-page-intro,
+  .sidera-page-intro--compact {
+    padding: 3.25rem 1.25rem 1.75rem;
+  }
+}
+
+@media (forced-colors: active) {
+  .sidera-page-intro {
+    border-block-end: 1px solid CanvasText;
+  }
+}

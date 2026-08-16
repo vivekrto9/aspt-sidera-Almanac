@@ -1,0 +1,484 @@
+---
+import { localizePath } from "../../../data/localization-contract.ts";
+import type { SupportedLocale } from "../../../data/localization-contract.ts";
+import type { AuthSignupFormCopy } from "../../../data/locale/auth/sections/signup-form.ts";
+import {
+  getCountries,
+  getCountryCallingCode,
+  type CountryCode,
+} from "libphonenumber-js";
+import Button from "../../shared/Button.astro";
+import Checkbox from "../../shared/Checkbox.astro";
+import PasswordField from "../../shared/PasswordField.astro";
+import SelectField from "../../shared/SelectField.astro";
+import TextField from "../../shared/TextField.astro";
+import "../../../styles/auth/sections/signup-form.css";
+
+type Props = {
+  copy: AuthSignupFormCopy;
+  locale: SupportedLocale;
+  editAttributes?: (field: string) => Record<string, string>;
+};
+
+const { copy, locale, editAttributes } = Astro.props as Props;
+const edit = (field: string) => editAttributes?.(field) ?? {};
+const runtimeCopy = JSON.stringify({
+  creatingLabel: copy.creatingLabel,
+  unavailableLabel: copy.unavailableLabel,
+  mismatchLabel: copy.mismatchLabel,
+  nameRequiredLabel: copy.nameRequiredLabel,
+  missingPasswordLabel: copy.missingPasswordLabel,
+  confirmPasswordRequiredLabel: copy.confirmPasswordRequiredLabel,
+  passwordTooShortLabel: copy.passwordHint,
+  termsRequiredLabel: copy.termsRequiredLabel,
+  invalidEmailLabel: copy.invalidEmailLabel,
+  invalidPhoneLabel: copy.invalidPhoneLabel,
+}).replace(/</g, "\\u003c");
+const termsHref = localizePath("/terms", locale);
+const privacyHref = localizePath("/privacy", locale);
+const loginHref = localizePath("/login", locale);
+const termsAccessibleLabel = [
+  copy.termsPrefix,
+  copy.termsLabel,
+  copy.termsGlue,
+  `${copy.privacyLabel}${copy.termsSuffix}`,
+].join(" ");
+const defaultCountryByLocale: Record<SupportedLocale, CountryCode> = {
+  en: "IN",
+  es: "ES",
+  fr: "FR",
+  pt: "BR",
+  ru: "RU",
+  it: "IT",
+  de: "DE",
+};
+const regionNames = new Intl.DisplayNames([locale], { type: "region" });
+const countryOptions = getCountries()
+  .map((country) => ({
+    value: country,
+    label: `${regionNames.of(country) ?? country} (+${getCountryCallingCode(country)})`,
+  }))
+  .sort((left, right) => left.label.localeCompare(right.label, locale));
+const defaultPhoneCountry = defaultCountryByLocale[locale];
+const defaultPhoneCallingCode = getCountryCallingCode(defaultPhoneCountry);
+---
+
+<form
+  class="sidera-auth-signup"
+  data-auth-signup-form
+  data-runtime-copy={runtimeCopy}
+  data-locale={locale}
+  data-success-href={localizePath("/account", locale)}
+  novalidate
+>
+  <div class="sidera-auth-signup__intro">
+    <h2 {...edit("signup_form_heading")}>{copy.heading}</h2>
+    <p {...edit("signup_form_subheading")}>{copy.subheading}</p>
+  </div>
+
+  <div class="sidera-auth-signup__row">
+    <div class="sidera-auth-signup__field">
+      <label class="sidera-auth-signup__label" for="signup-full-name">
+        <span {...edit("signup_full_name_label")}>{copy.fullNameLabel}</span>
+        <span class="sidera-auth-signup__required" aria-hidden="true">*</span>
+      </label>
+      <TextField
+        class="sidera-auth-signup__input"
+        id="signup-full-name"
+        name="fullName"
+        type="text"
+        placeholder={copy.fullNamePlaceholder}
+        autocomplete="name"
+        required
+        minlength={2}
+        ariaDescribedby="signup-full-name-error"
+        data-auth-signup-input="fullName"
+        {...edit("signup_full_name_placeholder")}
+      />
+      <p class="sidera-auth-signup__field-error" id="signup-full-name-error" data-auth-signup-error="fullName" role="alert" hidden></p>
+    </div>
+
+    <div class="sidera-auth-signup__field">
+      <label class="sidera-auth-signup__label" for="signup-phone">
+        <span {...edit("signup_phone_label")}>{copy.phoneLabel}</span>
+      </label>
+      <div class="sidera-auth-signup__phone-control">
+        <div class="sidera-auth-signup__country-control">
+          <SelectField
+            class="sidera-auth-signup__country"
+            id="signup-phone-country"
+            name="phoneCountry"
+            value={defaultPhoneCountry}
+            options={countryOptions}
+            autocomplete="tel-country-code"
+            ariaLabel={copy.phoneCountryLabel}
+            ariaDescribedby="signup-phone-error"
+            data-auth-signup-phone-country
+          />
+          <span
+            class="sidera-auth-signup__country-code"
+            data-auth-signup-country-code
+            aria-hidden="true"
+          >+{defaultPhoneCallingCode}</span>
+        </div>
+        <TextField
+          class="sidera-auth-signup__input"
+          id="signup-phone"
+          name="phone"
+          type="tel"
+          inputmode="tel"
+          pattern="[+0-9\\s().-]+"
+          placeholder={copy.phonePlaceholder}
+          autocomplete="tel-national"
+          ariaDescribedby="signup-phone-error"
+          data-auth-signup-input="phone"
+          {...edit("signup_phone_placeholder")}
+        />
+      </div>
+      <input type="hidden" name="phoneE164" data-auth-signup-phone-e164 />
+      <p class="sidera-auth-signup__field-error" id="signup-phone-error" data-auth-signup-error="phone" role="alert" hidden></p>
+    </div>
+  </div>
+
+  <div class="sidera-auth-signup__field">
+    <label class="sidera-auth-signup__label" for="signup-email">
+      <span {...edit("signup_email_label")}>{copy.emailLabel}</span>
+      <span class="sidera-auth-signup__required" aria-hidden="true">*</span>
+    </label>
+    <TextField
+      class="sidera-auth-signup__input"
+      id="signup-email"
+      name="email"
+      type="email"
+      autocomplete="email"
+      placeholder={copy.emailPlaceholder}
+      required
+      ariaDescribedby="signup-email-error"
+      data-auth-signup-input="email"
+      {...edit("signup_email_placeholder")}
+    />
+    <p class="sidera-auth-signup__field-error" id="signup-email-error" data-auth-signup-error="email" role="alert" hidden></p>
+  </div>
+
+  <div class="sidera-auth-signup__field sidera-auth-signup__field--password">
+    <PasswordField
+      id="signup-password"
+      name="password"
+      label={copy.passwordLabel}
+      showLabel={copy.passwordLabel}
+      hideLabel={copy.passwordLabel}
+      autocomplete="new-password"
+      placeholder={copy.passwordPlaceholder}
+      required
+      minlength={8}
+      ariaDescribedby="signup-password-help signup-password-runtime-error"
+      inputClass="sidera-auth-signup__input"
+      inputAttributes={{
+        "data-auth-signup-input": "password",
+        ...edit("signup_password_placeholder"),
+      }}
+      class="sidera-auth-signup__password-field"
+      labelEditAttributes={edit("signup_password_label")}
+      helpText={copy.passwordHint}
+      helpEditAttributes={edit("signup_password_hint")}
+    />
+    <p class="sidera-auth-signup__field-error" id="signup-password-runtime-error" data-auth-signup-error="password" role="alert" hidden></p>
+  </div>
+
+  <div class="sidera-auth-signup__field sidera-auth-signup__field--password">
+    <PasswordField
+      id="signup-confirm-password"
+      name="confirmPassword"
+      label={copy.confirmPasswordLabel}
+      showLabel={copy.confirmPasswordLabel}
+      hideLabel={copy.confirmPasswordLabel}
+      autocomplete="new-password"
+      placeholder={copy.confirmPasswordPlaceholder}
+      required
+      minlength={8}
+      ariaDescribedby="signup-confirm-password-runtime-error"
+      inputClass="sidera-auth-signup__input"
+      inputAttributes={{
+        "data-auth-signup-input": "confirmPassword",
+        ...edit("signup_confirm_password_placeholder"),
+      }}
+      class="sidera-auth-signup__password-field"
+      labelEditAttributes={edit("signup_confirm_password_label")}
+    />
+    <p class="sidera-auth-signup__field-error" id="signup-confirm-password-runtime-error" data-auth-signup-error="confirmPassword" role="alert" hidden></p>
+  </div>
+
+  <div class="sidera-auth-signup__actions">
+    <p class="sidera-auth-signup__status" data-auth-signup-status aria-live="polite" aria-atomic="true"></p>
+
+    <Button
+      class="sidera-auth-signup__submit"
+      type="submit"
+      shape="rounded"
+      size="large"
+      fullWidth
+      loading={false}
+      loadingLabel={copy.creatingLabel}
+      data-auth-signup-submit
+    >
+      <span {...edit("signup_create_account_label")}>{copy.createAccountLabel}</span>
+    </Button>
+
+    <div class="sidera-auth-signup__consent-field">
+      <div class="sidera-auth-signup__consent">
+        <Checkbox
+          id="signup-terms"
+          name="terms"
+          required
+          label={termsAccessibleLabel}
+          class="sidera-auth-signup__checkbox sidera-auth-signup__checkbox--inline"
+          ariaDescribedby="signup-terms-error"
+        />
+        <span class="sidera-auth-signup__consent-copy">
+          <span {...edit("signup_terms_prefix")}>{copy.termsPrefix}</span>
+          <a href={termsHref} {...edit("signup_terms_label")}>{copy.termsLabel}</a>
+          <span class="sidera-auth-signup__consent-glue" {...edit("signup_terms_glue")}>{copy.termsGlue}</span>
+          <a href={privacyHref} {...edit("signup_privacy_label")}>{copy.privacyLabel}</a>
+          <span {...edit("signup_terms_suffix")}>{copy.termsSuffix}</span>
+        </span>
+      </div>
+      <p class="sidera-auth-signup__field-error sidera-auth-signup__consent-error" id="signup-terms-error" data-auth-signup-error="terms" role="alert" hidden></p>
+    </div>
+
+    <div class="sidera-auth-signup__consent sidera-auth-signup__consent--secondary">
+      <Checkbox
+        name="marketingOptIn"
+        label={copy.marketingOptInLabel}
+        class="sidera-auth-signup__checkbox"
+        labelEditAttributes={edit("signup_marketing_opt_in_label")}
+      />
+    </div>
+
+    <p class="sidera-auth-signup__switch">
+      <span {...edit("signup_login_prompt")}>{copy.loginPrompt}</span>
+      <a href={loginHref} {...edit("signup_login_label")}>{copy.loginLabel}</a>
+    </p>
+  </div>
+</form>
+
+<script>
+  import { setActionLoading } from "../../../scripts/action-loading.ts";
+  import {
+    getCountryCallingCode,
+    parsePhoneNumberFromString,
+    type CountryCode,
+  } from "libphonenumber-js";
+
+  const initializeAuthSignupForms = () => {
+    document
+      .querySelectorAll<HTMLFormElement>("[data-auth-signup-form]")
+      .forEach((form) => {
+        if (form.dataset.authSignupReady === "true") return;
+
+        const runtimeCopy = JSON.parse(form.dataset.runtimeCopy || "{}");
+        const status = form.querySelector<HTMLElement>("[data-auth-signup-status]");
+        const submit = form.querySelector<HTMLButtonElement>("[data-auth-signup-submit]");
+        const phoneCountry = form.querySelector<HTMLSelectElement>(
+          "[data-auth-signup-phone-country]",
+        );
+        const phoneCallingCode = form.querySelector<HTMLElement>(
+          "[data-auth-signup-country-code]",
+        );
+        const phoneE164 = form.querySelector<HTMLInputElement>(
+          "[data-auth-signup-phone-e164]",
+        );
+
+        const inputs = {
+          fullName: form.querySelector<HTMLInputElement>('[data-auth-signup-input="fullName"]'),
+          email: form.querySelector<HTMLInputElement>('[data-auth-signup-input="email"]'),
+          phone: form.querySelector<HTMLInputElement>('[data-auth-signup-input="phone"]'),
+          password: form.querySelector<HTMLInputElement>('[data-auth-signup-input="password"]'),
+          confirmPassword: form.querySelector<HTMLInputElement>(
+            '[data-auth-signup-input="confirmPassword"]',
+          ),
+          terms: form.querySelector<HTMLInputElement>('input[name="terms"]'),
+        };
+
+        const errors = Object.fromEntries(
+          Array.from(form.querySelectorAll<HTMLElement>("[data-auth-signup-error]")).map(
+            (error) => [error.dataset.authSignupError, error],
+          ),
+        ) as Record<string, HTMLElement>;
+
+        const clearError = (key: keyof typeof errors) => {
+          const input = inputs[key as keyof typeof inputs];
+          const error = errors[key];
+          if (!error) return;
+          if (input) input.removeAttribute("aria-invalid");
+          error.textContent = "";
+          error.hidden = true;
+        };
+
+        const showError = (key: keyof typeof errors, message: string) => {
+          const input = inputs[key as keyof typeof inputs];
+          const error = errors[key];
+          if (!error) return;
+          if (input) input.setAttribute("aria-invalid", "true");
+          error.textContent = message;
+          error.hidden = false;
+        };
+
+        const setStatus = (message = "", isError = false) => {
+          if (!status) return;
+          status.textContent = message;
+          status.classList.toggle("sidera-auth-signup__status--error", isError);
+        };
+
+        const normalizePhone = (value: string) => {
+          const trimmed = value.trim();
+          if (!trimmed) {
+            if (phoneE164) phoneE164.value = "";
+            return true;
+          }
+
+          const parsedPhone = parsePhoneNumberFromString(
+            trimmed,
+            phoneCountry?.value as CountryCode | undefined,
+          );
+          const isValid = Boolean(parsedPhone?.isValid());
+          if (phoneE164) phoneE164.value = isValid ? parsedPhone?.number ?? "" : "";
+          return isValid;
+        };
+
+        const synchronizePhoneCallingCode = () => {
+          if (!phoneCallingCode || !phoneCountry?.value) return;
+          phoneCallingCode.textContent = `+${getCountryCallingCode(
+            phoneCountry.value as CountryCode,
+          )}`;
+        };
+
+        phoneCountry?.addEventListener("change", () => {
+          synchronizePhoneCallingCode();
+          clearError("phone");
+          if (inputs.phone?.value.trim()) normalizePhone(inputs.phone.value);
+          setStatus();
+        });
+
+        Object.values(inputs).forEach((input) => {
+          input?.addEventListener("input", () => {
+            const key = input?.name;
+            if (key) {
+              clearError(key as keyof typeof errors);
+              if (key === "phone" && input) normalizePhone(input.value);
+            } else if (input?.name === "terms") {
+              clearError("terms");
+            }
+            setStatus();
+          });
+        });
+
+        form.addEventListener("submit", async (event) => {
+          event.preventDefault();
+          if (form.getAttribute("aria-busy") === "true") return;
+          setStatus();
+          (Object.keys(errors) as Array<keyof typeof errors>).forEach((key) => {
+            clearError(key);
+          });
+
+          const invalidFields: Array<keyof typeof inputs> = [];
+
+          if (!inputs.fullName?.value.trim()) {
+            showError(
+              "fullName",
+              runtimeCopy.nameRequiredLabel || "Full name is required.",
+            );
+            invalidFields.push("fullName");
+          }
+
+          if (!inputs.email?.checkValidity()) {
+            showError("email", runtimeCopy.invalidEmailLabel || "Enter a valid email.");
+            invalidFields.push("email");
+          }
+
+          if (!inputs.phone?.value.trim()) {
+            // mobile is optional
+          } else if (!normalizePhone(inputs.phone.value)) {
+            showError("phone", runtimeCopy.invalidPhoneLabel || "Enter a valid mobile number.");
+            invalidFields.push("phone");
+          }
+
+          if (!(inputs.password?.value || "").trim()) {
+            showError("password", runtimeCopy.missingPasswordLabel || "Enter a password.");
+            invalidFields.push("password");
+          }
+
+          if (inputs.password?.value.length && inputs.password.value.length < 8) {
+            showError("password", runtimeCopy.passwordTooShortLabel || "Password must be at least 8 characters.");
+            invalidFields.push("password");
+          }
+
+          if (!inputs.confirmPassword?.value.trim()) {
+            showError(
+              "confirmPassword",
+              runtimeCopy.confirmPasswordRequiredLabel || "Confirm your password.",
+            );
+            invalidFields.push("confirmPassword");
+          } else if (inputs.password?.value !== inputs.confirmPassword?.value) {
+            showError("confirmPassword", runtimeCopy.mismatchLabel);
+            if (!invalidFields.includes("confirmPassword")) {
+              invalidFields.push("confirmPassword");
+            }
+          }
+
+          if (!inputs.terms?.checked) {
+            showError("terms", runtimeCopy.termsRequiredLabel);
+            invalidFields.push("terms");
+          }
+
+          if (invalidFields.length) {
+            const firstInvalid = invalidFields[0];
+            if (firstInvalid === "terms") {
+              inputs.terms?.focus();
+            } else {
+              inputs[firstInvalid]?.focus();
+            }
+            return;
+          }
+
+          setActionLoading(submit, true, runtimeCopy.creatingLabel);
+          form.setAttribute("aria-busy", "true");
+          let navigationStarted = false;
+
+          try {
+            const response = await fetch("/api/astropages/generated-site/customer-auth/signup", {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({
+                name: inputs.fullName?.value.trim(),
+                email: inputs.email?.value.trim(),
+                phone: phoneE164?.value || "",
+                password: inputs.password?.value,
+                acceptedTerms: Boolean(inputs.terms?.checked),
+                consentMarketing: Boolean(form.querySelector<HTMLInputElement>('input[name="marketingOptIn"]')?.checked),
+                locale: form.dataset.locale,
+              }),
+            });
+            const payload = await response.json().catch(() => ({}));
+            if (!response.ok) {
+              setStatus(payload.message || runtimeCopy.unavailableLabel, true);
+              return;
+            }
+            navigationStarted = true;
+            window.location.assign(form.dataset.successHref || "/account");
+          } catch {
+            setStatus(runtimeCopy.unavailableLabel, true);
+          } finally {
+            if (!navigationStarted) {
+              setActionLoading(submit, false);
+              form.setAttribute("aria-busy", "false");
+            }
+          }
+        });
+
+        form.dataset.authSignupReady = "true";
+      });
+  };
+
+  initializeAuthSignupForms();
+  document.addEventListener("astro:page-load", initializeAuthSignupForms);
+</script>

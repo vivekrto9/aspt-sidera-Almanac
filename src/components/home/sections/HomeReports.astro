@@ -1,0 +1,88 @@
+---
+import Button from "../../shared/Button.astro";
+import CardGrid from "../../shared/CardGrid.astro";
+import ReportCard from "../../shared/ReportCard.astro";
+import SectionHeading from "../../shared/SectionHeading.astro";
+import type { HomeReportsCopy } from "../../../data/locale/home/sections/reports.ts";
+import "../../../styles/home/sections/home-reports.css";
+
+type EditAttributes = Record<string, string>;
+
+type Props = {
+  copy: HomeReportsCopy;
+  actionHref: string;
+  editAttributes?: (field: string) => EditAttributes;
+};
+
+const {
+  copy,
+  actionHref,
+  editAttributes = () => ({}),
+} = Astro.props as Props;
+---
+
+<section
+  class="home-reports"
+  id="reports"
+  aria-labelledby="home-reports-title"
+>
+  <div class="home-reports__inner">
+    <SectionHeading
+      title={`${copy.titleAccent} ${copy.titleRest}`}
+      eyebrow={copy.eyebrow}
+      headingId="home-reports-title"
+      alignment="center"
+      class="home-reports__heading"
+      eyebrowEditAttributes={editAttributes("eyebrow")}
+    >
+      <Fragment slot="title">
+        <em {...editAttributes("title_accent")}>{copy.titleAccent}</em>{" "}<span
+          {...editAttributes("title_rest")}>{copy.titleRest}</span
+        >
+      </Fragment>
+    </SectionHeading>
+
+    <CardGrid
+      columns={3}
+      tabletColumns={2}
+      mobileColumns={1}
+      ariaLabelledby="home-reports-title"
+      class="home-reports__grid"
+    >
+      {
+        copy.reports.map((report, index) => {
+          const reportNumber = index + 1;
+          const edit = (field: string) =>
+            editAttributes(`report_${reportNumber}_${field}`);
+          return (
+            <ReportCard
+              title={report.title}
+              description={report.description}
+              pagesLabel={report.pagesLabel}
+              price={report.price}
+              href={report.href ?? actionHref}
+              actionLabel={report.actionLabel}
+              ariaLabel={`${report.actionLabel}: ${report.title}`}
+              variant="compact"
+              class="home-reports__card"
+              titleEditAttributes={edit("title")}
+              descriptionEditAttributes={edit("description")}
+              actionEditAttributes={edit("action")}
+            />
+          );
+        })
+      }
+    </CardGrid>
+
+    <div class="home-reports__action">
+      <Button
+        href={actionHref}
+        variant="outline"
+        editAttributes={editAttributes("browse_label")}
+      >
+        {copy.browseLabel}
+        <span slot="trailing-icon">→</span>
+      </Button>
+    </div>
+  </div>
+</section>

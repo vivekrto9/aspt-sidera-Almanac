@@ -1,0 +1,155 @@
+---
+import Button from "../../shared/Button.astro";
+import "../../../styles/glossary/sections/glossary-alphabet-navigator.css";
+
+type EditAttributes = Record<string, string>;
+
+type Props = {
+  navigationLabel: string;
+  letters: { id: string; label: string }[];
+  searchLabel: string;
+  searchPlaceholder: string;
+  clearSearchLabel: string;
+  resultsLabel: string;
+  searchLabelEditAttributes?: EditAttributes;
+  searchPlaceholderEditAttributes?: EditAttributes;
+};
+
+const {
+  navigationLabel,
+  letters,
+  searchLabel,
+  searchPlaceholder,
+  clearSearchLabel,
+  resultsLabel,
+  searchLabelEditAttributes = {},
+  searchPlaceholderEditAttributes = {},
+} = Astro.props as Props;
+---
+
+<section
+  id="glossary-alphabet-navigator"
+  class="sidera-glossary-alphabet"
+  data-screen-label="Glossary"
+>
+  <form class="sidera-glossary-alphabet__search" role="search">
+    <label
+      class="sidera-glossary-alphabet__search-label"
+      for="glossary-search"
+      {...searchLabelEditAttributes}
+    >
+      {searchLabel}
+    </label>
+    <div class="sidera-glossary-alphabet__search-control">
+      <svg viewBox="0 0 20 20" aria-hidden="true">
+        <circle cx="8.5" cy="8.5" r="5.5"></circle>
+        <path d="m12.5 12.5 4 4"></path>
+      </svg>
+      <input
+        id="glossary-search"
+        type="search"
+        placeholder={searchPlaceholder}
+        autocomplete="off"
+        data-glossary-search
+        {...searchPlaceholderEditAttributes}
+      />
+      <button
+        type="button"
+        class="sidera-glossary-alphabet__clear"
+        aria-label={clearSearchLabel}
+        data-glossary-clear
+        hidden
+      >
+        ×
+      </button>
+    </div>
+    <p
+      class="sidera-glossary-alphabet__results"
+      aria-live="polite"
+      data-glossary-results
+      data-results-template={resultsLabel}
+    ></p>
+  </form>
+
+  <nav
+    class="sidera-glossary-alphabet__list"
+    aria-label={navigationLabel}
+  >
+    {
+      letters.map((letter) => (
+        <Button
+          class="sidera-glossary-alphabet__link"
+          href={`#${letter.id}`}
+          variant="secondary"
+          size="compact"
+          shape="rounded"
+          ariaLabel={`${navigationLabel}: ${letter.label}`}
+          data-glossary-letter={letter.id}
+        >
+          {letter.label}
+        </Button>
+      ))
+    }
+  </nav>
+</section>
+
+<script>
+  const normalizeGlossaryText = (value: string) =>
+    value
+      .normalize("NFD")
+      .replace(/\p{Diacritic}/gu, "")
+      .toLocaleLowerCase();
+
+  document.querySelectorAll<HTMLElement>(".sidera-glossary").forEach((root) => {
+    const search = root.querySelector<HTMLInputElement>("[data-glossary-search]");
+    const clear = root.querySelector<HTMLButtonElement>("[data-glossary-clear]");
+    const results = root.querySelector<HTMLElement>("[data-glossary-results]");
+    const empty = root.querySelector<HTMLElement>("[data-glossary-empty]");
+    const terms = [...root.querySelectorAll<HTMLElement>("[data-glossary-term]")];
+    const groups = [...root.querySelectorAll<HTMLElement>("[data-glossary-group]")];
+
+    if (!search || !clear || !results || !empty) return;
+
+    const update = () => {
+      const query = normalizeGlossaryText(search.value.trim());
+      let visibleCount = 0;
+
+      terms.forEach((term) => {
+        const matches = !query || normalizeGlossaryText(term.textContent || "").includes(query);
+        term.hidden = !matches;
+        if (matches) visibleCount += 1;
+      });
+
+      groups.forEach((group) => {
+        const groupVisible = [...group.querySelectorAll<HTMLElement>("[data-glossary-term]")]
+          .some((term) => !term.hidden);
+        group.hidden = !groupVisible;
+        const groupId = group.dataset.glossaryGroup;
+        const letter = groupId
+          ? root.querySelector<HTMLElement>(`[data-glossary-letter="${CSS.escape(groupId)}"]`)
+          : null;
+        if (letter) letter.hidden = !groupVisible;
+      });
+
+      clear.hidden = !query;
+      empty.hidden = visibleCount > 0;
+      results.textContent = (results.dataset.resultsTemplate || "{count}")
+        .replace("{count}", String(visibleCount));
+    };
+
+    search.addEventListener("input", update);
+    search.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && search.value) {
+        search.value = "";
+        update();
+      }
+    });
+    clear.addEventListener("click", () => {
+      search.value = "";
+      update();
+      search.focus();
+    });
+    search.form?.addEventListener("submit", (event) => event.preventDefault());
+    update();
+  });
+</script>

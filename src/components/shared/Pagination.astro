@@ -1,0 +1,90 @@
+---
+import Button from "./Button.astro";
+import "../../styles/shared/pagination.css";
+
+type Props = {
+  currentPage: number;
+  totalPages: number;
+  hrefForPage: (page: number) => string;
+  navigationLabel: string;
+  previousLabel: string;
+  nextLabel: string;
+  pageLabel: string;
+};
+
+const props = Astro.props as Props;
+type PageToken = number | "ellipsis-start" | "ellipsis-end";
+const pages: PageToken[] = (() => {
+  if (props.totalPages <= 5) {
+    return Array.from({ length: props.totalPages }, (_, index) => index + 1);
+  }
+  if (props.currentPage <= 3) {
+    return [1, 2, 3, "ellipsis-end", props.totalPages];
+  }
+  if (props.currentPage >= props.totalPages - 2) {
+    return [1, "ellipsis-start", props.totalPages - 2, props.totalPages - 1, props.totalPages];
+  }
+  return [1, "ellipsis-start", props.currentPage, "ellipsis-end", props.totalPages];
+})();
+const previousPage = Math.max(1, props.currentPage - 1);
+const nextPage = Math.min(props.totalPages, props.currentPage + 1);
+const labelForPage = (page: number) => props.pageLabel.replace("{page}", String(page));
+---
+
+{
+  props.totalPages > 1 ? (
+    <nav class="sidera-pagination" aria-label={props.navigationLabel}>
+      <Button
+        href={props.hrefForPage(previousPage)}
+        variant="outline"
+        size="compact"
+        disabled={props.currentPage === 1}
+        ariaLabel={props.previousLabel}
+        class="sidera-pagination__direction"
+      >
+        <svg viewBox="0 0 20 20" aria-hidden="true">
+          <path d="m12.5 4.5-5.5 5.5 5.5 5.5" />
+        </svg>
+      </Button>
+
+      <ol class="sidera-pagination__pages">
+        {pages.map((page) => (
+          <li>
+            {typeof page !== "number" ? (
+              <span class="sidera-pagination__ellipsis" aria-hidden="true">…</span>
+            ) : page === props.currentPage ? (
+              <span
+                class="sidera-pagination__page sidera-pagination__page--current"
+                aria-current="page"
+                aria-label={labelForPage(page)}
+              >
+                {page}
+              </span>
+            ) : (
+              <a
+                class="sidera-pagination__page"
+                href={props.hrefForPage(page)}
+                aria-label={labelForPage(page)}
+              >
+                {page}
+              </a>
+            )}
+          </li>
+        ))}
+      </ol>
+
+      <Button
+        href={props.hrefForPage(nextPage)}
+        variant="outline"
+        size="compact"
+        disabled={props.currentPage === props.totalPages}
+        ariaLabel={props.nextLabel}
+        class="sidera-pagination__direction"
+      >
+        <svg viewBox="0 0 20 20" aria-hidden="true">
+          <path d="m7.5 4.5 5.5 5.5-5.5 5.5" />
+        </svg>
+      </Button>
+    </nav>
+  ) : null
+}

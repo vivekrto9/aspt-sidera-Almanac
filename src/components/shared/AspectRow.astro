@@ -1,0 +1,137 @@
+---
+import Badge from "./Badge.astro";
+import "../../styles/shared/aspect-row.css";
+
+type AspectTone = "neutral" | "conjunction" | "harmonious" | "challenging";
+type AspectSize = "compact" | "standard";
+type AspectAppearance = "default" | "sky";
+type BadgeTone = "neutral" | "accent" | "success" | "warning" | "danger" | "inverse";
+
+type Props = {
+  firstLabel: string;
+  secondLabel: string;
+  aspectLabel: string;
+  aspectGlyph: string;
+  orb: string;
+  firstGlyph?: string;
+  secondGlyph?: string;
+  tone?: AspectTone;
+  size?: AspectSize;
+  appearance?: AspectAppearance;
+  phaseLabel?: string;
+  phaseTone?: BadgeTone;
+  selected?: boolean;
+  interactive?: boolean;
+  href?: string;
+  disabled?: boolean;
+  ariaLabel?: string;
+  class?: string;
+  aspectLabelEditAttributes?: Record<string, string>;
+  phaseLabelEditAttributes?: Record<string, string>;
+  interpretationEditAttributes?: Record<string, string>;
+  [attribute: string]: unknown;
+};
+
+const {
+  firstLabel,
+  secondLabel,
+  aspectLabel,
+  aspectGlyph,
+  orb,
+  firstGlyph,
+  secondGlyph,
+  tone = "neutral",
+  size = "standard",
+  appearance = "default",
+  phaseLabel,
+  phaseTone = "neutral",
+  selected = false,
+  interactive = false,
+  href,
+  disabled = false,
+  ariaLabel,
+  class: className,
+  aspectLabelEditAttributes = {},
+  phaseLabelEditAttributes = {},
+  interpretationEditAttributes = {},
+  ...rowAttributes
+} = Astro.props as Props;
+
+const Root = href ? "a" : interactive ? "button" : "div";
+const isClickable = Boolean(href || interactive);
+const hasInterpretation = Astro.slots.has("interpretation");
+const accessibleLabel =
+  ariaLabel ?? `${firstLabel} ${aspectLabel} ${secondLabel}, orb ${orb}`;
+const classes = [
+  "sidera-aspect-row",
+  `sidera-aspect-row--${tone}`,
+  `sidera-aspect-row--${size}`,
+  `sidera-aspect-row--${appearance}`,
+  isClickable && "sidera-aspect-row--clickable",
+  selected && "sidera-aspect-row--selected",
+  disabled && "sidera-aspect-row--disabled",
+  hasInterpretation && "sidera-aspect-row--detailed",
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+---
+
+<Root
+  {...rowAttributes}
+  class={classes}
+  href={href && !disabled ? href : undefined}
+  type={interactive && !href ? "button" : undefined}
+  disabled={interactive && !href ? disabled : undefined}
+  aria-label={isClickable ? accessibleLabel : undefined}
+  aria-pressed={interactive && !href ? selected : undefined}
+  aria-current={href && selected ? "true" : undefined}
+  aria-disabled={href && disabled ? "true" : undefined}
+  tabindex={href && disabled ? -1 : undefined}
+>
+  <span class="sidera-aspect-row__main">
+    <span class="sidera-aspect-row__aspect-glyph" aria-hidden="true">{aspectGlyph}</span>
+
+    <span class="sidera-aspect-row__participants">
+      <span class="sidera-aspect-row__participant">
+        {firstGlyph ? <span class="sidera-aspect-row__planet-glyph" aria-hidden="true">{firstGlyph}</span> : null}
+        <strong>{firstLabel}</strong>
+      </span>
+      <span class="sidera-aspect-row__type" {...aspectLabelEditAttributes}>{aspectLabel}</span>
+      <span class="sidera-aspect-row__participant">
+        {secondGlyph ? <span class="sidera-aspect-row__planet-glyph" aria-hidden="true">{secondGlyph}</span> : null}
+        <strong>{secondLabel}</strong>
+      </span>
+    </span>
+
+    <span class="sidera-aspect-row__trailing">
+      <span class="sidera-aspect-row__orb">{orb}</span>
+      {
+        phaseLabel ? (
+          appearance === "sky" ? (
+            <>
+              <span class="sidera-aspect-row__meta-separator" aria-hidden="true">·</span>
+              <span class="sidera-aspect-row__phase" {...phaseLabelEditAttributes}>
+                {phaseLabel}
+              </span>
+            </>
+          ) : Object.keys(phaseLabelEditAttributes).length ? (
+            <span {...phaseLabelEditAttributes}>
+              <Badge tone={phaseTone} size="compact">{phaseLabel}</Badge>
+            </span>
+          ) : (
+            <Badge tone={phaseTone} size="compact">{phaseLabel}</Badge>
+          )
+        ) : null
+      }
+    </span>
+  </span>
+
+  {
+    hasInterpretation ? (
+      <span class="sidera-aspect-row__interpretation" {...interpretationEditAttributes}>
+        <slot name="interpretation" />
+      </span>
+    ) : null
+  }
+</Root>

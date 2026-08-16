@@ -1,0 +1,14 @@
+ALTER TABLE ec_site_account ADD COLUMN account_settings_eyebrow TEXT;
+ALTER TABLE ec_site_account ADD COLUMN account_settings_title TEXT;
+ALTER TABLE ec_site_account ADD COLUMN account_settings_full_name_label TEXT;
+ALTER TABLE ec_site_account ADD COLUMN account_settings_email_label TEXT;
+ALTER TABLE ec_site_account ADD COLUMN account_settings_house_system_label TEXT;
+ALTER TABLE ec_site_account ADD COLUMN account_settings_placidus_label TEXT;
+ALTER TABLE ec_site_account ADD COLUMN account_settings_whole_sign_label TEXT;
+ALTER TABLE ec_site_account ADD COLUMN account_settings_zodiac_label TEXT;
+ALTER TABLE ec_site_account ADD COLUMN account_settings_tropical_label TEXT;
+ALTER TABLE ec_site_account ADD COLUMN account_settings_sidereal_label TEXT;
+ALTER TABLE ec_site_account ADD COLUMN account_settings_horoscope_label TEXT;
+ALTER TABLE ec_site_account ADD COLUMN account_settings_horoscope_description TEXT;
+ALTER TABLE ec_site_account ADD COLUMN account_settings_save_label TEXT;
+ALTER TABLE ec_site_account ADD COLUMN account_settings_saved_message TEXT;

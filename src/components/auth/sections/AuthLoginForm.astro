@@ -1,0 +1,244 @@
+---
+import type { AuthLoginFormCopy } from "../../../data/locale/auth/sections/login-form.ts";
+import Button from "../../shared/Button.astro";
+import FormField from "../../shared/FormField.astro";
+import PasswordField from "../../shared/PasswordField.astro";
+import TextField from "../../shared/TextField.astro";
+import "../../../styles/auth/sections/login-form.css";
+
+type Props = {
+  copy: AuthLoginFormCopy;
+  successHref?: string;
+  signupHref: string;
+  forgotPasswordHref: string;
+  termsHref: string;
+  privacyHref: string;
+  editAttributes?: (field: string) => Record<string, string>;
+};
+
+const {
+  copy,
+  successHref = "/",
+  signupHref,
+  forgotPasswordHref,
+  termsHref,
+  privacyHref,
+  editAttributes,
+} = Astro.props as Props;
+const edit = (field: string) => editAttributes?.(field) ?? {};
+
+const runtimeCopy = JSON.stringify({
+  loadingLabel: copy.loadingLabel,
+  invalidEmailLabel: copy.invalidEmailLabel,
+  missingPasswordLabel: copy.missingPasswordLabel,
+  runtimeErrorLabel: copy.runtimeErrorLabel,
+  successHref,
+}).replace(/</g, "\\u003c");
+---
+
+<form
+  class="sidera-auth-login"
+  data-auth-login-form
+  data-runtime-copy={runtimeCopy}
+  novalidate
+>
+  <div class="sidera-auth-login__intro">
+    <h2 {...edit("login_form_heading")}>{copy.heading}</h2>
+    <p {...edit("login_form_subheading")}>{copy.subheading}</p>
+  </div>
+
+  <FormField
+    label={copy.emailLabel}
+    controlId="auth-login-email"
+    required
+    labelEditAttributes={edit("login_email_label")}
+    data-auth-login-field="email"
+  >
+    <TextField
+      id="auth-login-email"
+      name="email"
+      type="email"
+      autocomplete="email"
+      placeholder={copy.emailPlaceholder}
+      required
+      data-auth-login-input="email"
+      {...edit("login_email_placeholder")}
+    />
+  </FormField>
+
+  <PasswordField
+    id="auth-login-password"
+    name="password"
+    label={copy.passwordLabel}
+    showLabel={copy.showPasswordLabel}
+    hideLabel={copy.hidePasswordLabel}
+    autocomplete="current-password"
+    placeholder={copy.passwordPlaceholder}
+    required
+    labelEditAttributes={edit("login_password_label")}
+    inputAttributes={{
+      "data-auth-login-input": "password",
+      ...edit("login_password_placeholder"),
+    }}
+    class="sidera-auth-login__password"
+  />
+
+  <p
+    class="sidera-auth-login__status"
+    data-auth-login-status
+    aria-live="polite"
+    aria-atomic="true"
+  ></p>
+
+  <Button
+    class="sidera-auth-login__submit"
+    type="submit"
+    shape="rounded"
+    size="large"
+    fullWidth
+    loading={false}
+    loadingLabel={copy.loadingLabel}
+    editAttributes={edit("login_submit_label")}
+  >
+    {copy.submitLabel}
+  </Button>
+
+  <a
+    class="sidera-auth-login__forgot"
+    href={forgotPasswordHref}
+    {...edit("login_forgot_password_label")}
+  >
+    {copy.forgotPasswordLabel}
+  </a>
+
+  <p class="sidera-auth-login__terms">
+    <span {...edit("login_terms_prefix")}>{copy.termsPrefix}</span>
+    {" "}
+    <a href={termsHref} {...edit("login_terms_label")}>{copy.termsLabel}</a>
+    {" "}
+    <span {...edit("login_terms_glue")}>{copy.termsGlue}</span>
+    {" "}
+    <a href={privacyHref} {...edit("login_privacy_label")}>
+      {copy.privacyLabel}
+    </a>
+    <span {...edit("login_terms_suffix")}>{copy.termsSuffix}</span>
+  </p>
+
+  <p class="sidera-auth-login__signup">
+    <span {...edit("login_signup_prompt")}>{copy.signupPrompt}</span>
+    {" "}
+    <a href={signupHref} {...edit("login_signup_label")}>
+      {copy.signupLabel}
+    </a>
+  </p>
+</form>
+
+<script>
+  import { setActionLoading } from "../../../scripts/action-loading.ts";
+
+  const initializeAuthLoginForms = () => {
+    document.querySelectorAll<HTMLFormElement>("[data-auth-login-form]").forEach((form) => {
+      if (form.dataset.authLoginReady === "true") return;
+
+      const email = form.querySelector<HTMLInputElement>('[data-auth-login-input="email"]');
+      const password = form.querySelector<HTMLInputElement>('[data-auth-login-input="password"]');
+      const submit = form.querySelector<HTMLButtonElement>(".sidera-auth-login__submit");
+      const status = form.querySelector<HTMLElement>("[data-auth-login-status]");
+      const runtimeCopy = JSON.parse(form.dataset.runtimeCopy || "{}");
+
+      const fieldRoot = (input: HTMLInputElement | null) =>
+        input?.closest<HTMLElement>(".sidera-form-field") ?? null;
+
+      const clearError = (input: HTMLInputElement | null) => {
+        const root = fieldRoot(input);
+        const error = root?.querySelector<HTMLElement>(".sidera-form-field__error");
+        input?.removeAttribute("aria-invalid");
+        root?.removeAttribute("data-invalid");
+        root?.classList.remove("sidera-form-field--invalid");
+        if (error) error.textContent = "";
+      };
+
+      const showError = (input: HTMLInputElement | null, message: string) => {
+        const root = fieldRoot(input);
+        const error = root?.querySelector<HTMLElement>(".sidera-form-field__error");
+        input?.setAttribute("aria-invalid", "true");
+        root?.setAttribute("data-invalid", "true");
+        root?.classList.add("sidera-form-field--invalid");
+        if (error) error.textContent = message;
+      };
+
+      const setStatus = (message = "", isError = false) => {
+        if (!status) return;
+        status.textContent = message;
+        status.classList.toggle("sidera-auth-login__status--error", isError);
+      };
+
+      const setLoading = (loading: boolean) => {
+        setActionLoading(submit, loading, runtimeCopy.loadingLabel);
+        form.setAttribute("aria-busy", String(loading));
+      };
+
+      email?.addEventListener("input", () => {
+        clearError(email);
+        setStatus();
+      });
+      password?.addEventListener("input", () => {
+        clearError(password);
+        setStatus();
+      });
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (form.getAttribute("aria-busy") === "true") return;
+        clearError(email);
+        clearError(password);
+        setStatus();
+
+        let firstInvalid: HTMLInputElement | null = null;
+        if (!email?.checkValidity()) {
+          showError(email, runtimeCopy.invalidEmailLabel);
+          firstInvalid = email;
+        }
+        if (!password?.value) {
+          showError(password, runtimeCopy.missingPasswordLabel);
+          firstInvalid ??= password;
+        }
+        if (firstInvalid) {
+          firstInvalid.focus();
+          return;
+        }
+
+        setLoading(true);
+        let navigationStarted = false;
+
+        try {
+          const response = await fetch("/api/astropages/generated-site/customer-auth/login", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              email: email?.value.trim(),
+              password: password?.value,
+            }),
+          });
+          const payload = await response.json().catch(() => ({}));
+          if (!response.ok) {
+            showError(password, payload.message || runtimeCopy.runtimeErrorLabel);
+            password?.focus();
+            return;
+          }
+          navigationStarted = true;
+          window.location.assign(runtimeCopy.successHref || "/");
+        } catch {
+          setStatus(runtimeCopy.runtimeErrorLabel, true);
+        } finally {
+          if (!navigationStarted) setLoading(false);
+        }
+      });
+
+      form.dataset.authLoginReady = "true";
+    });
+  };
+
+  initializeAuthLoginForms();
+  document.addEventListener("astro:page-load", initializeAuthLoginForms);
+</script>

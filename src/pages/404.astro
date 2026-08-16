@@ -1,0 +1,15 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { getHomeDefaults } from "../data/public-copy.ts";
+
+const content = getHomeDefaults("en");
+---
+
+<BaseLayout title={content.not_found_title} description={content.not_found_body}>
+  <main class="not-found">
+    <p class="eyebrow">404</p>
+    <h1>{content.not_found_title}</h1>
+    <p>{content.not_found_body}</p>
+    <a class="button primary" href="/">{content.not_found_cta}</a>
+  </main>
+</BaseLayout>

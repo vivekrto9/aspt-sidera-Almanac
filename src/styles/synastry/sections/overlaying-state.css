@@ -1,0 +1,18 @@
+.synastry-overlaying {
+  min-block-size: calc(100svh - 4.6875rem);
+  padding-block: clamp(2rem, 4vw, 3rem);
+}
+
+.synastry-overlaying[hidden] {
+  display: none;
+}
+
+.synastry-overlaying:focus {
+  outline: none;
+}
+
+@media (max-width: 63.999rem) {
+  .synastry-overlaying {
+    min-block-size: calc(100svh - 4.3125rem);
+  }
+}

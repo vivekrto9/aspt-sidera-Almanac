@@ -1,0 +1,219 @@
+---
+import type { BuilderEditAttributes } from "../builder/builder.ts";
+import { loadPublicPageContent } from "../builder/public-page.ts";
+import TransitExperience from "../components/transit/TransitExperience.astro";
+import type { TransitSavedChart } from "../components/transit/sections/TransitFormWizard.astro";
+import Footer from "../components/shared/Footer.astro";
+import Header from "../components/shared/Header.astro";
+import type { TransitCastingStateCopy } from "../data/locale/transit/sections/casting-state.ts";
+import type { TransitFormWizardCopy } from "../data/locale/transit/sections/form-wizard.ts";
+import { getBirthChartFormWizardCopy } from "../data/locale/birth-chart/sections/form-wizard.ts";
+import {
+  activeLocales,
+  defaultLocale,
+  localizePath,
+  type SupportedLocale,
+} from "../data/localization-contract.ts";
+import { createSharedFooterProps } from "../data/shared-footer-navigation.ts";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { getCustomerSession } from "../server/aggregator/customer-auth.ts";
+import { listCustomerUserProfiles } from "../server/aggregator/customer-profiles.ts";
+import { getRuntimeEnv } from "../server/generated-site/request.ts";
+
+export const prerender = false;
+
+const {
+  locale,
+  content,
+  builder,
+  builderPage,
+  chromePage,
+  reviewTargets,
+  builderEdit,
+  chromeEdit,
+} = await loadPublicPageContent(Astro, "transit");
+
+const seoContent = {
+  seo_title: content.seo_title,
+  seo_description: content.seo_description,
+  seo_canonical_path: content.seo_canonical_path,
+  seo_robots: content.seo_robots,
+  og_title: content.og_title,
+  og_description: content.og_description,
+  og_image: content.og_image,
+  og_image_alt: content.og_image_alt,
+  twitter_card: content.twitter_card,
+  twitter_title: content.twitter_title,
+  twitter_description: content.twitter_description,
+  twitter_image: content.twitter_image,
+};
+
+const componentEditAttributes = (
+  attributes: BuilderEditAttributes,
+): Record<string, string> =>
+  Object.fromEntries(
+    Object.entries(attributes)
+      .filter((entry): entry is [string, string | true] => entry[1] !== undefined)
+      .map(([key, value]) => [key, value === true ? "true" : value]),
+  );
+
+const localeHref = (targetLocale: SupportedLocale) => {
+  const url = new URL(Astro.request.url);
+  if (targetLocale === defaultLocale) {
+    if (locale === defaultLocale) {
+      url.searchParams.delete("locale");
+    } else {
+      url.searchParams.set("locale", defaultLocale);
+    }
+  } else {
+    url.searchParams.set("locale", targetLocale);
+  }
+  return `${url.pathname}${url.search}${url.hash}`;
+};
+
+const homeHref = localizePath("/", locale);
+const navigation = [
+  {
+    label: content.nav_todays_sky,
+    href: localizePath("/todays-sky", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_todays_sky")),
+  },
+  {
+    label: content.nav_charts,
+    href: localizePath("/birth-chart", locale),
+    current: true,
+    editAttributes: componentEditAttributes(chromeEdit("nav_charts")),
+  },
+  {
+    label: content.nav_compatibility,
+    href: localizePath("/synastry", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_compatibility")),
+  },
+  {
+    label: content.nav_moon,
+    href: localizePath("/moon-calendar", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_moon")),
+  },
+  {
+    label: content.nav_horoscope,
+    href: localizePath("/daily-horoscope", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_horoscope")),
+  },
+  {
+    label: content.nav_astrologers,
+    href: localizePath("/astrologers", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_astrologers")),
+  },
+  {
+    label: content.nav_blog,
+    href: `${homeHref}#blog`,
+    editAttributes: componentEditAttributes(chromeEdit("nav_blog")),
+  },
+];
+
+const actions = [
+  {
+    id: "sign-in",
+    label: content.action_sign_in,
+    href: localizePath("/login", locale),
+    variant: "ghost" as const,
+    editAttributes: componentEditAttributes(chromeEdit("action_sign_in")),
+  },
+  {
+    id: "get-chart",
+    label: content.action_get_chart,
+    href: localizePath("/birth-chart", locale),
+    variant: "primary" as const,
+    editAttributes: componentEditAttributes(chromeEdit("action_get_chart")),
+  },
+];
+
+const languageOptions = activeLocales.map((item) => {
+  const field = `language_option_${item.code}_label`;
+  return {
+    code: item.code,
+    label: content[field] || item.nativeName,
+    href: localeHref(item.code),
+    lang: item.code,
+    hreflang: item.hreflang,
+    editAttributes: componentEditAttributes(chromeEdit(field)),
+  };
+});
+
+const runtimeEnv = await getRuntimeEnv(Astro);
+const customerSession = await getCustomerSession(runtimeEnv, Astro.request).catch(() => null);
+const savedProfiles = customerSession
+  ? await listCustomerUserProfiles(runtimeEnv, customerSession.account.id)
+  : [];
+const savedCharts: readonly TransitSavedChart[] = savedProfiles.map((profile) => ({
+  id: profile.id,
+  name: profile.profileName,
+  initials: profile.profileName.slice(0, 1).toUpperCase(),
+  birthSummary: `${profile.birthDate} · ${profile.birthTime} · ${profile.birthPlace}`,
+  birthDate: profile.birthDate,
+  birthTime: profile.birthTime,
+  birthPlace: profile.birthPlace,
+  placeId: profile.placeId,
+  latitude: profile.placeLat,
+  longitude: profile.placeLon,
+  timezone: profile.placeTimezone,
+  timezoneOffset: profile.timezoneOffset,
+  isDefault: profile.isDefault,
+}));
+const footerProps = createSharedFooterProps({
+  content,
+  locale,
+  editAttributes: (field) => componentEditAttributes(chromeEdit(field)),
+});
+---
+
+<BaseLayout
+  seo={seoContent}
+  bodyClass="transit-body"
+  builderToolbar={{
+    launcherEnabled: builder.launcherEnabled,
+    studioModeEnabled: builder.studioModeEnabled,
+    collection: builder.collection,
+    entry: builder.entry,
+    locale: builder.locale,
+    csrfToken: builder.csrfToken,
+    canPublish: builder.canPublish,
+    seo: seoContent,
+    hasSavedDraft: builderPage.hasSavedDraft || chromePage.hasSavedDraft,
+    reviewTargets,
+  }}
+>
+  <Header
+    id="transit-header"
+    brandLabel={content.brand_name}
+    brandHref={homeHref}
+    brandAriaLabel={content.brand_aria_label}
+    navigationLabel={content.primary_navigation_label}
+    chromeNavigation={{ content, edit: chromeEdit }}
+    navigation={navigation}
+    actions={actions}
+    language={{
+      activeLocale: locale,
+      options: languageOptions,
+      triggerLabel: content.language_trigger_label,
+      menuLabel: content.language_menu_label,
+    }}
+    mobileUtilityActionId="sign-in"
+    menuLabel={content.menu_open_label}
+    closeMenuLabel={content.menu_close_label}
+    brandEditAttributes={componentEditAttributes(chromeEdit("brand_name"))}
+  />
+
+  <TransitExperience
+    copy={content as TransitFormWizardCopy & TransitCastingStateCopy}
+    birthCopy={getBirthChartFormWizardCopy(locale)}
+    locale={locale}
+    savedCharts={savedCharts}
+    isAuthenticated={Boolean(customerSession)}
+    brandHref={homeHref}
+    resultHref={localizePath("/transit", locale)}
+    csrfToken={customerSession?.csrfToken || ""}
+    editAttributes={(field) => componentEditAttributes(builderEdit(field))}
+  />
+  <Footer {...footerProps} />
+</BaseLayout>

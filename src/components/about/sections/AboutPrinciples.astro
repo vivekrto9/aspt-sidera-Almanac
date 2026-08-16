@@ -1,0 +1,50 @@
+---
+import CardGrid from "../../shared/CardGrid.astro";
+import "../../../styles/about/sections/about-principles.css";
+
+type Principle = {
+  title: string;
+  body: string;
+  titleEditAttributes?: Record<string, string>;
+  bodyEditAttributes?: Record<string, string>;
+};
+
+type Props = {
+  principles: Principle[];
+};
+
+const { principles } = Astro.props as Props;
+---
+
+<div class="about-principles" data-screen-label="About · Principles">
+  <div class="about-principles__inner">
+    <CardGrid
+      as="ul"
+      columns={3}
+      tabletColumns={2}
+      mobileColumns={1}
+      gap="loose"
+      align="start"
+      class="about-principles__grid"
+    >
+      {
+        principles.map((principle) => (
+          <li class="about-principles__item">
+            <h2
+              class="about-principles__title"
+              {...principle.titleEditAttributes}
+            >
+              {principle.title}
+            </h2>
+            <p
+              class="about-principles__body"
+              {...principle.bodyEditAttributes}
+            >
+              {principle.body}
+            </p>
+          </li>
+        ))
+      }
+    </CardGrid>
+  </div>
+</div>

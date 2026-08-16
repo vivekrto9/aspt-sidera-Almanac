@@ -1,0 +1,112 @@
+---
+import LoadingIndicator from "./LoadingIndicator.astro";
+import "../../styles/shared/icon-button.css";
+
+type IconButtonVariant = "outline" | "solid" | "ghost" | "danger";
+type IconButtonSize = "compact" | "standard" | "large";
+type IconButtonShape = "rounded" | "circle";
+type IconButtonType = "button" | "submit" | "reset";
+
+type Props = {
+  ariaLabel: string;
+  href?: string;
+  variant?: IconButtonVariant;
+  size?: IconButtonSize;
+  shape?: IconButtonShape;
+  type?: IconButtonType;
+  disabled?: boolean;
+  loading?: boolean;
+  loadingLabel?: string;
+  pressed?: boolean;
+  expanded?: boolean;
+  controls?: string;
+  class?: string;
+  id?: string;
+  name?: string;
+  value?: string;
+  form?: string;
+  target?: "_self" | "_blank" | "_parent" | "_top";
+  rel?: string;
+};
+
+const {
+  ariaLabel,
+  href,
+  variant = "outline",
+  size = "standard",
+  shape = "rounded",
+  type = "button",
+  disabled = false,
+  loading,
+  loadingLabel,
+  pressed,
+  expanded,
+  controls,
+  class: className,
+  id,
+  name,
+  value,
+  form,
+  target,
+  rel,
+  ...restAttributes
+} = Astro.props as Props;
+
+const hasLoadingState = loading !== undefined;
+const isDisabled = disabled || loading === true;
+const resolvedAriaLabel = loading === true ? (loadingLabel ?? ariaLabel) : ariaLabel;
+
+const classes = [
+  "icon-button",
+  `icon-button--${variant}`,
+  `icon-button--${size}`,
+  `icon-button--${shape}`,
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+---
+
+{
+  href ? (
+    <a
+      {...restAttributes}
+      class={classes}
+      href={isDisabled ? undefined : href}
+      id={id}
+      target={target}
+      rel={rel}
+      aria-label={resolvedAriaLabel}
+      aria-disabled={isDisabled ? "true" : undefined}
+      aria-busy={hasLoadingState ? loading === true : undefined}
+      data-loading={hasLoadingState ? String(loading === true) : undefined}
+      aria-pressed={pressed}
+      aria-expanded={expanded}
+      aria-controls={controls}
+      tabindex={isDisabled ? -1 : undefined}
+    >
+      <span class="icon-button__icon" aria-hidden="true"><slot /></span>
+      {hasLoadingState ? <LoadingIndicator class="icon-button__loading-indicator" label={loadingLabel ?? ariaLabel} size="compact" tone="inverse" ariaLive="off" /> : null}
+    </a>
+  ) : (
+    <button
+      {...restAttributes}
+      class={classes}
+      type={type}
+      id={id}
+      name={name}
+      value={value}
+      form={form}
+      disabled={isDisabled}
+      aria-label={resolvedAriaLabel}
+      aria-busy={hasLoadingState ? loading === true : undefined}
+      data-loading={hasLoadingState ? String(loading === true) : undefined}
+      aria-pressed={pressed}
+      aria-expanded={expanded}
+      aria-controls={controls}
+    >
+      <span class="icon-button__icon" aria-hidden="true"><slot /></span>
+      {hasLoadingState ? <LoadingIndicator class="icon-button__loading-indicator" label={loadingLabel ?? ariaLabel} size="compact" tone="inverse" ariaLive="off" /> : null}
+    </button>
+  )
+}

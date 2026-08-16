@@ -1,0 +1,67 @@
+---
+import Button from "../../shared/Button.astro";
+import Badge from "../../shared/Badge.astro";
+import ChartWheel from "../../shared/ChartWheel.astro";
+import type { TrackedPersonRecord } from "../../../data/account/people.ts";
+import "../../../styles/account/sections/account-people.css";
+
+type Props = {
+  people: TrackedPersonRecord[];
+  synastryLabel: string;
+  synastryHref: string;
+  ownProfileLabel: string;
+  generateBirthChartLabel: string;
+  openBirthChartLabel: string;
+  edit?: (field: string) => Record<string, string>;
+};
+
+const props = Astro.props as Props;
+const edit = props.edit ?? (() => ({}));
+const synastryHrefFor = (profileId: string) => {
+  const separator = props.synastryHref.includes("?") ? "&" : "?";
+  return `${props.synastryHref}${separator}profileId=${encodeURIComponent(profileId)}`;
+};
+---
+
+<div class="account-people__grid">
+  {props.people.map((person) => (
+    <article class="account-people__card" data-tracked-person={person.id}>
+      {person.isOwnProfile ? (
+        <Badge class="account-people__profile-badge" tone="accent" size="compact">
+          <span {...edit("account_people_own_profile_label")}>{props.ownProfileLabel}</span>
+        </Badge>
+      ) : null}
+      {person.birthChart ? (
+        <a
+          class="account-people__chart account-people__chart--linked"
+          href={person.birthChart.href}
+          aria-label={`${props.openBirthChartLabel}: ${person.name}`}
+        >
+          <ChartWheel
+            title={person.name}
+            mode="natal"
+            size="compact"
+            rotation={person.birthChart.rotation}
+            planets={person.birthChart.planets}
+            showAspects={false}
+          />
+        </a>
+      ) : (
+        <Button
+          class="account-people__chart account-people__chart--empty"
+          href={person.generateBirthChartHref}
+          variant="ghost"
+          size="compact"
+          shape="pill"
+          ariaLabel={`${props.generateBirthChartLabel}: ${person.name}`}
+          editAttributes={edit("account_people_generate_birth_chart_label")}
+        >
+          {props.generateBirthChartLabel}
+        </Button>
+      )}
+      <h3>{person.name}</h3>
+      <p>{person.signs}</p>
+      <Button href={synastryHrefFor(person.id)} variant="outline" size="compact" shape="pill" fullWidth><span {...edit("account_people_synastry_label")}>{props.synastryLabel}</span></Button>
+    </article>
+  ))}
+</div>

@@ -1,0 +1,54 @@
+---
+import "../../styles/shared/accordion.css";
+
+type Props = {
+  question: string;
+  category?: string;
+  open?: boolean;
+  name?: string;
+  id?: string;
+  class?: string;
+  categoryEditAttributes?: Record<string, string>;
+  questionEditAttributes?: Record<string, string>;
+};
+
+const {
+  question,
+  category,
+  open = false,
+  name,
+  id,
+  class: className,
+  categoryEditAttributes = {},
+  questionEditAttributes = {},
+} = Astro.props as Props;
+
+const classes = ["sidera-accordion", className].filter(Boolean).join(" ");
+---
+
+<details class={classes} open={open} name={name} id={id}>
+  <summary class="sidera-accordion__summary">
+    <span class="sidera-accordion__heading">
+      {
+        category && (
+          <span
+            class="sidera-accordion__category"
+            {...categoryEditAttributes}
+          >
+            {category}
+          </span>
+        )
+      }
+      <span class="sidera-accordion__question" {...questionEditAttributes}>
+        {question}
+      </span>
+    </span>
+    <span class="sidera-accordion__indicator" aria-hidden="true">+</span>
+  </summary>
+
+  <div class="sidera-accordion__content">
+    <div class="sidera-accordion__answer">
+      <slot />
+    </div>
+  </div>
+</details>

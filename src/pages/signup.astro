@@ -1,0 +1,149 @@
+---
+import type { BuilderEditAttributes } from "../builder/builder.ts";
+import { loadPublicPageContent } from "../builder/public-page.ts";
+import { getAuthSignupFormCopy } from "../data/locale/auth/sections/signup-form.ts";
+import AuthShell from "../components/shared/AuthShell.astro";
+import AuthSignupForm from "../components/auth/sections/AuthSignupForm.astro";
+import { getAuthSignupShellCopy } from "../data/locale/auth/common/signup-shell.ts";
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+export const prerender = false;
+
+const {
+  content,
+  locale,
+  builder,
+  builderPage,
+  chromePage,
+  reviewTargets,
+  builderEdit,
+} = await loadPublicPageContent(Astro, "signup");
+const shellCopy = getAuthSignupShellCopy(locale);
+const baseFormCopy = getAuthSignupFormCopy(locale);
+const formCopy = {
+  ...baseFormCopy,
+  heading: content.signup_form_heading,
+  subheading: content.signup_form_subheading,
+  fullNameLabel: content.signup_full_name_label,
+  fullNamePlaceholder: content.signup_full_name_placeholder,
+  emailLabel: content.signup_email_label,
+  emailPlaceholder: content.signup_email_placeholder,
+  phoneLabel: content.signup_phone_label,
+  phonePlaceholder: content.signup_phone_placeholder,
+  passwordLabel: content.signup_password_label,
+  passwordPlaceholder: content.signup_password_placeholder,
+  confirmPasswordLabel: content.signup_confirm_password_label,
+  confirmPasswordPlaceholder: content.signup_confirm_password_placeholder,
+  passwordHint: content.signup_password_hint,
+  createAccountLabel: content.signup_create_account_label,
+  creatingLabel: content.signup_creating_label,
+  unavailableLabel: content.signup_unavailable_label,
+  mismatchLabel: content.signup_mismatch_label,
+  missingPasswordLabel: content.signup_missing_password_label,
+  termsRequiredLabel: content.signup_terms_required_label,
+  invalidEmailLabel: content.signup_invalid_email_label,
+  invalidPhoneLabel: content.signup_invalid_phone_label,
+  loginPrompt: content.signup_login_prompt,
+  loginLabel: content.signup_login_label,
+  termsPrefix: content.signup_terms_prefix,
+  termsLabel: content.signup_terms_label,
+  termsGlue: content.signup_terms_glue,
+  privacyLabel: content.signup_privacy_label,
+  termsSuffix: content.signup_terms_suffix,
+  marketingOptInLabel: content.signup_marketing_opt_in_label,
+};
+const componentEditAttributes = (
+  attributes: BuilderEditAttributes,
+): Record<string, string> =>
+  Object.fromEntries(
+    Object.entries(attributes)
+      .filter((entry): entry is [string, string | true] => entry[1] !== undefined)
+      .map(([key, value]) => [key, value === true ? "true" : value]),
+  );
+
+const panelPerks = [
+  {
+    icon: "✦",
+    label: content.signup_proof_1_label,
+    labelEditAttributes: componentEditAttributes(
+      builderEdit("signup_proof_1_label"),
+    ),
+  },
+  {
+    icon: "✦",
+    label: content.signup_proof_2_label,
+    labelEditAttributes: componentEditAttributes(
+      builderEdit("signup_proof_2_label"),
+    ),
+  },
+];
+
+const seoContent = {
+  seo_title: content.seo_title,
+  seo_description: content.seo_description,
+  seo_canonical_path: content.seo_canonical_path,
+  seo_robots: content.seo_robots,
+  og_title: content.og_title,
+  og_description: content.og_description,
+  og_image: content.og_image,
+  og_image_alt: content.og_image_alt,
+  twitter_card: content.twitter_card,
+  twitter_title: content.twitter_title,
+  twitter_description: content.twitter_description,
+  twitter_image: content.twitter_image,
+};
+---
+
+<BaseLayout
+  seo={seoContent}
+  bodyClass="sidera-auth-body"
+  builderToolbar={{
+    launcherEnabled: builder.launcherEnabled,
+    studioModeEnabled: builder.studioModeEnabled,
+    collection: builder.collection,
+    entry: builder.entry,
+    locale: builder.locale,
+    csrfToken: builder.csrfToken,
+    canPublish: builder.canPublish,
+    seo: seoContent,
+    hasSavedDraft: builderPage.hasSavedDraft || chromePage.hasSavedDraft,
+    reviewTargets,
+  }}
+>
+  <AuthShell
+    id="signup"
+    brandLabel={content.signup_brand_label}
+    brandHref="/"
+    brandAriaLabel={content.signup_brand_aria_label}
+    backLabel={content.signup_back_label}
+    backHref="/"
+    panelKicker={content.signup_panel_kicker}
+    panelTitle={content.signup_panel_title}
+    panelDescription={content.signup_panel_description}
+    perks={panelPerks}
+    formLabel={shellCopy.formLabel}
+    locale={locale}
+    brandEditAttributes={componentEditAttributes(
+      builderEdit("signup_brand_label"),
+    )}
+    backEditAttributes={componentEditAttributes(
+      builderEdit("signup_back_label"),
+    )}
+    kickerEditAttributes={componentEditAttributes(
+      builderEdit("signup_panel_kicker"),
+    )}
+    titleEditAttributes={componentEditAttributes(
+      builderEdit("signup_panel_title"),
+    )}
+    descriptionEditAttributes={componentEditAttributes(
+      builderEdit("signup_panel_description"),
+    )}
+  >
+    <AuthSignupForm
+      copy={formCopy}
+      locale={locale}
+      editAttributes={(field) =>
+        componentEditAttributes(builderEdit(field))}
+    />
+  </AuthShell>
+</BaseLayout>

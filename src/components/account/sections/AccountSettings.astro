@@ -1,0 +1,126 @@
+---
+import Button from "../../shared/Button.astro";
+import FormField from "../../shared/FormField.astro";
+import SectionHeading from "../../shared/SectionHeading.astro";
+import SelectField from "../../shared/SelectField.astro";
+import TextField from "../../shared/TextField.astro";
+import "../../../styles/account/sections/account-settings.css";
+
+type Props = {
+  eyebrow: string;
+  title: string;
+  fullNameLabel: string;
+  emailLabel: string;
+  displayName: string;
+  email: string;
+  csrfToken: string;
+  phone: string;
+  defaultLanguage: string;
+  consentMarketing: boolean;
+  houseSystem: string;
+  zodiacSystem: string;
+  dailyHoroscope: boolean;
+  houseSystemLabel: string;
+  placidusLabel: string;
+  wholeSignLabel: string;
+  zodiacLabel: string;
+  tropicalLabel: string;
+  siderealLabel: string;
+  saveLabel: string;
+  savedMessage: string;
+  edit: (field: string) => Record<string, string>;
+};
+const props = Astro.props as Props;
+---
+
+<section id="settings" class="account-settings" aria-label={props.title}>
+  <SectionHeading eyebrow={props.eyebrow} title={props.title} eyebrowEditAttributes={props.edit("account_settings_eyebrow")} titleEditAttributes={props.edit("account_settings_title")} />
+  <form
+    class="account-settings__form"
+    data-account-settings-form
+    data-csrf-token={props.csrfToken}
+    data-phone={props.phone}
+    data-default-language={props.defaultLanguage}
+    data-consent-marketing={String(props.consentMarketing)}
+    data-daily-horoscope={String(props.dailyHoroscope)}
+  >
+    <FormField label={props.fullNameLabel} controlId="account-settings-name" labelEditAttributes={props.edit("account_settings_full_name_label")}>
+      <TextField id="account-settings-name" name="displayName" value={props.displayName} autocomplete="name" />
+    </FormField>
+    <FormField label={props.emailLabel} controlId="account-settings-email" labelEditAttributes={props.edit("account_settings_email_label")}>
+      <TextField id="account-settings-email" name="email" type="email" value={props.email} autocomplete="email" readonly />
+    </FormField>
+    <FormField label={props.houseSystemLabel} controlId="account-settings-house-system" labelEditAttributes={props.edit("account_settings_house_system_label")}>
+      <SelectField id="account-settings-house-system" name="houseSystem" value={props.houseSystem} options={[
+        { value: "placidus", label: props.placidusLabel, editAttributes: props.edit("account_settings_placidus_label") },
+        { value: "whole-sign", label: props.wholeSignLabel, editAttributes: props.edit("account_settings_whole_sign_label") },
+      ]} />
+    </FormField>
+    <FormField label={props.zodiacLabel} controlId="account-settings-zodiac" labelEditAttributes={props.edit("account_settings_zodiac_label")}>
+      <SelectField id="account-settings-zodiac" name="zodiacSystem" value={props.zodiacSystem} options={[
+        { value: "tropical", label: props.tropicalLabel, editAttributes: props.edit("account_settings_tropical_label") },
+        { value: "sidereal", label: props.siderealLabel, editAttributes: props.edit("account_settings_sidereal_label") },
+      ]} />
+    </FormField>
+    <div class="account-settings__actions">
+      <Button type="submit" variant="primary" size="compact" shape="rounded" loading={false} loadingLabel={props.saveLabel} editAttributes={props.edit("account_settings_save_label")}>{props.saveLabel}</Button>
+      <p class="account-settings__status" role="status" aria-live="polite" data-account-settings-status data-saved-message={props.savedMessage} hidden {...props.edit("account_settings_saved_message")}>{props.savedMessage}</p>
+    </div>
+  </form>
+</section>
+
+<script>
+  import { setActionLoading } from "../../../scripts/action-loading.ts";
+
+  document.querySelectorAll<HTMLFormElement>("[data-account-settings-form]").forEach((form) => {
+    if (form.dataset.ready === "true") return;
+    form.dataset.ready = "true";
+    const status = form.querySelector<HTMLElement>("[data-account-settings-status]");
+    const submit = form.querySelector<HTMLButtonElement>("button[type='submit']");
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (form.getAttribute("aria-busy") === "true") return;
+      if (!form.reportValidity()) return;
+      const fields = new FormData(form);
+      setActionLoading(submit, true, submit?.textContent?.trim());
+      form.setAttribute("aria-busy", "true");
+      try {
+        const response = await fetch(
+          "/api/astropages/generated-site/customer/profile",
+          {
+            method: "PATCH",
+            headers: {
+              "content-type": "application/json",
+              "x-astropages-customer-csrf": form.dataset.csrfToken || "",
+            },
+            body: JSON.stringify({
+              displayName: String(fields.get("displayName") || ""),
+              phone: form.dataset.phone || "",
+              defaultLanguage: form.dataset.defaultLanguage || "English",
+              consentMarketing: form.dataset.consentMarketing === "true",
+              houseSystem: String(fields.get("houseSystem") || "placidus"),
+              zodiacSystem: String(fields.get("zodiacSystem") || "tropical"),
+              dailyHoroscope: form.dataset.dailyHoroscope === "true",
+            }),
+          },
+        );
+        const payload = await response.json().catch(() => null);
+        if (!response.ok) throw new Error(payload?.error?.message || payload?.message || "Unable to save settings.");
+        if (status) {
+          status.textContent = status.dataset.savedMessage || "Saved.";
+          status.hidden = false;
+        }
+      } catch (error) {
+        if (status) {
+          status.textContent = error instanceof Error ? error.message : "Unable to save settings.";
+          status.hidden = false;
+        }
+      } finally {
+        setActionLoading(submit, false);
+        form.setAttribute("aria-busy", "false");
+      }
+    });
+    form.addEventListener("input", () => { if (status) status.hidden = true; });
+    form.addEventListener("change", () => { if (status) status.hidden = true; });
+  });
+</script>

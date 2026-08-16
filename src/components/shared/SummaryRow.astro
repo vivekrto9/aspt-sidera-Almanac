@@ -1,0 +1,53 @@
+---
+import PriceDisplay from "./PriceDisplay.astro";
+import "../../styles/shared/summary-row.css";
+
+type SummaryRowVariant = "default" | "muted" | "discount" | "total";
+type SummaryRowTone = "default" | "inverse";
+
+type Props = {
+  label: string;
+  value: string;
+  variant?: SummaryRowVariant;
+  tone?: SummaryRowTone;
+  valueAriaLabel?: string;
+  class?: string;
+  labelEditAttributes?: Record<string, string>;
+};
+
+const {
+  label,
+  value,
+  variant = "default",
+  tone = "default",
+  valueAriaLabel,
+  class: className,
+  labelEditAttributes = {},
+} = Astro.props as Props;
+
+const classes = [
+  "summary-row",
+  `summary-row--${variant}`,
+  `summary-row--tone-${tone}`,
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+---
+
+<div class={classes}>
+  <span class="summary-row__label" {...labelEditAttributes}>{label}</span>
+  {
+    variant === "total" ? (
+      <PriceDisplay
+        class="summary-row__price"
+        current={value}
+        size="standard"
+        tone={tone}
+        ariaLabel={valueAriaLabel}
+      />
+    ) : (
+      <span class="summary-row__value" aria-label={valueAriaLabel}>{value}</span>
+    )
+  }
+</div>

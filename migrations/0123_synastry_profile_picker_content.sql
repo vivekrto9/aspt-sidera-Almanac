@@ -1,0 +1,14 @@
+ALTER TABLE ec_site_synastry ADD COLUMN select_profile_label TEXT;
+ALTER TABLE ec_site_synastry ADD COLUMN profile_picker_eyebrow TEXT;
+ALTER TABLE ec_site_synastry ADD COLUMN profile_picker_title TEXT;
+ALTER TABLE ec_site_synastry ADD COLUMN profile_picker_description TEXT;
+ALTER TABLE ec_site_synastry ADD COLUMN profile_picker_close_label TEXT;
+ALTER TABLE ec_site_synastry ADD COLUMN profile_picker_empty_title TEXT;
+ALTER TABLE ec_site_synastry ADD COLUMN profile_picker_empty_description TEXT;
+ALTER TABLE ec_site_synastry ADD COLUMN profile_picker_add_label TEXT;
+ALTER TABLE ec_site_synastry ADD COLUMN profile_picker_add_title TEXT;
+ALTER TABLE ec_site_synastry ADD COLUMN profile_picker_back_label TEXT;
+ALTER TABLE ec_site_synastry ADD COLUMN profile_picker_save_label TEXT;
+ALTER TABLE ec_site_synastry ADD COLUMN profile_picker_saving_label TEXT;
+ALTER TABLE ec_site_synastry ADD COLUMN profile_picker_error TEXT;
+ALTER TABLE ec_site_synastry ADD COLUMN profile_picker_default_label TEXT;

@@ -1,0 +1,399 @@
+---
+import type { AstrologerProfilePickerCopy } from "../../../data/locale/astrologers/sections/browse.ts";
+import type { SynastrySetupCopy } from "../../../data/locale/synastry/sections/two-profile-setup.ts";
+import type { SupportedLocale } from "../../../data/localization-contract.ts";
+import { birthMinuteOptions } from "../../../data/time-options.ts";
+import AddProfileForm from "../../shared/AddProfileForm.astro";
+import type { AstrologyProfile } from "../../shared/AstrologyProfileForm.astro";
+import Badge from "../../shared/Badge.astro";
+import Button from "../../shared/Button.astro";
+import Dialog from "../../shared/Dialog.astro";
+import EmptyState from "../../shared/EmptyState.astro";
+import "../../../styles/astrologers/shared/profile-picker.css";
+
+type EditAttributes = Record<string, string>;
+
+type CustomerProfile = {
+  id: string;
+  profileName: string;
+  birthDate: string;
+  birthPlace: string;
+  isDefault: boolean;
+};
+
+type Props = {
+  id?: string;
+  copy: AstrologerProfilePickerCopy;
+  customerProfiles?: CustomerProfile[];
+  csrfToken?: string;
+  profileFormCopy: SynastrySetupCopy;
+  locale: SupportedLocale;
+  editAttributes?: (field: string) => EditAttributes;
+};
+
+const {
+  id = "astrologer-profile-picker",
+  copy,
+  customerProfiles = [],
+  csrfToken = "",
+  profileFormCopy,
+  locale,
+  editAttributes = () => ({}),
+} = Astro.props as Props;
+
+const now = new Date();
+const months = Array.from({ length: 12 }, (_, index) => ({
+  value: String(index + 1),
+  label: new Intl.DateTimeFormat(locale, { month: "long" }).format(
+    new Date(2024, index, 1),
+  ),
+}));
+const days = Array.from({ length: 31 }, (_, index) => ({
+  value: String(index + 1),
+  label: String(index + 1),
+}));
+const years = Array.from({ length: 110 }, (_, index) => {
+  const year = now.getFullYear() - index;
+  return { value: String(year), label: String(year) };
+});
+const hours = Array.from({ length: 12 }, (_, index) => ({
+  value: String(index + 1),
+  label: String(index + 1),
+}));
+const addProfile: AstrologyProfile = {
+  id: `${id}-new-profile`,
+  title: copy.profilePickerAddTitle,
+  badge: "+",
+  tone: "terracotta",
+  nameLabel: profileFormCopy.name_label,
+  namePlaceholder: profileFormCopy.person_one_placeholder,
+  date: {
+    label: profileFormCopy.birth_date_label,
+    monthLabel: profileFormCopy.month_label,
+    dayLabel: profileFormCopy.day_label,
+    yearLabel: profileFormCopy.year_label,
+    months,
+    days,
+    years,
+    monthValue: "1",
+    dayValue: "1",
+    yearValue: String(now.getFullYear() - 30),
+  },
+  time: {
+    label: profileFormCopy.birth_time_label,
+    hourLabel: profileFormCopy.hour_label,
+    minuteLabel: profileFormCopy.minute_label,
+    periodLabel: profileFormCopy.period_label,
+    unknownLabel: profileFormCopy.unknown_time_label,
+    unknownDescription: profileFormCopy.unknown_time_description,
+    hours,
+    minutes: birthMinuteOptions,
+    periods: [
+      { value: "AM", label: "AM" },
+      { value: "PM", label: "PM" },
+    ],
+    hourValue: "12",
+    minuteValue: "00",
+    periodValue: "PM",
+  },
+  location: {
+    label: profileFormCopy.birth_place_label,
+    placeholder: profileFormCopy.location_placeholder,
+    startText: profileFormCopy.location_start,
+    searchingText: profileFormCopy.location_searching,
+    noResultsText: profileFormCopy.location_empty,
+    unavailableText: profileFormCopy.location_unavailable,
+    selectedText: profileFormCopy.location_selected,
+  },
+  titleEditAttributes: editAttributes("browse_profile_picker_add_title"),
+  required: true,
+};
+---
+
+<Dialog
+  id={id}
+  eyebrow={copy.profilePickerEyebrow}
+  title={copy.profilePickerTitle}
+  description={copy.profilePickerDescription}
+  closeLabel={copy.profilePickerCloseLabel}
+  width="standard"
+  class="astrologer-profile-picker"
+  builderToolbarAbove
+  eyebrowEditAttributes={editAttributes("browse_profile_picker_eyebrow")}
+  titleEditAttributes={editAttributes("browse_profile_picker_title")}
+  descriptionEditAttributes={editAttributes("browse_profile_picker_description")}
+>
+  <div data-astrologer-profile-list-view>
+    <p
+      class="astrologer-profile-picker__error"
+      data-astrologer-profile-session-error
+      role="alert"
+      hidden
+    >{copy.profilePickerError}</p>
+    <div
+      class="astrologer-profile-picker__progress"
+      data-astrologer-profile-progress
+      aria-live="polite"
+      hidden
+    >
+      <span aria-hidden="true">1 / 2</span>
+    </div>
+    <div
+      class="astrologer-profile-picker__list"
+      hidden={customerProfiles.length === 0}
+    >
+      {customerProfiles.map((profile) => (
+        <button
+          type="button"
+          class="astrologer-profile-picker__option"
+          data-astrologer-profile-option
+          data-profile-id={profile.id}
+          aria-label={`${copy.profilePickerSelectLabel} ${profile.profileName}`}
+        >
+          <span class="astrologer-profile-picker__initial" aria-hidden="true">
+            {profile.profileName.slice(0, 1).toUpperCase()}
+          </span>
+          <span class="astrologer-profile-picker__copy">
+            <span class="astrologer-profile-picker__name-row">
+              <strong>{profile.profileName}</strong>
+              {profile.isDefault ? (
+                <Badge size="compact">
+                  <span {...editAttributes("browse_profile_picker_default_label")}>
+                    {copy.profilePickerDefaultLabel}
+                  </span>
+                </Badge>
+              ) : null}
+            </span>
+            <small>{profile.birthDate} · {profile.birthPlace}</small>
+          </span>
+          <span aria-hidden="true">→</span>
+        </button>
+      ))}
+    </div>
+
+    <div hidden={customerProfiles.length > 0} data-astrologer-profile-empty>
+      <EmptyState
+        id={`${id}-empty`}
+        title={copy.profilePickerEmptyTitle}
+        description={copy.profilePickerEmptyDescription}
+        variant="plain"
+        headingLevel={3}
+        titleEditAttributes={editAttributes("browse_profile_picker_empty_title")}
+        descriptionEditAttributes={editAttributes("browse_profile_picker_empty_description")}
+      />
+    </div>
+  </div>
+
+  <div data-astrologer-profile-add-view hidden>
+    <Button
+      type="button"
+      variant="link"
+      class="astrologer-profile-picker__back"
+      data-astrologer-profile-back
+    >
+      <svg slot="leading-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+        <path d="m12.5 4.5-5.5 5.5 5.5 5.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+      <span {...editAttributes("browse_profile_picker_back_label")}>
+        {copy.profilePickerBackLabel}
+      </span>
+    </Button>
+    <AddProfileForm
+      id={`${id}-add-profile`}
+      profile={addProfile}
+      csrfToken={csrfToken}
+      saveLabel={copy.profilePickerSaveLabel}
+      savingLabel={copy.profilePickerSavingLabel}
+      errorMessage={copy.profilePickerError}
+      saveEditAttributes={editAttributes("browse_profile_picker_save_label")}
+    />
+  </div>
+
+  <div
+    slot="actions"
+    class="sidera-dialog__actions astrologer-profile-picker__actions"
+    data-astrologer-profile-actions
+  >
+    <Button type="button" variant="outline" data-astrologer-profile-add>
+      <svg slot="leading-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+        <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+      </svg>
+      <span {...editAttributes("browse_profile_picker_create_label")}>
+        {copy.profilePickerCreateLabel}
+      </span>
+    </Button>
+  </div>
+</Dialog>
+
+<script>
+  const initializeAstrologerProfilePicker = (dialog: HTMLDialogElement) => {
+    if (dialog.dataset.astrologerProfilePickerReady === "true") return;
+    const profileListView = dialog.querySelector<HTMLElement>(
+      "[data-astrologer-profile-list-view]",
+    );
+    const profileAddView = dialog.querySelector<HTMLElement>(
+      "[data-astrologer-profile-add-view]",
+    );
+    const profileActions = dialog.querySelector<HTMLElement>(
+      "[data-astrologer-profile-actions]",
+    );
+    const profileFooter = profileActions?.closest<HTMLElement>(
+      ".sidera-dialog__footer",
+    );
+    const showProfileList = () => {
+      if (profileListView) profileListView.hidden = false;
+      if (profileAddView) profileAddView.hidden = true;
+      if (profileFooter) profileFooter.hidden = false;
+    };
+    const showAddProfile = () => {
+      if (profileListView) profileListView.hidden = true;
+      if (profileAddView) profileAddView.hidden = false;
+      if (profileFooter) profileFooter.hidden = true;
+      window.requestAnimationFrame(() =>
+        profileAddView?.querySelector<HTMLElement>("input")?.focus(),
+      );
+    };
+    const sessionError = dialog.querySelector<HTMLElement>(
+      "[data-astrologer-profile-session-error]",
+    );
+    const selectionProgress = dialog.querySelector<HTMLElement>(
+      "[data-astrologer-profile-progress]",
+    );
+    const profileOptions = Array.from(
+      dialog.querySelectorAll<HTMLButtonElement>(
+        "[data-astrologer-profile-option]",
+      ),
+    );
+    let startingChat = false;
+    let sessionAttempt = 0;
+    let primaryProfileId = "";
+    const setPickerBusy = (busy: boolean) => {
+      startingChat = busy;
+      dialog.toggleAttribute("aria-busy", busy);
+      dialog
+        .querySelectorAll<HTMLButtonElement>(
+          "button:not([data-dialog-close])",
+        )
+        .forEach((button) => { button.disabled = busy; });
+    };
+    const resetProfileSelection = () => {
+      primaryProfileId = "";
+      if (selectionProgress) selectionProgress.hidden = true;
+      profileOptions.forEach((option) => {
+        option.classList.remove("is-primary-selected");
+        option.removeAttribute("aria-pressed");
+      });
+    };
+    const selectProfile = async (
+      profileId?: string,
+      partnerProfileId?: string,
+    ) => {
+      const href = dialog.dataset.bookingHref;
+      const astrologerSlug = dialog.dataset.astrologerSlug;
+      if (!href || !profileId || !astrologerSlug || startingChat) return;
+      const attempt = ++sessionAttempt;
+      setPickerBusy(true);
+      if (sessionError) sessionError.hidden = true;
+      try {
+        const response = await fetch("/api/astro-chat/create-session", {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            "x-astropages-customer-csrf": dialog.dataset.csrfToken || "",
+            "x-idempotency-key": `chat-session:${crypto.randomUUID()}`,
+          },
+          body: JSON.stringify({ profileId, partnerProfileId, astrologerSlug }),
+        });
+        const payload = await response.json().catch(() => ({}));
+        const sessionId = String(payload?.data?.session?.id || "");
+        if (!response.ok || !sessionId) {
+          throw new Error(payload?.message || "Chat could not be started.");
+        }
+        if (attempt !== sessionAttempt || !dialog.open) return;
+        const destination = new URL(href, window.location.origin);
+        destination.pathname = `${destination.pathname.replace(/\/$/, "")}/${encodeURIComponent(sessionId)}`;
+        destination.searchParams.delete("book");
+        window.location.assign(
+          `${destination.pathname}${destination.search}${destination.hash}`,
+        );
+      } catch (error) {
+        if (attempt !== sessionAttempt) return;
+        if (sessionError) {
+          sessionError.textContent =
+            error instanceof Error ? error.message : "Chat could not be started.";
+          sessionError.hidden = false;
+        }
+        setPickerBusy(false);
+      }
+    };
+
+    document
+      .querySelectorAll<HTMLElement>(
+        `[data-dialog-open="${CSS.escape(dialog.id)}"][data-chat-booking-href]`,
+      )
+      .forEach((trigger) => {
+        trigger.addEventListener("click", () => {
+          dialog.dataset.bookingHref = trigger.dataset.chatBookingHref ?? "";
+          dialog.dataset.astrologerSlug = trigger.dataset.chatAstrologerSlug ?? "";
+          dialog.dataset.chatProfileType = trigger.dataset.chatProfileType ?? "KUNDLI";
+          dialog.dataset.csrfToken = trigger.dataset.chatCsrfToken ?? "";
+          if (sessionError) sessionError.hidden = true;
+          resetProfileSelection();
+          showProfileList();
+        });
+      });
+    dialog
+      .querySelectorAll<HTMLButtonElement>("[data-astrologer-profile-option]")
+      .forEach((option) => {
+        option.addEventListener("click", () => {
+          const profileId = option.dataset.profileId || "";
+          if (dialog.dataset.chatProfileType !== "MATCHING") {
+            void selectProfile(profileId);
+            return;
+          }
+          if (!primaryProfileId) {
+            primaryProfileId = profileId;
+            profileOptions.forEach((profileOption) => {
+              const selected = profileOption.dataset.profileId === primaryProfileId;
+              profileOption.classList.toggle("is-primary-selected", selected);
+              profileOption.setAttribute("aria-pressed", String(selected));
+            });
+            if (selectionProgress) selectionProgress.hidden = false;
+            return;
+          }
+          if (profileId === primaryProfileId) return;
+          void selectProfile(primaryProfileId, profileId);
+        });
+      });
+    dialog
+      .querySelectorAll<HTMLButtonElement>("[data-astrologer-profile-add]")
+      .forEach((button) => button.addEventListener("click", showAddProfile));
+    dialog
+      .querySelector<HTMLButtonElement>("[data-astrologer-profile-back]")
+      ?.addEventListener("click", showProfileList);
+    dialog.addEventListener("sidera:profile-created", (event) => {
+      const profile = (
+        event as CustomEvent<{ profile?: { id?: string } }>
+      ).detail?.profile;
+      const profileId = profile?.id;
+      if (dialog.dataset.chatProfileType === "MATCHING" && !primaryProfileId) {
+        primaryProfileId = profileId || "";
+        if (selectionProgress) selectionProgress.hidden = !primaryProfileId;
+        showProfileList();
+        return;
+      }
+      void selectProfile(primaryProfileId || profileId, primaryProfileId ? profileId : undefined);
+    });
+    dialog.addEventListener("sidera:dialog-close", () => {
+      sessionAttempt += 1;
+      setPickerBusy(false);
+      resetProfileSelection();
+      showProfileList();
+    });
+    dialog.dataset.astrologerProfilePickerReady = "true";
+  };
+
+  document
+    .querySelectorAll<HTMLDialogElement>("dialog.astrologer-profile-picker")
+    .forEach(initializeAstrologerProfilePicker);
+</script>

@@ -1,0 +1,782 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { loadPublicPageContent } from "../builder/public-page.ts";
+import type { BuilderEditAttributes } from "../builder/builder.ts";
+import Footer from "../components/shared/Footer.astro";
+import Header from "../components/shared/Header.astro";
+import HomeAstrologers from "../components/home/sections/HomeAstrologers.astro";
+import HomeBlog from "../components/home/sections/HomeBlog.astro";
+import HomeBirthChart from "../components/home/sections/HomeBirthChart.astro";
+import HomeDailyHoroscope from "../components/home/sections/HomeDailyHoroscope.astro";
+import HomeFinalCta from "../components/home/sections/HomeFinalCta.astro";
+import HomeHero from "../components/home/sections/HomeHero.astro";
+import HomeMoonCalendar from "../components/home/sections/HomeMoonCalendar.astro";
+import HomeReports from "../components/home/sections/HomeReports.astro";
+import HomeShop from "../components/home/sections/HomeShop.astro";
+import HomeSynastry from "../components/home/sections/HomeSynastry.astro";
+import HomeTodaySky from "../components/home/sections/HomeTodaySky.astro";
+import HomeTransit from "../components/home/sections/HomeTransit.astro";
+import { blogArticles } from "../data/blog/articles.ts";
+import { listBlogPosts } from "../data/blog/posts.ts";
+import type { ShopProductId } from "../data/shop/catalog.ts";
+import {
+  getHomeAstrologersCopy,
+  type HomeAstrologersCopy,
+} from "../data/locale/home/sections/astrologers.ts";
+import { getAstrologersBrowseCopy } from "../data/locale/astrologers/sections/browse.ts";
+import {
+  getHomeBlogCopy,
+  type HomeBlogCopy,
+} from "../data/locale/home/sections/blog.ts";
+import {
+  getHomeBirthChartCopy,
+  type HomeBirthChartCopy,
+} from "../data/locale/home/sections/birth-chart.ts";
+import {
+  getHomeDailyHoroscopeCopy,
+  getHomeDailyHoroscopeRuntimeCopy,
+  type HomeDailyHoroscopeCopy,
+} from "../data/locale/home/sections/daily-horoscope.ts";
+import type { HomeFinalCtaCopy } from "../data/locale/home/sections/final-cta.ts";
+import type { HomeMoonCalendarCopy } from "../data/locale/home/sections/moon-calendar.ts";
+import { getMoonCalendarCalendarCopy } from "../data/locale/moon-calendar/sections/calendar-day-detail.ts";
+import {
+  getHomeReportsCopy,
+  type HomeReportsCopy,
+} from "../data/locale/home/sections/reports.ts";
+import {
+  getHomeShopCopy,
+  type HomeShopCopy,
+} from "../data/locale/home/sections/shop.ts";
+import type { HomeSynastryCopy } from "../data/locale/home/sections/synastry.ts";
+import { getHomeTodaySkyCopy } from "../data/locale/home/sections/todays-sky.ts";
+import {
+  getHomeTransitPresentation,
+  type HomeTransitCopy,
+} from "../data/locale/home/sections/transit.ts";
+import {
+  activeLocales,
+  defaultLocale,
+  localizePath,
+  type SupportedLocale,
+} from "../data/localization-contract.ts";
+import { createSharedFooterProps } from "../data/shared-footer-navigation.ts";
+import { getProviderUnavailableCopy } from "../data/provider-unavailable.ts";
+import {
+  moonCalendarPath,
+  type MoonCalendarPhase,
+} from "../data/moon-calendar/calendar-model.ts";
+import { listReportProducts } from "../server/aggregator/report-catalog.ts";
+import { listShopProducts } from "../server/aggregator/shop-catalog.ts";
+import { listAstrologers } from "../server/aggregator/astrologer-directory.ts";
+import { getCurrentMoonGuide } from "../server/aggregator/moon-guide-api.ts";
+import { getHoroscopePrediction } from "../server/aggregator/horoscope-api.ts";
+import {
+  getSkyForDate,
+  normalizeUpcomingSkyAspectEvents,
+} from "../server/aggregator/sky-api.ts";
+import { getRuntimeEnv } from "../server/generated-site/request.ts";
+import "../styles/home/home.css";
+
+export const prerender = false;
+
+const {
+  locale,
+  content,
+  builder,
+  builderPage,
+  chromePage,
+  reviewTargets,
+  builderEdit,
+  chromeEdit,
+} = await loadPublicPageContent(Astro, "home");
+const seoContent = {
+  seo_title: content.seo_title,
+  seo_description: content.seo_description,
+  seo_canonical_path: content.seo_canonical_path,
+  seo_robots: content.seo_robots,
+  og_title: content.og_title,
+  og_description: content.og_description,
+  og_image: content.og_image,
+  og_image_alt: content.og_image_alt,
+  twitter_card: content.twitter_card,
+  twitter_title: content.twitter_title,
+  twitter_description: content.twitter_description,
+  twitter_image: content.twitter_image,
+};
+
+const componentEditAttributes = (
+  attributes: BuilderEditAttributes,
+): Record<string, string> =>
+  Object.fromEntries(
+    Object.entries(attributes)
+      .filter((entry): entry is [string, string | true] => entry[1] !== undefined)
+      .map(([key, value]) => [key, value === true ? "true" : value]),
+  );
+
+const localeHref = (targetLocale: SupportedLocale) => {
+  const url = new URL(Astro.request.url);
+  if (targetLocale === defaultLocale) {
+    if (locale === defaultLocale) {
+      url.searchParams.delete("locale");
+    } else {
+      url.searchParams.set("locale", defaultLocale);
+    }
+  } else {
+    url.searchParams.set("locale", targetLocale);
+  }
+  return `${url.pathname}${url.search}${url.hash}`;
+};
+
+const navigation = [
+  {
+    label: content.nav_todays_sky,
+    href: localizePath("/todays-sky", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_todays_sky")),
+  },
+  {
+    label: content.nav_charts,
+    href: "#birth-chart",
+    editAttributes: componentEditAttributes(chromeEdit("nav_charts")),
+  },
+  {
+    label: content.nav_compatibility,
+    href: "#synastry",
+    editAttributes: componentEditAttributes(chromeEdit("nav_compatibility")),
+  },
+  {
+    label: content.nav_moon,
+    href: localizePath("/moon-calendar", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_moon")),
+  },
+  {
+    label: content.nav_horoscope,
+    href: localizePath("/daily-horoscope", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_horoscope")),
+  },
+  {
+    label: content.nav_astrologers,
+    href: localizePath("/astrologers", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_astrologers")),
+  },
+  {
+    label: content.nav_blog,
+    href: "#blog",
+    editAttributes: componentEditAttributes(chromeEdit("nav_blog")),
+  },
+];
+
+const actions = [
+  {
+    id: "sign-in",
+    label: content.action_sign_in,
+    href: localizePath("/login", locale),
+    variant: "ghost" as const,
+    editAttributes: componentEditAttributes(chromeEdit("action_sign_in")),
+  },
+  {
+    id: "get-chart",
+    label: content.action_get_chart,
+    href: localizePath("/birth-chart", locale),
+    variant: "primary" as const,
+    editAttributes: componentEditAttributes(chromeEdit("action_get_chart")),
+  },
+];
+
+const languageOptions = activeLocales.map((item) => {
+  const field = `language_option_${item.code}_label`;
+  return {
+    code: item.code,
+    label: content[field] || item.nativeName,
+    href: localeHref(item.code),
+    lang: item.code,
+    hreflang: item.hreflang,
+    editAttributes: componentEditAttributes(chromeEdit(field)),
+  };
+});
+
+const todaySkyCopy = getHomeTodaySkyCopy(locale);
+const localizedAstrologersCopy = getHomeAstrologersCopy(locale);
+const localizedBrowseAstrologersCopy = getAstrologersBrowseCopy(locale);
+const localizedBlogCopy = getHomeBlogCopy(locale);
+const dynamicBlogPosts = await listBlogPosts(locale);
+const dynamicBlogPostBySlug = new Map(dynamicBlogPosts.map((post) => [post.slug, post]));
+const localizedBirthChartCopy = getHomeBirthChartCopy(locale);
+const localizedDailyHoroscopeCopy = getHomeDailyHoroscopeCopy(locale);
+const dailyHoroscopeRuntime = getHomeDailyHoroscopeRuntimeCopy(locale);
+const homeMoonRuntime = getMoonCalendarCalendarCopy(locale).runtime;
+const localizedReportsCopy = getHomeReportsCopy(locale);
+const runtimeEnv = await getRuntimeEnv(Astro);
+const homeAstrologers = (await listAstrologers(runtimeEnv)).slice(0, 2);
+const homeAstrologerCurrency = new Intl.NumberFormat(locale, {
+  style: "currency",
+  currency: "USD",
+  minimumFractionDigits: 2,
+});
+const homeReportProducts = (await listReportProducts(runtimeEnv, locale)).slice(0, 3);
+const shopProducts = await listShopProducts(runtimeEnv, locale);
+const shopProductById = new Map(shopProducts.map((product) => [product.id, product]));
+const localizedShopCopy = getHomeShopCopy(locale);
+const homeTransitPresentation = getHomeTransitPresentation(locale);
+const today = new Date();
+const localeMeta = activeLocales.find((item) => item.code === locale);
+const todayDateLabel = new Intl.DateTimeFormat(localeMeta?.hreflang ?? "en", {
+  weekday: "long",
+  month: "long",
+  day: "numeric",
+  year: "numeric",
+}).format(today);
+const todayDateIso = today.toISOString().slice(0, 10);
+const homeSky = await getSkyForDate({
+  env: runtimeEnv,
+  date: todayDateIso,
+  locale,
+  live: true,
+  eventRangeDays: 30,
+  now: today.toISOString(),
+}).catch(() => null);
+const homeMoonGuide = await getCurrentMoonGuide({
+  env: runtimeEnv,
+  locale,
+  now: today.toISOString(),
+}).catch(() => null);
+const homeDailyHoroscopeReading = await getHoroscopePrediction({
+  env: runtimeEnv,
+  sign: "aries",
+  period: "daily",
+  locale,
+  now: today.toISOString(),
+}).catch(() => null);
+const homeSkyBodyIds = new Set([
+  "sun",
+  "moon",
+  "mercury",
+  "venus",
+  "mars",
+  "jupiter",
+  "saturn",
+]);
+const localizedSignNames = new Map(
+  localizedDailyHoroscopeCopy.signs.map((sign) => [sign.id, sign.name]),
+);
+const homeTodaySkyPositions = homeSky
+  ? homeSky.positions
+      .filter((position) => homeSkyBodyIds.has(position.id))
+      .map((position) => ({
+        id: position.id,
+        planetName:
+          todaySkyCopy.planetNames[
+            position.id as keyof typeof todaySkyCopy.planetNames
+          ] || position.planetName,
+        planetGlyph: position.planetGlyph,
+        signName:
+          localizedSignNames.get(position.signName.toLowerCase()) ||
+          position.signName,
+        degreeText: position.degreeText,
+        motionText:
+          position.id === "moon"
+            ? todaySkyCopy.motions[homeSky.moon.waxing ? "waxing" : "waning"]
+            : position.motionText
+              ? todaySkyCopy.motions.retrograde
+              : undefined,
+      }))
+  : [];
+const providerUnavailable = getProviderUnavailableCopy(locale);
+const homeTransitDateFormatter = new Intl.DateTimeFormat(
+  localeMeta?.hreflang ?? "en",
+  { month: "short", day: "numeric", timeZone: "UTC" },
+);
+const homeTransitEvents = homeSky
+  ? normalizeUpcomingSkyAspectEvents(homeSky.events).slice(0, 4)
+  : [];
+const homeMoonDateFormatter = new Intl.DateTimeFormat(
+  localeMeta?.hreflang ?? "en",
+  { month: "short", day: "numeric", timeZone: "UTC" },
+);
+const homeMoonPhaseOrder: MoonCalendarPhase[] = [
+  "new",
+  "waxing-crescent",
+  "first-quarter",
+  "waxing-gibbous",
+  "full",
+  "waning-gibbous",
+  "last-quarter",
+  "waning-crescent",
+];
+const formatHomeMoonMoment = (moment: string | undefined) =>
+  moment ? homeMoonDateFormatter.format(new Date(moment)) : "";
+const homeMoonAvailable = Boolean(
+  homeMoonGuide?.nextFull &&
+    homeMoonGuide?.nextNew &&
+    homeMoonGuide.milestones.length,
+);
+const homeMoonCurrentMilestoneIndex = homeMoonGuide
+  ? homeMoonGuide.milestones.findLastIndex(
+      (milestone) => Date.parse(milestone.moment) <= today.getTime(),
+    )
+  : -1;
+const birthChartCopy: HomeBirthChartCopy = {
+  eyebrow: content.home_birth_chart_eyebrow,
+  titleAccent: content.home_birth_chart_title_accent,
+  titleRest: content.home_birth_chart_title_rest,
+  description: content.home_birth_chart_description,
+  formTitle: content.home_birth_chart_form_title,
+  dateLabel: content.home_birth_chart_date_label,
+  monthLabel: localizedBirthChartCopy.monthLabel,
+  dayLabel: localizedBirthChartCopy.dayLabel,
+  yearLabel: localizedBirthChartCopy.yearLabel,
+  timeLabel: content.home_birth_chart_time_label,
+  hourLabel: localizedBirthChartCopy.hourLabel,
+  minuteLabel: localizedBirthChartCopy.minuteLabel,
+  periodLabel: localizedBirthChartCopy.periodLabel,
+  unknownTimeLabel: content.home_birth_chart_unknown_time_label,
+  locationLabel: content.home_birth_chart_location_label,
+  locationPlaceholder: content.home_birth_chart_location_placeholder,
+  locationStart: content.home_birth_chart_location_start,
+  locationSearching: content.home_birth_chart_location_searching,
+  locationEmpty: content.home_birth_chart_location_empty,
+  locationUnavailable: content.home_birth_chart_location_unavailable,
+  locationSelected: content.home_birth_chart_location_selected,
+  extendedSettingsLabel: content.home_birth_chart_extended_settings_label,
+  houseSystemLabel: content.home_birth_chart_house_system_label,
+  housePlacidus: content.home_birth_chart_house_placidus,
+  houseWholeSign: content.home_birth_chart_house_whole_sign,
+  houseKoch: content.home_birth_chart_house_koch,
+  houseEqual: content.home_birth_chart_house_equal,
+  showAspectsLabel: content.home_birth_chart_show_aspects_label,
+  ctaLabel: content.home_birth_chart_cta,
+  wheelTitle: content.home_birth_chart_wheel_title,
+  wheelDescription: content.home_birth_chart_wheel_description,
+  features: [
+    {
+      title: content.home_birth_chart_feature_1_title,
+      body: content.home_birth_chart_feature_1_body,
+    },
+    {
+      title: content.home_birth_chart_feature_2_title,
+      body: content.home_birth_chart_feature_2_body,
+    },
+    {
+      title: content.home_birth_chart_feature_3_title,
+      body: content.home_birth_chart_feature_3_body,
+    },
+  ],
+};
+const transitCopy: HomeTransitCopy = {
+  eyebrow: content.home_transit_eyebrow,
+  titleAccent: content.home_transit_title_accent,
+  titleRest: content.home_transit_title_rest,
+  description: content.home_transit_description,
+  ctaLabel: content.home_transit_cta,
+  items: homeTransitEvents.map((event) => {
+    const presentation = homeTransitPresentation.aspects[event.aspectId];
+    const planetA =
+      homeTransitPresentation.planetNames[event.planetA.toLowerCase()] ||
+      event.planetA;
+    const planetB =
+      homeTransitPresentation.planetNames[event.planetB.toLowerCase()] ||
+      event.planetB;
+    return {
+      id: event.id,
+      date: homeTransitDateFormatter.format(new Date(event.moment)),
+      glyph: presentation.glyph,
+      aspect: `${planetA} ${presentation.label} ${planetB}`,
+      note: event.interpretation || presentation.guidance,
+    };
+  }),
+};
+const synastryCopy: HomeSynastryCopy = {
+  eyebrow: content.home_synastry_eyebrow,
+  titleAccent: content.home_synastry_title_accent,
+  titleRest: content.home_synastry_title_rest,
+  description: content.home_synastry_description,
+  primaryCta: content.home_synastry_primary_cta,
+  secondaryCta: content.home_synastry_secondary_cta,
+  personAName: content.home_synastry_person_a_name,
+  personADetail: content.home_synastry_person_a_detail,
+  personBName: content.home_synastry_person_b_name,
+  personBDetail: content.home_synastry_person_b_detail,
+  resonance: content.home_synastry_resonance,
+};
+const moonCalendarCopy: HomeMoonCalendarCopy = {
+  eyebrow: content.home_moon_calendar_eyebrow,
+  titleAccent: content.home_moon_calendar_title_accent,
+  titleRest: content.home_moon_calendar_title_rest,
+  currentPhaseName: homeMoonGuide
+    ? homeMoonRuntime.phaseNames[homeMoonGuide.phase.key]
+    : "",
+  currentPhaseMeta: homeMoonGuide
+    ? [
+        homeMoonRuntime.illuminationTemplate
+          .replace("{percent}", String(homeMoonGuide.phase.illumination))
+          .replace(
+            "{direction}",
+            homeMoonGuide.phase.waxing
+              ? homeMoonRuntime.waxingLabel
+              : homeMoonRuntime.waningLabel,
+          ),
+        homeMoonRuntime.moonInTemplate
+          .replace(
+            "{sign}",
+            homeMoonGuide.phase.moonSignIndex === undefined
+              ? homeMoonGuide.phase.moonSign
+              : homeMoonRuntime.zodiacNames[homeMoonGuide.phase.moonSignIndex],
+          )
+          .replace("{degree}", `${homeMoonGuide.phase.moonDegree}°`),
+      ].join(" · ")
+    : "",
+  currentPhaseDescription: homeMoonGuide
+    ? homeMoonRuntime.rituals[
+        homeMoonPhaseOrder.indexOf(homeMoonGuide.phase.key)
+      ]
+    : "",
+  ctaLabel: content.home_moon_calendar_cta,
+  phases: homeMoonGuide
+    ? homeMoonGuide.milestones.map((milestone) => ({
+        phase: milestone.kind,
+        name: homeMoonRuntime.phaseNames[milestone.kind],
+        date: formatHomeMoonMoment(milestone.moment),
+      }))
+    : [],
+  nextFullLabel: content.home_moon_calendar_next_full_label,
+  nextFullValue: formatHomeMoonMoment(homeMoonGuide?.nextFull),
+  nextNewLabel: content.home_moon_calendar_next_new_label,
+  nextNewValue: formatHomeMoonMoment(homeMoonGuide?.nextNew),
+};
+const dailyHoroscopeCopy: HomeDailyHoroscopeCopy = {
+  eyebrow: content.home_horoscope_eyebrow,
+  titleAccent: content.home_horoscope_title_accent,
+  titleRest: content.home_horoscope_title_rest,
+  prompt: content.home_horoscope_prompt,
+  signs: localizedDailyHoroscopeCopy.signs.map((sign, index) => {
+    const signNumber = index + 1;
+    return {
+      ...sign,
+      name: content[`home_horoscope_sign_${signNumber}_name`],
+      dates: content[`home_horoscope_sign_${signNumber}_dates`],
+      element: content[`home_horoscope_sign_${signNumber}_element`],
+      reading: index === 0 ? homeDailyHoroscopeReading?.headline ?? "" : "",
+      cta: content[`home_horoscope_sign_${signNumber}_cta`],
+      href: localizePath(`/daily-horoscope/${sign.id}`, locale),
+    };
+  }),
+};
+const astrologersCopy: HomeAstrologersCopy = {
+  eyebrow: content.home_astrologers_eyebrow,
+  titleAccent: content.home_astrologers_title_accent,
+  titleRest: content.home_astrologers_title_rest,
+  browseLabel: content.home_astrologers_browse_label,
+  profiles: homeAstrologers.map((astrologer, index) => {
+    const profile = localizedAstrologersCopy.profiles[index];
+    const profileNumber = index + 1;
+    const field = (suffix: string) =>
+      content[`home_astrologers_profile_${profileNumber}_${suffix}`];
+    return {
+      ...profile,
+      slug: astrologer?.slug,
+      imageUrl: astrologer?.imageUrl,
+      href: localizePath(`/astrologers/${astrologer.slug}`, locale),
+      name: astrologer.name,
+      tradition: astrologer.tradition,
+      availability:
+        astrologer.availability === "online" ? "online" : "offline",
+      availabilityLabel: field("availability_label"),
+      ratingValue: astrologer.rating,
+      ratingText: astrologer.rating.toFixed(1),
+      ratingAriaLabel: `${astrologer.name}: ${astrologer.rating.toFixed(1)} / 5`,
+      rateText: homeAstrologerCurrency.format(astrologer.rate),
+      rateUnit: localizedBrowseAstrologersCopy.rateUnit,
+      actionLabel: field("action"),
+    };
+  }),
+};
+const reportsCopy: HomeReportsCopy = {
+  eyebrow: content.home_reports_eyebrow,
+  titleAccent: content.home_reports_title_accent,
+  titleRest: content.home_reports_title_rest,
+  browseLabel: content.home_reports_browse_label,
+  reports: localizedReportsCopy.reports.map((report, index) => {
+    const product = homeReportProducts[index];
+    const reportNumber = index + 1;
+    const field = (suffix: string) =>
+      content[`home_reports_report_${reportNumber}_${suffix}`];
+    return {
+      ...report,
+      title: field("title"),
+      description: field("description"),
+      pagesLabel: product?.pages ?? field("pages"),
+      price: product?.price ?? field("price"),
+      actionLabel: field("action"),
+      href: product
+        ? localizePath(`/reports/${product.slug}`, locale)
+        : localizePath("/reports", locale),
+    };
+  }),
+};
+const shopCopy: HomeShopCopy = {
+  eyebrow: content.home_shop_eyebrow,
+  titleLead: content.home_shop_title_lead,
+  titleAccent: content.home_shop_title_accent,
+  titleRest: content.home_shop_title_rest,
+  browseLabel: content.home_shop_browse_label,
+  items: localizedShopCopy.items.map((item, index) => {
+    const productId: ShopProductId | undefined = (
+      ["natal-print", "pins", "almanac", "candle"] as const
+    )[index];
+    const product = productId ? shopProductById.get(productId) : undefined;
+    const itemNumber = index + 1;
+    const field = (suffix: string) =>
+      content[`home_shop_item_${itemNumber}_${suffix}`];
+    return {
+      ...item,
+      title: field("title"),
+      category: field("category"),
+      price: product?.priceLabel ?? field("price"),
+      imageAlt: field("image_alt"),
+      imageSrc: product?.imageUrl,
+      href: product
+        ? localizePath(`/shop/${product.slug}`, locale)
+        : localizePath("/shop", locale),
+    };
+  }),
+};
+const blogCopy: HomeBlogCopy = {
+  titleAccent: content.home_blog_title_accent,
+  titleRest: content.home_blog_title_rest,
+  tagline: content.home_blog_tagline,
+  browseLabel: content.home_blog_browse_label,
+  posts: localizedBlogCopy.posts.map((post, index) => {
+    const postNumber = index + 1;
+    const field = (suffix: string) =>
+      content[`home_blog_post_${postNumber}_${suffix}`];
+    return {
+      ...post,
+      category: field("category"),
+      title: field("title"),
+      excerpt: field("excerpt"),
+      imageAlt: field("image_alt"),
+    };
+  }),
+};
+const homeBlogPosts = blogCopy.posts.map((post, index) => {
+  const article = blogArticles[index];
+  const dynamicPost = dynamicBlogPostBySlug.get(article.slug);
+  return {
+    ...post,
+    category: dynamicPost?.category ?? post.category,
+    title: dynamicPost?.title ?? post.title,
+    excerpt: dynamicPost?.excerpt ?? post.excerpt,
+    imageAlt: dynamicPost?.image?.alt ?? article.image.alt,
+    image: dynamicPost?.image ?? article.image,
+    href: localizePath(`/blog/${article.slug}`, locale),
+  };
+});
+const finalCtaCopy: HomeFinalCtaCopy = {
+  titleAccent: content.home_final_cta_title_accent,
+  titleRest: content.home_final_cta_title_rest,
+  actionLabel: content.home_final_cta_action_label,
+};
+const footerProps = createSharedFooterProps({
+  content,
+  locale,
+  editAttributes: (field) => componentEditAttributes(chromeEdit(field)),
+});
+---
+
+<BaseLayout
+  seo={seoContent}
+  bodyClass="sidera-home-body"
+  builderToolbar={{
+    launcherEnabled: builder.launcherEnabled,
+    studioModeEnabled: builder.studioModeEnabled,
+    collection: builder.collection,
+    entry: builder.entry,
+    locale: builder.locale,
+    csrfToken: builder.csrfToken,
+    canPublish: builder.canPublish,
+    seo: seoContent,
+    hasSavedDraft: builderPage.hasSavedDraft || chromePage.hasSavedDraft,
+    reviewTargets,
+  }}
+>
+  <Header
+    id="home-header"
+    brandLabel={content.brand_name}
+    brandHref={localizePath("/", locale)}
+    brandAriaLabel={content.brand_aria_label}
+    navigationLabel={content.primary_navigation_label}
+    chromeNavigation={{ content, edit: chromeEdit }}
+    navigation={navigation}
+    actions={actions}
+    language={{
+      activeLocale: locale,
+      options: languageOptions,
+      triggerLabel: content.language_trigger_label,
+      menuLabel: content.language_menu_label,
+    }}
+    mobileUtilityActionId="sign-in"
+    menuLabel={content.menu_open_label}
+    closeMenuLabel={content.menu_close_label}
+    brandEditAttributes={componentEditAttributes(chromeEdit("brand_name"))}
+  />
+
+  <main class="sidera-home">
+    <HomeHero
+      kicker={content.hero_kicker}
+      title={content.hero_title}
+      body={content.hero_body}
+      primaryCta={content.hero_primary_cta}
+      primaryHref={localizePath("/birth-chart", locale)}
+      secondaryCta={content.hero_secondary_cta}
+      secondaryHref={localizePath("/todays-sky", locale)}
+      proofs={[
+        {
+          label: content.hero_proof_1,
+          editAttributes: componentEditAttributes(builderEdit("hero_proof_1")),
+        },
+        {
+          label: content.hero_proof_2,
+          editAttributes: componentEditAttributes(builderEdit("hero_proof_2")),
+        },
+        {
+          label: content.hero_proof_3,
+          editAttributes: componentEditAttributes(builderEdit("hero_proof_3")),
+        },
+      ]}
+      kickerEditAttributes={componentEditAttributes(builderEdit("hero_kicker"))}
+      titleEditAttributes={componentEditAttributes(builderEdit("hero_title"))}
+      bodyEditAttributes={componentEditAttributes(builderEdit("hero_body"))}
+      primaryCtaEditAttributes={componentEditAttributes(builderEdit("hero_primary_cta"))}
+      secondaryCtaEditAttributes={componentEditAttributes(builderEdit("hero_secondary_cta"))}
+    />
+
+    <HomeTodaySky
+      eyebrow={content.today_sky_eyebrow}
+      titleAccent={content.today_sky_title_accent}
+      titleRest={content.today_sky_title_rest}
+      dateLabel={todayDateLabel}
+      dateIso={todayDateIso}
+      metadata={content.today_sky_metadata}
+      ctaLabel={content.today_sky_cta}
+      ctaHref={localizePath("/todays-sky", locale)}
+      positions={homeTodaySkyPositions}
+      unavailableTitle={providerUnavailable.title}
+      unavailableDescription={providerUnavailable.description}
+      eyebrowEditAttributes={componentEditAttributes(builderEdit("today_sky_eyebrow"))}
+      titleAccentEditAttributes={componentEditAttributes(
+        builderEdit("today_sky_title_accent"),
+      )}
+      titleRestEditAttributes={componentEditAttributes(
+        builderEdit("today_sky_title_rest"),
+      )}
+      metadataEditAttributes={componentEditAttributes(builderEdit("today_sky_metadata"))}
+      ctaEditAttributes={componentEditAttributes(builderEdit("today_sky_cta"))}
+    />
+
+    <HomeBirthChart
+      locale={locale}
+      copy={birthChartCopy}
+      actionHref={localizePath("/birth-chart", locale)}
+      editAttributes={(field) =>
+        componentEditAttributes(builderEdit(`home_birth_chart_${field}`))
+      }
+    />
+
+    <HomeTransit
+      copy={transitCopy}
+      actionHref={localizePath("/transit", locale)}
+      unavailableTitle={providerUnavailable.title}
+      unavailableDescription={providerUnavailable.description}
+      editAttributes={(field) =>
+        componentEditAttributes(builderEdit(`home_transit_${field}`))
+      }
+    />
+
+    <HomeSynastry
+      copy={synastryCopy}
+      actionHref={localizePath("/synastry", locale)}
+      editAttributes={(field) =>
+        componentEditAttributes(builderEdit(`home_synastry_${field}`))
+      }
+    />
+
+    <HomeMoonCalendar
+      copy={moonCalendarCopy}
+      actionHref={localizePath("/moon-calendar", locale)}
+      moonPath={homeMoonGuide
+        ? moonCalendarPath(
+            homeMoonGuide.phase.illumination / 100,
+            homeMoonGuide.phase.waxing,
+            66,
+            62,
+          )
+        : ""}
+      currentMilestoneIndex={homeMoonCurrentMilestoneIndex}
+      available={homeMoonAvailable}
+      unavailableTitle={providerUnavailable.title}
+      unavailableDescription={providerUnavailable.description}
+      editAttributes={(field) =>
+        componentEditAttributes(builderEdit(`home_moon_calendar_${field}`))
+      }
+    />
+
+    <HomeDailyHoroscope
+      copy={dailyHoroscopeCopy}
+      dateLabel={todayDateLabel}
+      dateIso={todayDateIso}
+      actionHref={localizePath("/daily-horoscope", locale)}
+      apiHref="/api/astropages/generated-site/horoscope"
+      locale={locale}
+      loadingLabel={dailyHoroscopeRuntime.loading}
+      unavailableDescription={providerUnavailable.description}
+      editAttributes={(field) =>
+        componentEditAttributes(builderEdit(`home_horoscope_${field}`))
+      }
+    />
+
+    <HomeAstrologers
+      copy={astrologersCopy}
+      actionHref={localizePath("/astrologers", locale)}
+      editAttributes={(field) =>
+        componentEditAttributes(builderEdit(`home_astrologers_${field}`))
+      }
+    />
+
+    <HomeReports
+      copy={reportsCopy}
+      actionHref={localizePath("/reports", locale)}
+      editAttributes={(field) =>
+        componentEditAttributes(builderEdit(`home_reports_${field}`))
+      }
+    />
+
+    <HomeShop
+      copy={shopCopy}
+      actionHref={localizePath("/shop", locale)}
+      locale={locale}
+      editAttributes={(field) =>
+        componentEditAttributes(builderEdit(`home_shop_${field}`))
+      }
+    />
+
+    <HomeBlog
+      copy={blogCopy}
+      posts={homeBlogPosts}
+      dynamicContent={dynamicBlogPosts.length > 0}
+      actionHref={localizePath("/blog", locale)}
+      editAttributes={(field) =>
+        componentEditAttributes(builderEdit(`home_blog_${field}`))
+      }
+    />
+
+    <HomeFinalCta
+      copy={finalCtaCopy}
+      locale={locale}
+      actionHref={localizePath("/birth-chart", locale)}
+      editAttributes={(field) =>
+        componentEditAttributes(builderEdit(`home_final_cta_${field}`))
+      }
+    />
+  </main>
+  <Footer {...footerProps} />
+</BaseLayout>

@@ -1,0 +1,194 @@
+.synastry-setup {
+  min-block-size: 100svh;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+.synastry-setup__inner {
+  inline-size: min(100%, 70rem);
+  margin-inline: auto;
+  padding: clamp(2.75rem, 6vw, 3.25rem) clamp(1rem, 3vw, 2.125rem) 4.5rem;
+}
+
+.synastry-setup__intro {
+  text-align: center;
+  animation: synastry-rise 480ms ease-out both;
+}
+
+.synastry-setup__eyebrow {
+  margin: 0;
+  color: var(--color-primary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.synastry-setup__intro h1 {
+  margin: 0.875rem auto 0;
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 400;
+  letter-spacing: -0.015em;
+  line-height: 1;
+  text-align: center;
+}
+
+.synastry-setup__intro h1 em {
+  color: var(--color-primary);
+  font-weight: 400;
+}
+
+.synastry-setup__description {
+  max-inline-size: 31.25rem;
+  margin: 1rem auto 0;
+  color: var(--color-muted);
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+.synastry-setup__form {
+  animation: synastry-rise 520ms 80ms ease-out both;
+}
+
+.synastry-setup__profile-heading-action .sidera-button {
+  min-block-size: 2.5rem;
+  padding-inline: 0.25rem;
+  white-space: nowrap;
+}
+
+.synastry-profile-picker [hidden] {
+  display: none !important;
+}
+
+.synastry-profile-picker__list {
+  max-block-size: min(20rem, 40svh);
+  display: grid;
+  gap: 0.75rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.synastry-profile-picker__option {
+  inline-size: 100%;
+  min-block-size: 4.75rem;
+  display: grid;
+  grid-template-columns: 2.75rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.875rem;
+  border: 1px solid rgba(var(--color-text-rgb), 0.18);
+  border-radius: 1rem;
+  padding: 0.875rem 1rem;
+  background: var(--color-panel);
+  color: var(--color-text);
+  cursor: pointer;
+  text-align: start;
+  transition:
+    border-color 180ms ease,
+    background-color 180ms ease,
+    transform 180ms ease;
+}
+
+.synastry-profile-picker__option:hover {
+  border-color: rgba(var(--color-primary-rgb), 0.52);
+  background: #f7eddf;
+}
+
+.synastry-profile-picker__option:active {
+  transform: translateY(1px);
+}
+
+.synastry-profile-picker__option:focus-visible {
+  outline: 0.1875rem solid rgba(var(--color-primary-rgb), 0.48);
+  outline-offset: 0.1875rem;
+}
+
+.synastry-profile-picker__initial {
+  inline-size: 2.75rem;
+  block-size: 2.75rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-dark);
+  color: #fff8ef;
+  font: 400 1.25rem / 1 var(--font-serif), Georgia, serif;
+}
+
+.synastry-profile-picker__option-copy {
+  min-inline-size: 0;
+  display: grid;
+  gap: 0.125rem;
+}
+
+.synastry-profile-picker__name-row {
+  min-inline-size: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.synastry-profile-picker__name-row strong {
+  min-inline-size: 0;
+  flex: 1;
+  font: 600 1rem / 1.3 var(--font-sans), system-ui, sans-serif;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.synastry-profile-picker__name-row .sidera-badge {
+  flex: none;
+}
+
+.synastry-profile-picker__option-copy small {
+  color: #796257;
+  font: 400 0.8125rem / 1.4 var(--font-sans), system-ui, sans-serif;
+  overflow-wrap: anywhere;
+}
+
+.synastry-profile-picker__add-row {
+  margin-block-start: 1rem;
+  border-block-start: 1px solid rgba(var(--color-text-rgb), 0.12);
+  padding-block-start: 1rem;
+}
+
+.synastry-profile-picker__back {
+  margin-block-end: 0.75rem;
+}
+
+@keyframes synastry-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 40rem) {
+  .synastry-setup__inner {
+    padding-block-start: 2.25rem;
+  }
+
+  .synastry-profile-picker__list {
+    max-block-size: min(14rem, 33svh);
+  }
+
+  .synastry-setup__profile-heading-action .sidera-button {
+    min-block-size: 2.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .synastry-setup__intro,
+  .synastry-setup__form {
+    animation: none;
+  }
+
+  .synastry-profile-picker__option {
+    transition: none;
+  }
+}

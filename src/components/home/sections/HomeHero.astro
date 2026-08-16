@@ -1,0 +1,104 @@
+---
+import Button from "../../shared/Button.astro";
+import "../../../styles/home/sections/home-hero.css";
+
+type EditAttributes = Record<string, string>;
+
+type ProofItem = {
+  label: string;
+  editAttributes?: EditAttributes;
+};
+
+type Props = {
+  kicker: string;
+  title: string;
+  body: string;
+  primaryCta: string;
+  primaryHref: string;
+  secondaryCta: string;
+  secondaryHref: string;
+  proofs: ProofItem[];
+  kickerEditAttributes?: EditAttributes;
+  titleEditAttributes?: EditAttributes;
+  bodyEditAttributes?: EditAttributes;
+  primaryCtaEditAttributes?: EditAttributes;
+  secondaryCtaEditAttributes?: EditAttributes;
+};
+
+const {
+  kicker,
+  title,
+  body,
+  primaryCta,
+  primaryHref,
+  secondaryCta,
+  secondaryHref,
+  proofs,
+  kickerEditAttributes = {},
+  titleEditAttributes = {},
+  bodyEditAttributes = {},
+  primaryCtaEditAttributes = {},
+  secondaryCtaEditAttributes = {},
+} = Astro.props as Props;
+
+const titleWords = title.trim().split(/\s+/);
+const titleAccent = titleWords.shift() ?? "";
+const titleRemainder = titleWords.join(" ");
+const zodiacGlyphs = ["♈", "♉", "♊", "♋", "♌", "♍", "♎", "♏", "♐", "♑", "♒", "♓"];
+---
+
+<section class="home-hero" id="top" aria-labelledby="home-hero-title">
+  <div class="home-hero__zodiac" aria-hidden="true">
+    {
+      zodiacGlyphs.map((glyph, index) => (
+        <span style={`--zodiac-index: ${index}`}>{glyph}</span>
+      ))
+    }
+    <i></i>
+  </div>
+  <div class="home-hero__inner">
+    <div class="home-hero__content">
+      <p class="home-hero__kicker" {...kickerEditAttributes}>{kicker}</p>
+
+      <h1 id="home-hero-title" {...titleEditAttributes}>
+        <em>{titleAccent}</em>{titleRemainder ? ` ${titleRemainder}` : ""}
+      </h1>
+
+      <p class="home-hero__body" {...bodyEditAttributes}>{body}</p>
+
+      <div class="home-hero__actions">
+        <Button
+          href={primaryHref}
+          size="large"
+          class="home-hero__button"
+          editAttributes={primaryCtaEditAttributes}
+        >
+          {primaryCta}
+        </Button>
+        <Button
+          href={secondaryHref}
+          variant="outline"
+          size="large"
+          class="home-hero__button"
+          editAttributes={secondaryCtaEditAttributes}
+        >
+          {secondaryCta}
+        </Button>
+      </div>
+
+      {
+        proofs.length > 0 ? (
+          <ul class="home-hero__proofs" aria-label={kicker}>
+            {proofs.map((proof) => (
+              <li>
+                <span aria-hidden="true">✦</span>
+                <span {...(proof.editAttributes ?? {})}>{proof.label}</span>
+              </li>
+            ))}
+          </ul>
+        ) : null
+      }
+    </div>
+
+  </div>
+</section>

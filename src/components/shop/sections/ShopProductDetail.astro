@@ -1,0 +1,275 @@
+---
+import type { SupportedLocale } from "../../../data/localization-contract.ts";
+import type { ShopProductId } from "../../../data/shop/catalog.ts";
+import Breadcrumb from "../../shared/Breadcrumb.astro";
+import Button from "../../shared/Button.astro";
+import CardGrid from "../../shared/CardGrid.astro";
+import MediaThumbnail from "../../shared/MediaThumbnail.astro";
+import ProductCard from "../../shared/ProductCard.astro";
+import QuantityStepper from "../../shared/QuantityStepper.astro";
+import "../../../styles/shop/sections/product-detail.css";
+
+type EditAttributes = Record<string, string>;
+type RelatedProduct = {
+  id: ShopProductId;
+  title: string;
+  unit: string;
+  price: string;
+  imageAlt: string;
+  imageSrc: string;
+};
+type Props = {
+  locale: SupportedLocale;
+  product: {
+    id: ShopProductId;
+    title: string;
+    category: string;
+    price: number;
+    priceLabel: string;
+    rating: number;
+    reviews: number;
+    imageAlt: string;
+    imageSrc: string;
+    personalized: boolean;
+    description: string;
+    shipNote: string;
+    includes: string[];
+    variantLabel?: string;
+    variantOptions?: string[];
+  };
+  shopLabel: string;
+  breadcrumbLabel: string;
+  reviewsLabel: string;
+  personalizedEyebrow: string;
+  personalizedChartLabel: string;
+  addLabel: string;
+  shippingStatusLabel: string;
+  inBoxLabel: string;
+  relatedLabel: string;
+  quantityLabel: string;
+  quantityValueLabel: string;
+  decrementLabel: string;
+  incrementLabel: string;
+  related: RelatedProduct[];
+  viewLabel: string;
+  addToCartLabel: string;
+  editAttributes?: (field: string) => EditAttributes;
+};
+
+const {
+  locale,
+  product,
+  shopLabel,
+  breadcrumbLabel,
+  reviewsLabel,
+  personalizedEyebrow,
+  personalizedChartLabel,
+  addLabel,
+  shippingStatusLabel,
+  inBoxLabel,
+  relatedLabel,
+  quantityLabel,
+  quantityValueLabel,
+  decrementLabel,
+  incrementLabel,
+  related,
+  viewLabel,
+  addToCartLabel,
+  editAttributes = () => ({}),
+} = Astro.props as Props;
+
+const productKey = product.id.replaceAll("-", "_");
+const detailField = (suffix: string) => `shop_detail_${productKey}_${suffix}`;
+---
+
+<section
+  class="shop-product-detail"
+  data-screen-label="Product"
+  data-product-detail
+  data-product-id={product.id}
+  data-unit-price={product.price}
+>
+  <div class="shop-product-detail__inner">
+    <Breadcrumb
+      class="shop-product-detail__breadcrumb"
+      locale={locale}
+      ariaLabel={breadcrumbLabel}
+      items={[
+        { label: shopLabel, href: "/shop", editAttributes: editAttributes("catalog_nav_shop_label") },
+        { label: product.category },
+        { label: product.title, current: true, editAttributes: editAttributes(`shop_product_${productKey}_title`) },
+      ]}
+    />
+
+    <div class="shop-product-detail__layout">
+      <div class="shop-product-detail__gallery">
+        <MediaThumbnail
+          class="shop-product-detail__hero-media"
+          alt={product.imageAlt}
+          src={product.imageSrc}
+          width={1122}
+          height={1402}
+          loading="eager"
+          fallbackLabelEditAttributes={editAttributes(`shop_product_${productKey}_fallback_label`)}
+        />
+        <div class="shop-product-detail__thumbnails" aria-hidden="true">
+          {[0, 1, 2].map((index) => (
+            <MediaThumbnail
+              class={`shop-product-detail__thumbnail shop-product-detail__thumbnail--${index + 1}`}
+              alt=""
+              src={product.imageSrc}
+              width={1122}
+              height={1402}
+              decorative
+              size="compact"
+            />
+          ))}
+        </div>
+      </div>
+
+      <div class="shop-product-detail__info">
+        <p class="shop-product-detail__category">{product.category}</p>
+        <h1 {...editAttributes(`shop_product_${productKey}_title`)}>{product.title}</h1>
+        <div class="shop-product-detail__rating">
+          <span aria-hidden="true">★★★★★</span>
+          <span>{product.rating.toFixed(1)} · {product.reviews} {reviewsLabel}</span>
+        </div>
+        <p class="shop-product-detail__price">{product.priceLabel}</p>
+        <p class="shop-product-detail__description" {...editAttributes(detailField("description"))}>
+          {product.description}
+        </p>
+
+        {product.personalized && (
+          <div class="shop-product-detail__personalized">
+            <span class="shop-product-detail__chart-mark" aria-hidden="true">✦</span>
+            <div>
+              <p {...editAttributes("shop_detail_personalized_eyebrow")}>{personalizedEyebrow}</p>
+              <strong>Sidera · <span {...editAttributes("shop_detail_personalized_chart_label")}>{personalizedChartLabel}</span></strong>
+            </div>
+          </div>
+        )}
+
+        {product.variantLabel && product.variantOptions?.length ? (
+          <fieldset class="shop-product-detail__variants" data-product-variants>
+            <legend>
+              <span {...editAttributes(detailField("variant_label"))}>{product.variantLabel}</span>:
+              <strong data-selected-variant>{product.variantOptions[0]}</strong>
+            </legend>
+            <div>
+              {product.variantOptions.map((option, index) => (
+                <button
+                  type="button"
+                  class:list={["shop-product-detail__variant", index === 0 && "is-selected"]}
+                  aria-pressed={index === 0 ? "true" : "false"}
+                  data-variant-option
+                  data-variant-value={option}
+                >
+                  <span {...editAttributes(detailField(`variant_option_${index + 1}`))}>{option}</span>
+                </button>
+              ))}
+            </div>
+          </fieldset>
+        ) : null}
+
+        <div class="shop-product-detail__purchase">
+          <QuantityStepper
+            name="quantity"
+            label={quantityLabel}
+            valueLabel={quantityValueLabel}
+            decrementLabel={decrementLabel}
+            incrementLabel={incrementLabel}
+          />
+          <Button class="shop-product-detail__add" fullWidth data-product-add>
+            <span {...editAttributes("shop_detail_add_label")}>{addLabel}</span>
+            <span aria-hidden="true"> · </span>
+            <span data-line-total>{product.priceLabel}</span>
+          </Button>
+        </div>
+        <p class="shop-product-detail__shipping">
+          <span aria-hidden="true">✓</span>
+          <span class="sr-only">{shippingStatusLabel}: </span>
+          <span {...editAttributes(detailField("ship_note"))}>{product.shipNote}</span>
+        </p>
+
+        <div class="shop-product-detail__includes">
+          <h2 {...editAttributes("shop_detail_in_box_label")}>{inBoxLabel}</h2>
+          <ul>
+            {product.includes.map((item, index) => (
+              <li>
+                <span aria-hidden="true">✦</span>
+                <span {...editAttributes(detailField(`include_${index + 1}`))}>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <section class="shop-product-detail__related">
+      <h2 {...editAttributes("shop_detail_related_label")}>{relatedLabel}</h2>
+      <CardGrid columns={4} tabletColumns={2} mobileColumns={1} gap="default" ariaLabel={relatedLabel}>
+        {related.map((item) => {
+          const key = item.id.replaceAll("-", "_");
+          return (
+            <ProductCard
+              variant="compact"
+              locale={locale}
+              title={item.title}
+              href={`/shop/${item.id}`}
+              unit={item.unit}
+              currentPrice={item.price}
+              imageAlt={item.imageAlt}
+              imageSrc={item.imageSrc}
+              imageWidth={1122}
+              imageHeight={1402}
+              viewLabel={viewLabel}
+              addLabel={`${addToCartLabel}: ${item.title}`}
+              productId={item.id}
+              personalizationLabel={undefined}
+              titleEditAttributes={editAttributes(`shop_product_${key}_title`)}
+              metaEditAttributes={editAttributes(`shop_product_${key}_unit`)}
+              imageAltEditAttributes={editAttributes(`shop_product_${key}_fallback_label`)}
+            />
+          );
+        })}
+      </CardGrid>
+    </section>
+  </div>
+</section>
+
+<script>
+  const enhanceProductDetail = (root: HTMLElement) => {
+    if (root.dataset.productDetailBound === "true") return;
+    root.dataset.productDetailBound = "true";
+    const price = Number(root.dataset.unitPrice);
+    const total = root.querySelector<HTMLElement>("[data-line-total]");
+    const formatter = new Intl.NumberFormat(document.documentElement.lang || "en", {
+      style: "currency",
+      currency: "USD",
+      maximumFractionDigits: 0,
+    });
+
+    root.addEventListener("quantitychange", (event) => {
+      const quantity = Number((event as CustomEvent<{ value: number }>).detail?.value ?? 1);
+      if (total) total.textContent = formatter.format(price * quantity);
+    });
+
+    root.querySelectorAll<HTMLButtonElement>("[data-variant-option]").forEach((button) => {
+      button.addEventListener("click", () => {
+        root.querySelectorAll<HTMLButtonElement>("[data-variant-option]").forEach((item) => {
+          const selected = item === button;
+          item.classList.toggle("is-selected", selected);
+          item.setAttribute("aria-pressed", selected ? "true" : "false");
+        });
+        const selected = root.querySelector<HTMLElement>("[data-selected-variant]");
+        if (selected) selected.textContent = button.dataset.variantValue ?? "";
+      });
+    });
+  };
+
+  const enhanceProductDetails = () => {
+    document.querySelectorAll<HTMLElement>("[data-product-detail]").forEach(enhanceProductDetail);
+  };
+  enhanceProductDetails();
+  document.addEventListener("astro:page-load", enhanceProductDetails);
+</script>

@@ -1,0 +1,379 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { loadPublicPageContent } from "../builder/public-page.ts";
+import type { BuilderEditAttributes } from "../builder/builder.ts";
+import MoonCalendarPageHeader from "../components/moon-calendar/sections/MoonCalendarPageHeader.astro";
+import MoonCalendarTonightBanner from "../components/moon-calendar/sections/MoonCalendarTonightBanner.astro";
+import MoonCalendarCalendarDetail from "../components/moon-calendar/sections/MoonCalendarCalendarDetail.astro";
+import MoonCalendarLunarCycleStrip from "../components/moon-calendar/sections/MoonCalendarLunarCycleStrip.astro";
+import MoonCalendarPersonalizedCta from "../components/moon-calendar/sections/MoonCalendarPersonalizedCta.astro";
+import Footer from "../components/shared/Footer.astro";
+import Header from "../components/shared/Header.astro";
+import {
+  getMoonCalendarCalendarCopy,
+  getMoonCalendarOperationalCopy,
+} from "../data/locale/moon-calendar/sections/calendar-day-detail.ts";
+import { getMoonCalendarLunarCycleStripCopy } from "../data/locale/moon-calendar/sections/lunar-cycle-strip.ts";
+import {
+  activeLocales,
+  defaultLocale,
+  localizePath,
+  type SupportedLocale,
+} from "../data/localization-contract.ts";
+import { createSharedFooterProps } from "../data/shared-footer-navigation.ts";
+import { getMoonCalendarDay } from "../data/moon-calendar/calendar-model.ts";
+import { getCurrentMoonGuide } from "../server/aggregator/moon-guide-api.ts";
+import { getRuntimeEnv } from "../server/generated-site/request.ts";
+import "../styles/moon-calendar/moon-calendar.css";
+
+export const prerender = false;
+
+const {
+  locale,
+  content,
+  builder,
+  builderPage,
+  chromePage,
+  reviewTargets,
+  builderEdit,
+  chromeEdit,
+} = await loadPublicPageContent(Astro, "moon_calendar");
+
+const seoContent = {
+  seo_title: content.seo_title,
+  seo_description: content.seo_description,
+  seo_canonical_path: content.seo_canonical_path,
+  seo_robots: content.seo_robots,
+  og_title: content.og_title,
+  og_description: content.og_description,
+  og_image: content.og_image,
+  og_image_alt: content.og_image_alt,
+  twitter_card: content.twitter_card,
+  twitter_title: content.twitter_title,
+  twitter_description: content.twitter_description,
+  twitter_image: content.twitter_image,
+};
+
+const componentEditAttributes = (
+  attributes: BuilderEditAttributes,
+): Record<string, string> =>
+  Object.fromEntries(
+    Object.entries(attributes)
+      .filter((entry): entry is [string, string | true] => entry[1] !== undefined)
+      .map(([key, value]) => [key, value === true ? "true" : value]),
+  );
+
+const localeHref = (targetLocale: SupportedLocale) => {
+  const url = new URL(Astro.request.url);
+  if (targetLocale === defaultLocale) {
+    if (locale === defaultLocale) {
+      url.searchParams.delete("locale");
+    } else {
+      url.searchParams.set("locale", defaultLocale);
+    }
+  } else {
+    url.searchParams.set("locale", targetLocale);
+  }
+  return `${url.pathname}${url.search}${url.hash}`;
+};
+
+const navigation = [
+  {
+    label: content.nav_todays_sky,
+    href: localizePath("/todays-sky", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_todays_sky")),
+  },
+  {
+    label: content.nav_charts,
+    href: localizePath("/birth-chart", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_charts")),
+  },
+  {
+    label: content.nav_compatibility,
+    href: localizePath("/synastry", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_compatibility")),
+  },
+  {
+    label: content.nav_moon,
+    href: localizePath("/moon-calendar", locale),
+    current: true,
+    editAttributes: componentEditAttributes(chromeEdit("nav_moon")),
+  },
+  {
+    label: content.nav_horoscope,
+    href: localizePath("/daily-horoscope", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_horoscope")),
+  },
+  {
+    label: content.nav_astrologers,
+    href: localizePath("/astrologers", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_astrologers")),
+  },
+  {
+    label: content.nav_blog,
+    href: localizePath("/blog", locale),
+    editAttributes: componentEditAttributes(chromeEdit("nav_blog")),
+  },
+];
+
+const actions = [
+  {
+    id: "sign-in",
+    label: content.action_sign_in,
+    href: localizePath("/login", locale),
+    variant: "ghost" as const,
+    editAttributes: componentEditAttributes(chromeEdit("action_sign_in")),
+  },
+  {
+    id: "get-chart",
+    label: content.action_get_chart,
+    href: localizePath("/birth-chart", locale),
+    variant: "primary" as const,
+    editAttributes: componentEditAttributes(chromeEdit("action_get_chart")),
+  },
+];
+
+const languageOptions = activeLocales.map((item) => {
+  const field = `language_option_${item.code}_label`;
+  return {
+    code: item.code,
+    label: content[field] || item.nativeName,
+    href: localeHref(item.code),
+    lang: item.code,
+    hreflang: item.hreflang,
+    editAttributes: componentEditAttributes(chromeEdit(field)),
+  };
+});
+
+const calendarCopy = getMoonCalendarCalendarCopy(locale);
+const operational = getMoonCalendarOperationalCopy(locale);
+const cycleCopy = getMoonCalendarLunarCycleStripCopy(locale);
+const moonApiHref = "/api/astropages/generated-site/moon-guide";
+const calendarEditable = {
+  calendar_today_label: content.calendar_today_label,
+  calendar_weekday_sun: content.calendar_weekday_sun,
+  calendar_weekday_mon: content.calendar_weekday_mon,
+  calendar_weekday_tue: content.calendar_weekday_tue,
+  calendar_weekday_wed: content.calendar_weekday_wed,
+  calendar_weekday_thu: content.calendar_weekday_thu,
+  calendar_weekday_fri: content.calendar_weekday_fri,
+  calendar_weekday_sat: content.calendar_weekday_sat,
+  calendar_legend_new: content.calendar_legend_new,
+  calendar_legend_quarter: content.calendar_legend_quarter,
+  calendar_legend_full: content.calendar_legend_full,
+  calendar_instruction: content.calendar_instruction,
+  detail_today_badge: content.detail_today_badge,
+  detail_hold_off_label: content.detail_hold_off_label,
+  detail_cta_label: content.detail_cta_label,
+};
+const calendarEditAttributes = Object.fromEntries(
+  Object.keys(calendarEditable).map((field) => [
+    field,
+    componentEditAttributes(builderEdit(field)),
+  ]),
+);
+const cyclePhases = cycleCopy.phases.map((item) => {
+  const field = `cycle_phase_${item.phase.replaceAll("-", "_")}`;
+  return {
+    phase: item.phase,
+    name: content[field],
+    nameEditAttributes: componentEditAttributes(builderEdit(field)),
+  };
+});
+const localCurrentMoon = getMoonCalendarDay(
+  new Date(),
+  calendarCopy.runtime,
+);
+const serverTimezoneOffset = -new Date().getTimezoneOffset() / 60;
+const providerMoon = await getCurrentMoonGuide({
+  env: await getRuntimeEnv(Astro),
+  locale,
+  timezoneOffset: serverTimezoneOffset,
+}).catch(() => null);
+const currentPhase = (providerMoon?.phase.key || localCurrentMoon.phase) as typeof localCurrentMoon.phase;
+const currentIllumination = providerMoon?.phase.illumination ?? localCurrentMoon.illumination;
+const currentWaxing = providerMoon?.phase.waxing ?? localCurrentMoon.direction === calendarCopy.runtime.waxingLabel;
+const currentPhaseIndex = cyclePhases.findIndex((item) => item.phase === currentPhase);
+const providerDetail = providerMoon
+  ? [
+      calendarCopy.runtime.illuminationTemplate
+        .replace("{percent}", String(Math.round(currentIllumination)))
+        .replace("{direction}", providerMoon.phase.waxing ? calendarCopy.runtime.waxingLabel : calendarCopy.runtime.waningLabel),
+      providerMoon.phase.moonSign ? calendarCopy.runtime.moonInTemplate
+        .replace("{sign}", providerMoon.phase.moonSign)
+        .replace("{degree}", "") : "",
+    ].filter(Boolean).join(" · ")
+  : calendarCopy.runtime.illuminationTemplate
+      .replace("{percent}", String(Math.round(currentIllumination)))
+      .replace("{direction}", currentWaxing ? calendarCopy.runtime.waxingLabel : calendarCopy.runtime.waningLabel);
+const formatMoonMoment = (moment?: string) => {
+  if (!moment) return "—";
+  const parsed = new Date(moment);
+  if (Number.isNaN(parsed.getTime())) return "—";
+  return new Intl.DateTimeFormat(locale, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(parsed);
+};
+const formatMoonCountdown = (moment?: string) => {
+  if (!moment) return "";
+  const difference = new Date(moment).getTime() - Date.now();
+  if (!Number.isFinite(difference) || difference <= 0) return "";
+  const hours = Math.ceil(difference / 3_600_000);
+  return new Intl.RelativeTimeFormat(locale, { numeric: "auto" }).format(
+    hours < 48 ? hours : Math.ceil(hours / 24),
+    hours < 48 ? "hour" : "day",
+  );
+};
+const footerProps = createSharedFooterProps({
+  content,
+  locale,
+  editAttributes: (field) => componentEditAttributes(chromeEdit(field)),
+});
+---
+
+<BaseLayout
+  seo={seoContent}
+  bodyClass="moon-calendar-body"
+  builderToolbar={{
+    launcherEnabled: builder.launcherEnabled,
+    studioModeEnabled: builder.studioModeEnabled,
+    collection: builder.collection,
+    entry: builder.entry,
+    locale: builder.locale,
+    csrfToken: builder.csrfToken,
+    canPublish: builder.canPublish,
+    seo: seoContent,
+    hasSavedDraft: builderPage.hasSavedDraft || chromePage.hasSavedDraft,
+    reviewTargets,
+  }}
+>
+  <Header
+    id="moon-calendar-header"
+    brandLabel={content.brand_name}
+    brandHref={localizePath("/", locale)}
+    brandAriaLabel={content.brand_aria_label}
+    navigationLabel={content.primary_navigation_label}
+    chromeNavigation={{ content, edit: chromeEdit }}
+    navigation={navigation}
+    actions={actions}
+    language={{
+      activeLocale: locale,
+      options: languageOptions,
+      triggerLabel: content.language_trigger_label,
+      menuLabel: content.language_menu_label,
+    }}
+    mobileUtilityActionId="sign-in"
+    menuLabel={content.menu_open_label}
+    closeMenuLabel={content.menu_close_label}
+    brandEditAttributes={componentEditAttributes(chromeEdit("brand_name"))}
+  />
+
+  <main class="moon-calendar-page">
+    <MoonCalendarPageHeader
+      eyebrow={content.page_header_eyebrow}
+      titleAccent={content.page_header_title_accent}
+      titleSuffix={content.page_header_title_suffix}
+      metaPrimary={content.page_header_meta_primary}
+      metaSecondary={content.page_header_meta_secondary}
+      eyebrowEditAttributes={componentEditAttributes(
+        builderEdit("page_header_eyebrow"),
+      )}
+      titleAccentEditAttributes={componentEditAttributes(
+        builderEdit("page_header_title_accent"),
+      )}
+      titleSuffixEditAttributes={componentEditAttributes(
+        builderEdit("page_header_title_suffix"),
+      )}
+      metaPrimaryEditAttributes={componentEditAttributes(
+        builderEdit("page_header_meta_primary"),
+      )}
+      metaSecondaryEditAttributes={componentEditAttributes(
+        builderEdit("page_header_meta_secondary"),
+      )}
+    />
+
+    <MoonCalendarTonightBanner
+      eyebrow={content.tonight_eyebrow}
+      phaseName={providerMoon ? calendarCopy.runtime.phaseNames[currentPhase] : localCurrentMoon.phaseName}
+      phaseDetail={providerDetail}
+      meaning={currentPhaseIndex >= 0 ? calendarCopy.runtime.rituals[currentPhaseIndex] : localCurrentMoon.ritual}
+      illumination={currentIllumination}
+      waxing={currentWaxing}
+      apiHref={moonApiHref}
+      runtime={calendarCopy.runtime}
+      nextFullLabel={content.tonight_next_full_label}
+      nextFullDate={formatMoonMoment(providerMoon?.nextFull)}
+      nextFullCountdown={formatMoonCountdown(providerMoon?.nextFull)}
+      nextNewLabel={content.tonight_next_new_label}
+      nextNewDate={formatMoonMoment(providerMoon?.nextNew)}
+      nextNewCountdown={formatMoonCountdown(providerMoon?.nextNew)}
+      eyebrowEditAttributes={componentEditAttributes(
+        builderEdit("tonight_eyebrow"),
+      )}
+      phaseNameEditAttributes={{}}
+      phaseDetailEditAttributes={{}}
+      meaningEditAttributes={{}}
+      nextFullLabelEditAttributes={componentEditAttributes(
+        builderEdit("tonight_next_full_label"),
+      )}
+      nextFullDateEditAttributes={{}}
+      nextFullCountdownEditAttributes={{}}
+      nextNewLabelEditAttributes={componentEditAttributes(
+        builderEdit("tonight_next_new_label"),
+      )}
+      nextNewDateEditAttributes={{}}
+      nextNewCountdownEditAttributes={{}}
+    />
+
+    <MoonCalendarCalendarDetail
+      editable={calendarEditable}
+      runtime={calendarCopy.runtime}
+      navigationLabel={calendarCopy.navigationLabel}
+      previousMonthLabel={calendarCopy.previousMonthLabel}
+      nextMonthLabel={calendarCopy.nextMonthLabel}
+      skyHref={localizePath("/todays-sky", locale)}
+      apiHref={moonApiHref}
+      operational={operational}
+      editAttributes={calendarEditAttributes}
+    />
+
+    <MoonCalendarLunarCycleStrip
+      title={content.cycle_title}
+      description={content.cycle_description}
+      phases={cyclePhases}
+      currentPhase={currentPhase}
+      selectPhaseTemplate={operational.selectPhaseTemplate}
+      titleEditAttributes={componentEditAttributes(builderEdit("cycle_title"))}
+      descriptionEditAttributes={componentEditAttributes(
+        builderEdit("cycle_description"),
+      )}
+    />
+
+    <MoonCalendarPersonalizedCta
+      copy={{
+        eyebrow: content.personalized_cta_eyebrow,
+        titlePrefix: content.personalized_cta_title_prefix,
+        titleAccent: content.personalized_cta_title_accent,
+        titleSuffix: content.personalized_cta_title_suffix,
+        description: content.personalized_cta_description,
+        primaryLabel: content.personalized_cta_primary_label,
+        secondaryLabel: content.personalized_cta_secondary_label,
+      }}
+      locale={locale}
+      editAttributes={(field) =>
+        componentEditAttributes(
+          builderEdit(
+            `personalized_cta_${field.replace(
+              /[A-Z]/g,
+              (letter) => `_${letter.toLowerCase()}`,
+            )}`,
+          ),
+        )
+      }
+    />
+  </main>
+  <Footer {...footerProps} />
+</BaseLayout>

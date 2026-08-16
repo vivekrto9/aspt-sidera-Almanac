@@ -1,0 +1,59 @@
+.sidera-card-grid {
+  --sidera-card-grid-columns: 3;
+  --sidera-card-grid-tablet-columns: 2;
+  --sidera-card-grid-mobile-columns: 1;
+  --sidera-card-grid-gap: 1.25rem;
+
+  inline-size: 100%;
+  min-inline-size: 0;
+  display: grid;
+  grid-template-columns: repeat(
+    var(--sidera-card-grid-columns),
+    minmax(0, 1fr)
+  );
+  gap: var(--sidera-card-grid-gap);
+  margin: 0;
+  padding: 0;
+}
+
+.sidera-card-grid:is(ul, ol) {
+  list-style: none;
+}
+
+.sidera-card-grid > * {
+  min-inline-size: 0;
+}
+
+.sidera-card-grid--gap-compact {
+  --sidera-card-grid-gap: 0.75rem;
+}
+
+.sidera-card-grid--gap-loose {
+  --sidera-card-grid-gap: 1.625rem;
+}
+
+.sidera-card-grid--align-start {
+  align-items: start;
+}
+
+.sidera-card-grid--align-stretch {
+  align-items: stretch;
+}
+
+@media (max-width: 64rem) {
+  .sidera-card-grid {
+    grid-template-columns: repeat(
+      var(--sidera-card-grid-tablet-columns),
+      minmax(0, 1fr)
+    );
+  }
+}
+
+@media (max-width: 42rem) {
+  .sidera-card-grid {
+    grid-template-columns: repeat(
+      var(--sidera-card-grid-mobile-columns),
+      minmax(0, 1fr)
+    );
+  }
+}

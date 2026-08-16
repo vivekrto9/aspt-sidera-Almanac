@@ -1,0 +1,215 @@
+---
+import Badge from "./Badge.astro";
+import Button from "./Button.astro";
+import MediaThumbnail from "./MediaThumbnail.astro";
+import PriceDisplay from "./PriceDisplay.astro";
+import QuantityStepper from "./QuantityStepper.astro";
+import "../../styles/shared/order-line-item.css";
+
+type OrderLineItemVariant = "editable" | "summary" | "history";
+type OrderStatusTone = "neutral" | "success" | "warning" | "danger";
+
+type Props = {
+  id: string;
+  title: string;
+  price: string;
+  variant?: OrderLineItemVariant;
+  meta?: string;
+  href?: string;
+  mediaSrc?: string;
+  mediaAlt?: string;
+  quantity?: number;
+  quantityLabel?: string;
+  quantityName?: string;
+  quantityMin?: number;
+  quantityMax?: number;
+  decrementLabel?: string;
+  incrementLabel?: string;
+  removeLabel?: string;
+  removeName?: string;
+  removeValue?: string;
+  form?: string;
+  dateLabel?: string;
+  statusLabel?: string;
+  statusTone?: OrderStatusTone;
+  priceAriaLabel?: string;
+  class?: string;
+  titleEditAttributes?: Record<string, string>;
+  metaEditAttributes?: Record<string, string>;
+  quantityEditAttributes?: Record<string, string>;
+  dateEditAttributes?: Record<string, string>;
+  statusEditAttributes?: Record<string, string>;
+  removeEditAttributes?: Record<string, string>;
+};
+
+const {
+  id,
+  title,
+  price,
+  variant = "editable",
+  meta,
+  href,
+  mediaSrc,
+  mediaAlt = title,
+  quantity = 1,
+  quantityLabel = "Quantity",
+  quantityName,
+  quantityMin = 1,
+  quantityMax,
+  decrementLabel = "Decrease quantity",
+  incrementLabel = "Increase quantity",
+  removeLabel = "Remove",
+  removeName,
+  removeValue,
+  form,
+  dateLabel,
+  statusLabel,
+  statusTone = "neutral",
+  priceAriaLabel,
+  class: className,
+  titleEditAttributes = {},
+  metaEditAttributes = {},
+  quantityEditAttributes = {},
+  dateEditAttributes = {},
+  statusEditAttributes = {},
+  removeEditAttributes = {},
+} = Astro.props as Props;
+
+const hasMediaSlot = Astro.slots.has("media");
+const showMedia = variant !== "history";
+const classes = [
+  "sidera-order-line-item",
+  `sidera-order-line-item--${variant}`,
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+---
+
+<article class={classes} data-order-line-item data-item-id={id}>
+  {
+    variant === "history" && dateLabel ? (
+      <p class="sidera-order-line-item__date" {...dateEditAttributes}>{dateLabel}</p>
+    ) : null
+  }
+
+  {
+    showMedia ? (
+      <div class="sidera-order-line-item__media" aria-hidden="true">
+        {hasMediaSlot ? (
+          <MediaThumbnail alt={mediaAlt} size="compact" decorative>
+            <slot name="media" />
+          </MediaThumbnail>
+        ) : (
+          <MediaThumbnail
+            src={mediaSrc}
+            alt={mediaAlt}
+            size="compact"
+            decorative
+          />
+        )}
+      </div>
+    ) : null
+  }
+
+  <div class="sidera-order-line-item__content">
+    {
+      href ? (
+        <a class="sidera-order-line-item__title" href={href} {...titleEditAttributes}>
+          {title}
+        </a>
+      ) : (
+        <h3 class="sidera-order-line-item__title" {...titleEditAttributes}>{title}</h3>
+      )
+    }
+    {meta ? <p class="sidera-order-line-item__meta" {...metaEditAttributes}>{meta}</p> : null}
+    {
+      variant === "summary" ? (
+        <p class="sidera-order-line-item__quantity-copy">
+          <span {...quantityEditAttributes}>{quantityLabel}</span> {quantity}
+        </p>
+      ) : null
+    }
+  </div>
+
+  {
+    variant === "history" && statusLabel ? (
+      <Badge
+        class="sidera-order-line-item__status"
+        tone={statusTone}
+        size="compact"
+        {...statusEditAttributes}
+      >
+        {statusLabel}
+      </Badge>
+    ) : null
+  }
+
+  <PriceDisplay
+    class="sidera-order-line-item__price"
+    current={price}
+    size={variant === "summary" ? "compact" : "standard"}
+    ariaLabel={priceAriaLabel}
+  />
+
+  {
+    variant === "editable" ? (
+      <div class="sidera-order-line-item__actions">
+        <QuantityStepper
+          value={quantity}
+          min={quantityMin}
+          max={quantityMax}
+          size="compact"
+          name={quantityName}
+          label={quantityLabel}
+          decrementLabel={decrementLabel}
+          incrementLabel={incrementLabel}
+        />
+        <span class="sidera-order-line-item__remove" data-order-item-remove>
+          <Button
+            variant="link"
+            size="compact"
+            type={removeName ? "submit" : "button"}
+            name={removeName}
+            value={removeValue ?? id}
+            form={form}
+            ariaLabel={`${removeLabel}: ${title}`}
+            editAttributes={removeEditAttributes}
+          >
+            {removeLabel}
+          </Button>
+        </span>
+      </div>
+    ) : null
+  }
+</article>
+
+<script>
+  const enhanceOrderLineItem = (root: HTMLElement) => {
+    if (root.dataset.orderLineBound === "true") return;
+    root.dataset.orderLineBound = "true";
+
+    const removeButton = root.querySelector<HTMLButtonElement>(
+      "[data-order-item-remove] button",
+    );
+    if (!removeButton || removeButton.type === "submit") return;
+
+    removeButton.addEventListener("click", () => {
+      root.dispatchEvent(
+        new CustomEvent("orderitemremove", {
+          bubbles: true,
+          detail: { id: root.dataset.itemId },
+        }),
+      );
+    });
+  };
+
+  const enhanceOrderLineItems = () => {
+    document
+      .querySelectorAll<HTMLElement>("[data-order-line-item]")
+      .forEach(enhanceOrderLineItem);
+  };
+
+  enhanceOrderLineItems();
+  document.addEventListener("astro:page-load", enhanceOrderLineItems);
+</script>

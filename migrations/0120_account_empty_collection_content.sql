@@ -1,0 +1,32 @@
+-- Keep Account empty-state copy in a bounded supplemental collection instead
+-- of pushing the existing Account content table over D1's column cap.
+CREATE TABLE IF NOT EXISTS ec_site_account_empty_states (
+  id TEXT PRIMARY KEY,
+  slug TEXT,
+  status TEXT DEFAULT 'draft',
+  author_id TEXT,
+  primary_byline_id TEXT,
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now')),
+  published_at TEXT,
+  scheduled_at TEXT,
+  deleted_at TEXT,
+  version INTEGER DEFAULT 1,
+  live_revision_id TEXT,
+  draft_revision_id TEXT,
+  locale TEXT DEFAULT 'en' NOT NULL,
+  translation_group TEXT,
+  account_saved_charts_empty_title TEXT,
+  account_saved_charts_empty_description TEXT,
+  account_saved_charts_empty_action_label TEXT,
+  account_people_empty_title TEXT,
+  account_people_empty_description TEXT,
+  account_people_empty_action_label TEXT,
+  account_orders_empty_title TEXT,
+  account_orders_empty_description TEXT,
+  account_orders_empty_action_label TEXT,
+  account_sessions_empty_title TEXT,
+  account_sessions_empty_description TEXT,
+  account_sessions_empty_action_label TEXT,
+  UNIQUE(slug, locale)
+);

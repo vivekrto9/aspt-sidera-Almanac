@@ -1,0 +1,376 @@
+---
+import type { BuilderEditAttributes } from "../builder/builder.ts";
+import { loadPublicPageContent } from "../builder/public-page.ts";
+import ShopFlowClient from "../components/shop/common/ShopFlowClient.astro";
+import ShopCart from "../components/shop/sections/ShopCart.astro";
+import ShopCatalogIntroControls from "../components/shop/sections/ShopCatalogIntroControls.astro";
+import ShopCheckout from "../components/shop/sections/ShopCheckout.astro";
+import ShopOrderConfirmation from "../components/shop/sections/ShopOrderConfirmation.astro";
+import ShopPaymentFailure from "../components/shop/sections/ShopPaymentFailure.astro";
+import ShopProductGrid from "../components/shop/sections/ShopProductGrid.astro";
+import Footer from "../components/shared/Footer.astro";
+import Header from "../components/shared/Header.astro";
+import {
+  activeLocales,
+  defaultLocale,
+  localizePath,
+  type SupportedLocale,
+} from "../data/localization-contract.ts";
+import {
+  isShopCategoryId,
+  shopCategoryIds,
+} from "../data/shop/catalog.ts";
+import { createShopCheckoutFlowCopy } from "../data/shop/commerce.ts";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { listShopProducts } from "../server/aggregator/shop-catalog.ts";
+import { getCommerceOrder } from "../server/aggregator/commerce-orders.ts";
+import { getCustomerSession } from "../server/aggregator/customer-auth.ts";
+import { getRuntimeEnv } from "../server/generated-site/request.ts";
+import "../styles/shop/shop.css";
+
+export const prerender = false;
+
+const {
+  content, locale, builder, builderPage, chromePage, reviewTargets,
+  builderEdit, chromeEdit,
+} = await loadPublicPageContent(Astro, "shop");
+const runtimeEnv = await getRuntimeEnv(Astro);
+const catalogProducts = await listShopProducts(runtimeEnv, locale);
+const customerSession = await getCustomerSession(runtimeEnv, Astro.request).catch(() => null);
+
+const editAttributes = (attributes: BuilderEditAttributes): Record<string, string> =>
+  Object.fromEntries(
+    Object.entries(attributes)
+      .filter((entry): entry is [string, string | true] => entry[1] !== undefined)
+      .map(([key, value]) => [key, value === true ? "true" : value]),
+  );
+
+const localeHref = (targetLocale: SupportedLocale) => {
+  const url = new URL(Astro.request.url);
+  if (targetLocale === defaultLocale) url.searchParams.delete("locale");
+  else url.searchParams.set("locale", targetLocale);
+  return `${url.pathname}${url.search}${url.hash}`;
+};
+
+const navigation: Array<{
+  label: string;
+  href: string;
+  current?: boolean;
+  editAttributes: Record<string, string>;
+}> = [
+  ["nav_todays_sky", "/todays-sky"],
+  ["nav_charts", "/birth-chart"],
+  ["nav_compatibility", "/synastry"],
+  ["nav_moon", "/moon-calendar"],
+  ["nav_horoscope", "/daily-horoscope"],
+  ["nav_astrologers", "/astrologers"],
+].map(([field, href]) => ({
+  label: content[field],
+  href: localizePath(href, locale),
+  editAttributes: editAttributes(chromeEdit(field)),
+}));
+navigation.push({
+  label: content.catalog_nav_shop_label,
+  href: localizePath("/shop", locale),
+  current: true,
+  editAttributes: editAttributes(builderEdit("catalog_nav_shop_label")),
+});
+
+const actions = [
+  {
+    id: "sign-in",
+    label: content.action_sign_in,
+    href: localizePath("/login", locale),
+    variant: "ghost" as const,
+    editAttributes: editAttributes(chromeEdit("action_sign_in")),
+  },
+  {
+    id: "cart",
+    label: content.catalog_cart_label,
+    href: localizePath("/shop?view=cart", locale),
+    variant: "primary" as const,
+    editAttributes: editAttributes(builderEdit("catalog_cart_label")),
+  },
+];
+
+const languageOptions = activeLocales.map((item) => ({
+  code: item.code,
+  label: content[`language_option_${item.code}_label`] || item.nativeName,
+  href: localeHref(item.code),
+  lang: item.code,
+  hreflang: item.hreflang,
+  editAttributes: editAttributes(chromeEdit(`language_option_${item.code}_label`)),
+}));
+
+const footerGroups = [
+  {
+    label: content.footer_group_charts,
+    labelEditAttributes: editAttributes(chromeEdit("footer_group_charts")),
+    links: [
+      ["footer_link_birth_chart", "/birth-chart"],
+      ["footer_link_transit", "/transit"],
+      ["footer_link_synastry", "/synastry"],
+    ].map(([field, path]) => ({
+      label: content[field],
+      href: localizePath(path, locale),
+      editAttributes: editAttributes(chromeEdit(field)),
+    })),
+  },
+  {
+    label: content.footer_group_tools,
+    labelEditAttributes: editAttributes(chromeEdit("footer_group_tools")),
+    links: [
+      ["footer_link_todays_sky", "/todays-sky"],
+      ["footer_link_moon_calendar", "/moon-calendar"],
+      ["footer_link_retrogrades", "/retrogrades"],
+      ["footer_link_reports", "/reports"],
+    ].map(([field, path]) => ({
+      label: content[field],
+      href: localizePath(path, locale),
+      editAttributes: editAttributes(chromeEdit(field)),
+    })),
+  },
+  {
+    label: content.footer_group_learn,
+    labelEditAttributes: editAttributes(chromeEdit("footer_group_learn")),
+    links: [
+      ["footer_link_blog", "/blog"],
+      ["footer_link_daily_horoscope", "/daily-horoscope"],
+      ["footer_link_glossary", "/glossary"],
+      ["footer_link_faq", "/faq"],
+    ].map(([field, path]) => ({
+      label: content[field],
+      href: localizePath(path, locale),
+      editAttributes: editAttributes(chromeEdit(field)),
+    })),
+  },
+  {
+    label: content.footer_group_company,
+    labelEditAttributes: editAttributes(chromeEdit("footer_group_company")),
+    links: [
+      ["footer_link_about", "/about"],
+      ["footer_link_account", "/account"],
+      ["footer_link_shop", "/shop"],
+    ].map(([field, path]) => ({
+      label: content[field],
+      href: localizePath(path, locale),
+      editAttributes: editAttributes(chromeEdit(field)),
+    })),
+  },
+];
+
+const footerLegalLinks = [
+  ["footer_link_privacy", "/privacy"],
+  ["footer_link_terms", "/terms"],
+].map(([field, path]) => ({
+  label: content[field],
+  href: localizePath(path, locale),
+  editAttributes: editAttributes(chromeEdit(field)),
+}));
+
+const requestedCategory = Astro.url.searchParams.get("category") ?? "all";
+const activeCategory = isShopCategoryId(requestedCategory) ? requestedCategory : "all";
+const categories = shopCategoryIds.map((value) => ({
+  value,
+  label: content[`catalog_category_${value}`],
+  editAttributes: editAttributes(builderEdit(`catalog_category_${value}`)),
+}));
+const activeProducts = activeCategory === "all"
+  ? catalogProducts
+  : catalogProducts.filter((product) => product.category === activeCategory);
+const products = activeProducts.map((product) => {
+  const key = product.id.replaceAll("-", "_");
+  return {
+    id: product.id,
+    title: content[`shop_product_${key}_title`],
+    unit: content[`shop_product_${key}_unit`],
+    imageAlt: content[`shop_product_${key}_fallback_label`],
+    currentPrice: product.priceLabel,
+    personalized: Boolean(product.personalized),
+    imageSrc: product.imageUrl,
+    imageWidth: 1122,
+    imageHeight: 1402,
+  };
+});
+const productPerks = ["✵", "☾", "⚘"].map((icon, index) => ({
+  icon,
+  title: content[`shop_perk_${index + 1}_title`],
+  description: content[`shop_perk_${index + 1}_description`],
+}));
+const requestedView = Astro.url.searchParams.get("view");
+const activeView = requestedView === "cart" || requestedView === "checkout" || requestedView === "confirmed" || requestedView === "failed"
+  ? requestedView
+  : "catalog";
+if ((activeView === "checkout" || activeView === "confirmed") && !customerSession && !builder.launcherEnabled) {
+  return Astro.redirect(`${localizePath("/login", locale)}?next=${encodeURIComponent(`${Astro.url.pathname}${Astro.url.search}`)}`, 302);
+}
+const isResultView = activeView === "confirmed" || activeView === "failed";
+const shopHref = localizePath("/shop", locale);
+const cartHref = localizePath("/shop?view=cart", locale);
+const checkoutHref = localizePath("/shop?view=checkout", locale);
+const confirmationHref = localizePath("/shop?view=confirmed", locale);
+const requestedOrderId = Astro.url.searchParams.get("orderId") ?? "";
+const requestedAttemptId = Astro.url.searchParams.get("attemptId") ?? "";
+const requestedStripeSessionId = Astro.url.searchParams.get("session_id") ?? "";
+const confirmedOrder = customerSession && requestedOrderId
+  ? await getCommerceOrder(runtimeEnv, requestedOrderId, customerSession.account.id)
+  : null;
+if (activeView === "confirmed" && !confirmedOrder && !builder.launcherEnabled) {
+  return Astro.redirect(localizePath("/shop?view=failed", locale), 302);
+}
+const commerceProducts = catalogProducts.map((product) => {
+  const key = product.id.replaceAll("-", "_");
+  return {
+    id: product.id,
+    title: content[`shop_product_${key}_title`],
+    unit: content[`shop_product_${key}_unit`],
+    imageAlt: content[`shop_product_${key}_fallback_label`],
+    price: product.price,
+    imageSrc: product.imageUrl,
+    defaultVariant: product.variant
+      ? content[`shop_detail_${key}_variant_option_1`]
+      : undefined,
+  };
+});
+const checkoutFlowCopy = createShopCheckoutFlowCopy(content);
+const defaultVariants = Object.fromEntries(
+  commerceProducts
+    .filter((product) => product.defaultVariant)
+    .map((product) => [product.id, product.defaultVariant!]),
+);
+
+const seoContent = {
+  seo_title: content.seo_title,
+  seo_description: content.seo_description,
+  seo_canonical_path: content.seo_canonical_path,
+  seo_robots: activeView === "catalog" ? content.seo_robots : "noindex,nofollow",
+  og_title: content.og_title,
+  og_description: content.og_description,
+  og_image: content.og_image,
+  og_image_alt: content.og_image_alt,
+  twitter_card: content.twitter_card,
+  twitter_title: content.twitter_title,
+  twitter_description: content.twitter_description,
+  twitter_image: content.twitter_image,
+};
+---
+
+<BaseLayout
+  seo={seoContent}
+  bodyClass="shop-body"
+  builderToolbar={{
+    launcherEnabled: builder.launcherEnabled,
+    studioModeEnabled: builder.studioModeEnabled,
+    collection: builder.collection,
+    entry: builder.entry,
+    locale: builder.locale,
+    csrfToken: builder.csrfToken,
+    canPublish: builder.canPublish,
+    seo: seoContent,
+    hasSavedDraft: builderPage.hasSavedDraft || chromePage.hasSavedDraft,
+    reviewTargets,
+  }}
+>
+  {!isResultView && <Header
+    id="shop-header"
+    brandLabel={content.brand_name}
+    brandHref={localizePath("/", locale)}
+    brandAriaLabel={content.brand_aria_label}
+    navigationLabel={content.primary_navigation_label}
+    chromeNavigation={{ content, edit: chromeEdit }}
+    navigation={navigation}
+    actions={actions}
+    language={{
+      activeLocale: locale,
+      options: languageOptions,
+      triggerLabel: content.language_trigger_label,
+      menuLabel: content.language_menu_label,
+    }}
+    mobileUtilityActionId="cart"
+    menuLabel={content.menu_open_label}
+    closeMenuLabel={content.menu_close_label}
+    brandEditAttributes={editAttributes(chromeEdit("brand_name"))}
+  />}
+
+  {activeView === "confirmed" ? (
+    <ShopOrderConfirmation
+      locale={locale}
+      products={commerceProducts}
+      copy={checkoutFlowCopy}
+      shopHref={shopHref}
+      homeHref={localizePath("/", locale)}
+      order={confirmedOrder}
+      attemptId={requestedAttemptId}
+      stripeSessionId={requestedStripeSessionId}
+      csrfToken={customerSession?.csrfToken || ""}
+      editAttributes={(field: string) => editAttributes(builderEdit(field))}
+    />
+  ) : activeView === "failed" ? (
+    <ShopPaymentFailure
+      copy={checkoutFlowCopy}
+      checkoutHref={checkoutHref}
+      cartHref={cartHref}
+      editAttributes={(field) => editAttributes(builderEdit(field))}
+    />
+  ) : (
+  <main class="shop-page">
+    {activeView === "catalog" && <ShopCatalogIntroControls
+      locale={locale}
+      eyebrow={content.catalog_eyebrow}
+      titleLead={content.catalog_title_lead}
+      titleAccent={content.catalog_title_accent}
+      titleRest={content.catalog_title_rest}
+      description={content.catalog_description}
+      filterLabel={content.catalog_filter_label}
+      categories={categories}
+      activeCategory={activeCategory}
+      resultCount={activeProducts.length}
+      piecesSuffix={content.catalog_pieces_suffix}
+      editAttributes={(field) => editAttributes(builderEdit(field))}
+    />}
+    {activeView === "catalog" && <ShopProductGrid
+      locale={locale}
+      ariaLabel={content.shop_catalog_aria_label}
+      products={products}
+      personalizedLabel={content.shop_personalized_label}
+      viewLabel={content.shop_view_label}
+      addLabel={content.shop_add_label}
+      perks={productPerks}
+      editAttributes={(field) => editAttributes(builderEdit(field))}
+    />}
+    {activeView === "cart" && <ShopCart
+      locale={locale}
+      products={commerceProducts}
+      copy={checkoutFlowCopy}
+      shopHref={shopHref}
+      checkoutHref={checkoutHref}
+      editAttributes={(field) => editAttributes(builderEdit(field))}
+    />}
+    {activeView === "checkout" && <ShopCheckout
+      locale={locale}
+      products={commerceProducts}
+      copy={checkoutFlowCopy}
+      cartHref={cartHref}
+      confirmationHref={confirmationHref}
+      csrfToken={customerSession?.csrfToken || ""}
+      accountEmail={customerSession?.account.email || ""}
+      editAttributes={(field) => editAttributes(builderEdit(field))}
+    />}
+  </main>
+  )}
+
+  {!isResultView && <Footer
+    brandLabel={content.footer_brand_name}
+    brandHref={localizePath("/", locale)}
+    description={content.footer_about}
+    groups={footerGroups}
+    legalLinks={footerLegalLinks}
+    copyrightText={content.footer_copyright}
+    navigationLabel={content.footer_navigation_label}
+    legalNavigationLabel={content.footer_legal_navigation_label}
+    brandEditAttributes={editAttributes(chromeEdit("footer_brand_name"))}
+    descriptionEditAttributes={editAttributes(chromeEdit("footer_about"))}
+    copyrightEditAttributes={editAttributes(chromeEdit("footer_copyright"))}
+  />}
+  {!isResultView && <ShopFlowClient cartHref={cartHref} defaultVariants={defaultVariants} />}
+</BaseLayout>

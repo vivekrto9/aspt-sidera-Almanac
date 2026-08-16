@@ -1,0 +1,119 @@
+.sidera-accordion {
+  overflow: clip;
+  border: 1px solid rgba(var(--color-text-rgb), 0.1);
+  border-radius: 0.875rem;
+  background: var(--color-panel);
+  color: var(--color-text);
+}
+
+.sidera-accordion__summary {
+  min-block-size: 4rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 1.375rem;
+  cursor: pointer;
+  list-style: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sidera-accordion__summary::-webkit-details-marker {
+  display: none;
+}
+
+.sidera-accordion__summary:hover {
+  background: rgba(var(--color-surface-rgb), 0.54);
+}
+
+.sidera-accordion__summary:focus-visible {
+  outline: 0.1875rem solid rgba(var(--color-primary-rgb), 0.5);
+  outline-offset: -0.1875rem;
+}
+
+.sidera-accordion__heading {
+  min-inline-size: 0;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.sidera-accordion__category {
+  color: var(--color-primary);
+  font: 600 0.65625rem / 1.2 var(--font-sans), system-ui, sans-serif;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.sidera-accordion__question {
+  color: var(--color-text);
+  font: 600 1rem / 1.35 var(--font-sans), system-ui, sans-serif;
+}
+
+.sidera-accordion__indicator {
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  color: var(--color-primary);
+  font: 400 1.375rem / 1 var(--font-sans), system-ui, sans-serif;
+  transition: transform 180ms ease;
+}
+
+.sidera-accordion[open] .sidera-accordion__indicator {
+  transform: rotate(45deg);
+}
+
+.sidera-accordion__content {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 180ms ease;
+}
+
+.sidera-accordion[open] .sidera-accordion__content {
+  grid-template-rows: 1fr;
+}
+
+.sidera-accordion__answer {
+  min-block-size: 0;
+  overflow: hidden;
+  padding: 0 1.375rem 1.375rem;
+  color: var(--color-muted);
+  font: 400 0.90625rem / 1.65 var(--font-sans), system-ui, sans-serif;
+}
+
+.sidera-accordion__answer > :first-child {
+  margin-block-start: 0;
+}
+
+.sidera-accordion__answer > :last-child {
+  margin-block-end: 0;
+}
+
+@media (max-width: 40rem) {
+  .sidera-accordion__summary {
+    min-block-size: 4.5rem;
+    padding: 1rem;
+  }
+
+  .sidera-accordion__question {
+    font-size: 0.9375rem;
+  }
+
+  .sidera-accordion__answer {
+    padding: 0 1rem 1.125rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidera-accordion__indicator,
+  .sidera-accordion__content {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .sidera-accordion {
+    border-color: CanvasText;
+  }
+}

@@ -1,0 +1,102 @@
+---
+import AstrologerCard from "../../shared/AstrologerCard.astro";
+import Button from "../../shared/Button.astro";
+import CardGrid from "../../shared/CardGrid.astro";
+import SectionHeading from "../../shared/SectionHeading.astro";
+import type { HomeAstrologersCopy } from "../../../data/locale/home/sections/astrologers.ts";
+import "../../../styles/home/sections/home-astrologers.css";
+
+type EditAttributes = Record<string, string>;
+
+type Props = {
+  copy: HomeAstrologersCopy;
+  actionHref: string;
+  editAttributes?: (field: string) => EditAttributes;
+};
+
+const {
+  copy,
+  actionHref,
+  editAttributes = () => ({}),
+} = Astro.props as Props;
+const showBrowseAction = copy.profiles.length > 2;
+const gridColumns = copy.profiles.length <= 2 ? 2 : 4;
+---
+
+<section
+  class="home-astrologers"
+  id="astrologers"
+  aria-labelledby="home-astrologers-title"
+>
+  <div class="home-astrologers__inner">
+    <SectionHeading
+      title={`${copy.titleAccent} ${copy.titleRest}`}
+      eyebrow={copy.eyebrow}
+      headingId="home-astrologers-title"
+      class="home-astrologers__heading"
+      eyebrowEditAttributes={editAttributes("eyebrow")}
+    >
+      <Fragment slot="title">
+        <em {...editAttributes("title_accent")}>{copy.titleAccent}</em>{" "}<span
+          {...editAttributes("title_rest")}>{copy.titleRest}</span
+        >
+      </Fragment>
+      {showBrowseAction ? (
+        <Fragment slot="action">
+          <Button
+            href={actionHref}
+            variant="link"
+            size="compact"
+            editAttributes={editAttributes("browse_label")}
+          >
+            {copy.browseLabel}
+            <span slot="trailing-icon">→</span>
+          </Button>
+        </Fragment>
+      ) : null}
+    </SectionHeading>
+
+    <CardGrid
+      columns={gridColumns}
+      tabletColumns={2}
+      mobileColumns={1}
+      ariaLabelledby="home-astrologers-title"
+      class="home-astrologers__grid"
+    >
+      {
+        copy.profiles.map((profile, index) => {
+          const profileNumber = index + 1;
+          const edit = (field: string) =>
+            editAttributes(`profile_${profileNumber}_${field}`);
+          return (
+            <AstrologerCard
+              name={profile.name}
+              tradition={profile.tradition}
+              ratingValue={profile.ratingValue}
+              ratingText={profile.ratingText}
+              ratingAriaLabel={profile.ratingAriaLabel}
+              availability={profile.availability}
+              availabilityLabel={profile.availabilityLabel}
+              rateText={profile.rateText}
+              rateUnit={profile.rateUnit}
+              variant="compact"
+              avatarSrc={profile.imageUrl}
+              avatarAlt=""
+              avatarFallback="placeholder"
+              actionHref={profile.href ?? actionHref}
+              actionLabel={profile.actionLabel}
+              class="home-astrologers__card"
+              nameEditAttributes={edit("name")}
+              traditionEditAttributes={edit("tradition")}
+              availabilityEditAttributes={edit("availability_label")}
+              ratingEditAttributes={edit("rating")}
+              rateEditAttributes={edit("rate")}
+              unitEditAttributes={edit("rate_unit")}
+              actionEditAttributes={edit("action")}
+            />
+          );
+        })
+      }
+    </CardGrid>
+  </div>
+</section>

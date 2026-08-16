@@ -1,0 +1,240 @@
+---
+import type { BrowseAstrologer } from "../../../data/astrologers/browse.ts";
+import type { AstrologerLiveSessionCopy } from "../../../data/locale/astrologers/sections/live-session.ts";
+import Avatar from "../../shared/Avatar.astro";
+import IconButton from "../../shared/IconButton.astro";
+import "../../../styles/astrologers/shared/chat-history.css";
+
+type EditAttributes = Record<string, string>;
+type ChatSessionItem = {
+  id: string;
+  astrologerName: string;
+  astrologerImage: string;
+  profileName: string;
+  partnerProfileName: string;
+  status: string;
+  updatedAt: string;
+  lastMessage: string;
+};
+type WalletTransaction = {
+  id: string;
+  type: string;
+  amountCents: number;
+  signedAmount: string;
+  description: string;
+  createdAt: string;
+};
+type Props = {
+  astrologer: BrowseAstrologer;
+  sessions: ChatSessionItem[];
+  transactions: WalletTransaction[];
+  activeSessionId: string;
+  activeProfileLabel: string;
+  locale: string;
+  newChatHref: string;
+  walletHref: string;
+  walletBalance: string;
+  questionPrice: string;
+  sessionMode: string;
+  sessionActive: boolean;
+  exitHref: string;
+  copy: AstrologerLiveSessionCopy;
+  editAttributes?: (field: string) => EditAttributes;
+};
+
+const {
+  astrologer,
+  sessions,
+  transactions,
+  activeSessionId,
+  activeProfileLabel,
+  locale,
+  newChatHref,
+  walletHref,
+  walletBalance,
+  questionPrice,
+  sessionMode,
+  sessionActive,
+  exitHref,
+  copy,
+  editAttributes = () => ({}),
+} = Astro.props as Props;
+
+const pageSize = 10;
+const formatDate = (value: string) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat(locale, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date);
+};
+const profileLabel = (session: ChatSessionItem) =>
+  [session.profileName, session.partnerProfileName].filter(Boolean).join(" + ");
+const initialsFor = (value: string) =>
+  value
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toLocaleUpperCase())
+    .join("") || "S";
+const chatHref = (sessionId: string) =>
+  `/chat/${encodeURIComponent(sessionId)}${locale === "en" ? "" : `?locale=${encodeURIComponent(locale)}`}`;
+---
+
+<aside id="astrologer-chat-history" class="astrologer-chat-history" data-chat-history-panel>
+  <div class="astrologer-chat-history__head">
+    <a
+      class="astrologer-chat-history__back"
+      href={newChatHref}
+      aria-label={copy.backToAstrologers}
+      {...editAttributes("live_back_to_astrologers")}
+    ><span aria-hidden="true">←</span></a>
+    <IconButton
+      type="button"
+      variant="ghost"
+      shape="circle"
+      size="compact"
+      ariaLabel={copy.closeHistory}
+      class="astrologer-chat-history__close"
+      data-chat-history-close
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+    </IconButton>
+    <div class="astrologer-chat-history__advisor">
+      <span class="astrologer-chat-history__advisor-avatar">
+        <Avatar
+          name={astrologer.name}
+          src={astrologer.imageUrl}
+          alt={astrologer.name}
+          initials={initialsFor(astrologer.name)}
+          fallback="initials"
+          size="compact"
+        />
+        <i aria-hidden="true"></i>
+      </span>
+      <span>
+        <strong>{astrologer.name}</strong>
+        <small>{sessionMode} · {questionPrice} <span {...editAttributes("live_meter_label")}>{copy.meterLabel}</span></small>
+      </span>
+    </div>
+    <a class="astrologer-chat-history__wallet" href={walletHref}>
+      <span {...editAttributes("live_wallet_label")}>{copy.walletLabel}</span>
+      <strong data-wallet-balance>{walletBalance}</strong>
+    </a>
+  </div>
+
+  <div class="astrologer-chat-history__tabs" role="tablist" aria-label={copy.historyTitle}>
+    <button class="is-active" type="button" role="tab" aria-selected="true" data-chat-sidebar-tab="chats" {...editAttributes("live_chats_label")}>{copy.chatsLabel}</button>
+    <button type="button" role="tab" aria-selected="false" data-chat-sidebar-tab="transactions" {...editAttributes("live_transactions_label")}>{copy.transactionsLabel}</button>
+  </div>
+
+  <nav
+    class="astrologer-chat-history__list"
+    aria-label={copy.historyTitle}
+    data-chat-sidebar-panel="chats"
+    data-chat-sidebar-pager
+    data-page-size={pageSize}
+  >
+    {
+      sessions.length ? sessions.map((session) => {
+        const active = session.id === activeSessionId;
+        const name = session.astrologerName || astrologer.name;
+        const context = profileLabel(session) || name;
+        const title = session.lastMessage || `${copy.chatsLabel} · ${name}`;
+        return (
+          <article class:list={["astrologer-chat-history__item", active && "is-active"]} data-chat-history-session={session.id} data-chat-paginated-item>
+            <a href={chatHref(session.id)} aria-current={active ? "page" : undefined}>
+              <span class="astrologer-chat-history__initials" aria-hidden="true">{initialsFor(context)}</span>
+              <span class="astrologer-chat-history__content">
+                <strong data-chat-history-summary>{title}</strong>
+                <time datetime={session.updatedAt} data-chat-history-time>{formatDate(session.updatedAt)}</time>
+              </span>
+            </a>
+          </article>
+        );
+      }) : (
+        <p class="astrologer-chat-history__empty" {...editAttributes("live_no_history")}>{copy.noHistory}</p>
+      )
+    }
+    {sessions.length > pageSize ? <div class="astrologer-chat-history__load-more"><button type="button" data-chat-sidebar-load-more {...editAttributes("live_load_more")}>{copy.loadMore}</button></div> : null}
+  </nav>
+
+  <div
+    class="astrologer-chat-history__list"
+    data-chat-sidebar-panel="transactions"
+    data-chat-sidebar-pager
+    data-page-size={pageSize}
+    hidden
+  >
+    {transactions.length ? transactions.map((transaction) => {
+      const credit = Number(transaction.amountCents) >= 0;
+      return (
+        <article class="astrologer-chat-history__transaction" data-chat-paginated-item>
+          <span class:list={["astrologer-chat-history__transaction-mark", credit ? "is-credit" : "is-debit"]} aria-hidden="true">{credit ? "+" : "−"}</span>
+          <span>
+            <strong>{transaction.description || copy.transactionsLabel}</strong>
+            <time datetime={transaction.createdAt}>{formatDate(transaction.createdAt)}</time>
+          </span>
+          <b class:list={[credit ? "is-credit" : "is-debit"]}>{transaction.signedAmount}</b>
+        </article>
+      );
+    }) : (
+      <p class="astrologer-chat-history__empty" {...editAttributes("live_no_transactions")}>{copy.noTransactions}</p>
+    )}
+    {transactions.length > pageSize ? <div class="astrologer-chat-history__load-more"><button type="button" data-chat-sidebar-load-more {...editAttributes("live_load_more")}>{copy.loadMore}</button></div> : null}
+  </div>
+
+  <div class="astrologer-chat-history__bottom">
+    <p><span {...editAttributes("live_chatting_as")}>{copy.chattingAs}</span> <strong>{activeProfileLabel}</strong></p>
+    <span>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
+      <span {...editAttributes("live_secure_private")}>{copy.securePrivate}</span>
+    </span>
+    <a
+      class="astrologer-chat-history__session-action"
+      href={sessionActive ? exitHref : newChatHref}
+      data-live-end={sessionActive ? true : undefined}
+      {...editAttributes(sessionActive ? "live_end_session" : "live_new_chat")}
+    >{sessionActive ? copy.endSession : copy.newChat}</a>
+  </div>
+</aside>
+
+<button class="astrologer-chat-history__backdrop" type="button" aria-label={copy.closeHistory} data-chat-history-close tabindex="-1"></button>
+
+<script>
+  const historyPanel = document.querySelector<HTMLElement>("[data-chat-history-panel]");
+  if (historyPanel && historyPanel.dataset.tabsReady !== "true") {
+    const tabs = historyPanel.querySelectorAll<HTMLButtonElement>("[data-chat-sidebar-tab]");
+    const panels = historyPanel.querySelectorAll<HTMLElement>("[data-chat-sidebar-panel]");
+    const refreshPager = (panel: HTMLElement) => {
+      const size = Number(panel.dataset.pageSize || 10);
+      const items = Array.from(panel.querySelectorAll<HTMLElement>("[data-chat-paginated-item]"));
+      const loadMore = panel.querySelector<HTMLButtonElement>("[data-chat-sidebar-load-more]");
+      let visible = Math.min(size, items.length);
+      const render = () => {
+        items.forEach((item, index) => { item.hidden = index >= visible; });
+        if (loadMore) loadMore.hidden = visible >= items.length;
+      };
+      loadMore?.addEventListener("click", () => {
+        visible = Math.min(visible + size, items.length);
+        render();
+      });
+      render();
+    };
+    panels.forEach(refreshPager);
+    tabs.forEach((tab) => tab.addEventListener("click", () => {
+      const target = tab.dataset.chatSidebarTab;
+      tabs.forEach((item) => {
+        const active = item === tab;
+        item.classList.toggle("is-active", active);
+        item.setAttribute("aria-selected", String(active));
+      });
+      panels.forEach((panel) => { panel.hidden = panel.dataset.chatSidebarPanel !== target; });
+    }));
+    historyPanel.dataset.tabsReady = "true";
+  }
+</script>

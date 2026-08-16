@@ -1,0 +1,144 @@
+---
+import type { SupportedLocale } from "../../data/localization-contract.ts";
+import type { TransitCastingStateCopy } from "../../data/locale/transit/sections/casting-state.ts";
+import type { TransitFormWizardCopy } from "../../data/locale/transit/sections/form-wizard.ts";
+import type { BirthChartFormWizardCopy } from "../../data/locale/birth-chart/sections/form-wizard.ts";
+import TransitCastingState from "./sections/TransitCastingState.astro";
+import TransitFormWizard from "./sections/TransitFormWizard.astro";
+import type { TransitSavedChart } from "./sections/TransitFormWizard.astro";
+import "../../styles/transit/transit.css";
+
+type TransitExperienceCopy = TransitFormWizardCopy & TransitCastingStateCopy;
+
+type Props = {
+  copy: TransitExperienceCopy;
+  birthCopy: BirthChartFormWizardCopy;
+  locale: SupportedLocale;
+  savedCharts?: readonly TransitSavedChart[];
+  isAuthenticated?: boolean;
+  brandHref: string;
+  resultHref?: string;
+  apiEndpoint?: string;
+  csrfToken?: string;
+  editAttributes?: (field: keyof TransitExperienceCopy) => Record<string, string>;
+};
+
+const {
+  copy,
+  birthCopy,
+  locale,
+  savedCharts = [],
+  isAuthenticated = false,
+  brandHref,
+  resultHref,
+  apiEndpoint = "/api/astropages/generated-site/transit",
+  csrfToken = "",
+  editAttributes = () => ({}),
+} = Astro.props as Props;
+---
+
+<main
+  data-transit-experience
+  data-result-href={resultHref}
+  data-api-endpoint={apiEndpoint}
+  data-locale={locale}
+  data-csrf-token={csrfToken}
+>
+  <TransitFormWizard
+    copy={copy}
+    birthCopy={birthCopy}
+    locale={locale}
+    savedCharts={savedCharts}
+    isAuthenticated={isAuthenticated}
+    csrfToken={csrfToken}
+    brandHref={brandHref}
+    editAttributes={editAttributes}
+  />
+  <TransitCastingState copy={copy} editAttributes={editAttributes} />
+</main>
+
+<script>
+  const initializeTransitExperiences = () => {
+    document
+      .querySelectorAll<HTMLElement>("[data-transit-experience]")
+      .forEach((experience) => {
+        if (experience.dataset.ready === "true") return;
+
+        const wizard = experience.querySelector<HTMLElement>(
+          "[data-transit-wizard]",
+        );
+        const casting = experience.querySelector<HTMLElement>(
+          "[data-transit-casting]",
+        );
+
+        experience.addEventListener("transitformsubmit", async (event) => {
+          if (
+            !wizard ||
+            !casting ||
+            experience.dataset.submitting === "true"
+          ) return;
+
+          experience.dataset.submitting = "true";
+          wizard.hidden = true;
+          casting.hidden = false;
+          casting.focus();
+
+          const formData = (
+            event as CustomEvent<{ formData?: FormData }>
+          ).detail?.formData;
+          if (!formData) {
+            experience.dataset.submitting = "false";
+            casting.hidden = true;
+            wizard.hidden = false;
+            return;
+          }
+          const status = wizard.querySelector<HTMLElement>("[data-transit-status]");
+          const profileId = formData.get("profileId");
+          const year = formData?.get("transitYear");
+          const month = formData?.get("transitMonth");
+          const day = formData?.get("transitDay");
+
+          const date = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+          const profile = {
+            name: formData.get("profileName"),
+            year: formData.get("birthYear"),
+            month: formData.get("birthMonth"),
+            day: formData.get("birthDay"),
+            hour: formData.get("birthHour"),
+            minute: formData.get("birthMinute"),
+            period: formData.get("birthPeriod"),
+            timeUnknown: formData.get("birthTimeUnknown"),
+            location: formData.get("birthLocation"),
+            locationId: formData.get("birthLocationId"),
+            latitude: formData.get("birthLocationLatitude"),
+            longitude: formData.get("birthLocationLongitude"),
+            timezone: formData.get("birthLocationTimezone"),
+            timezoneOffset: formData.get("birthLocationTimezoneOffset"),
+          };
+          try {
+            const response = await fetch(experience.dataset.apiEndpoint || "", {
+              method: "POST",
+              headers: { "content-type": "application/json", accept: "application/json", "x-astropages-customer-csrf": experience.dataset.csrfToken || "" },
+              body: JSON.stringify({ profileId, profile, date, locale: experience.dataset.locale || "en" }),
+            });
+            const body = await response.json().catch(() => ({})) as { readingId?: string; message?: string };
+            if (!response.ok || !body.readingId) throw new Error(body.message || "Transit could not be calculated.");
+            const destination = new URL(experience.dataset.resultHref || "/transit", window.location.href);
+            destination.pathname = `${destination.pathname.replace(/\/$/, "")}/${encodeURIComponent(body.readingId)}`;
+            window.location.assign(`${destination.pathname}${destination.search}`);
+          } catch (error) {
+            experience.dataset.submitting = "false";
+            casting.hidden = true;
+            wizard.hidden = false;
+            if (status) status.textContent = error instanceof Error ? error.message : "Transit could not be calculated.";
+            wizard.focus();
+          }
+        });
+
+        experience.dataset.ready = "true";
+      });
+  };
+
+  initializeTransitExperiences();
+  document.addEventListener("astro:page-load", initializeTransitExperiences);
+</script>

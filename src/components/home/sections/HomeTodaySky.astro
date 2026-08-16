@@ -1,0 +1,123 @@
+---
+import Button from "../../shared/Button.astro";
+import EmptyState from "../../shared/EmptyState.astro";
+import SectionHeading from "../../shared/SectionHeading.astro";
+import type { HomeTodaySkyPosition } from "../../../data/locale/home/sections/todays-sky.ts";
+import "../../../styles/home/sections/home-today-sky.css";
+
+type EditAttributes = Record<string, string>;
+
+type Props = {
+  eyebrow: string;
+  titleAccent: string;
+  titleRest: string;
+  dateLabel: string;
+  dateIso: string;
+  metadata: string;
+  ctaLabel: string;
+  ctaHref: string;
+  positions: HomeTodaySkyPosition[];
+  unavailableTitle: string;
+  unavailableDescription: string;
+  eyebrowEditAttributes?: EditAttributes;
+  titleAccentEditAttributes?: EditAttributes;
+  titleRestEditAttributes?: EditAttributes;
+  metadataEditAttributes?: EditAttributes;
+  ctaEditAttributes?: EditAttributes;
+};
+
+const {
+  eyebrow,
+  titleAccent,
+  titleRest,
+  dateLabel,
+  dateIso,
+  metadata,
+  ctaLabel,
+  ctaHref,
+  positions,
+  unavailableTitle,
+  unavailableDescription,
+  eyebrowEditAttributes = {},
+  titleAccentEditAttributes = {},
+  titleRestEditAttributes = {},
+  metadataEditAttributes = {},
+  ctaEditAttributes = {},
+} = Astro.props as Props;
+---
+
+<section class="home-today-sky" id="today" aria-labelledby="home-today-sky-title">
+  <div class="home-today-sky__inner">
+    <SectionHeading
+      title={`${titleAccent}${titleRest}`}
+      eyebrow={eyebrow}
+      headingId="home-today-sky-title"
+      class="home-today-sky__heading"
+      eyebrowEditAttributes={eyebrowEditAttributes}
+    >
+      <Fragment slot="title">
+        <em {...titleAccentEditAttributes}>{titleAccent}</em><span
+          {...titleRestEditAttributes}>{titleRest}</span
+        >
+      </Fragment>
+
+      <div slot="action" class="home-today-sky__summary">
+        <p>
+          <time datetime={dateIso}>{dateLabel}</time>
+          <span {...metadataEditAttributes}>{metadata}</span>
+        </p>
+        <Button
+          href={ctaHref}
+          size="compact"
+          class="home-today-sky__cta"
+          editAttributes={ctaEditAttributes}
+        >
+          {ctaLabel}
+          <span slot="trailing-icon">→</span>
+        </Button>
+      </div>
+    </SectionHeading>
+
+    {
+      positions.length ? (
+        <div class="home-today-sky__positions" role="list">
+          {
+        positions.map((position) => (
+          <div
+            role="listitem"
+            class="home-today-sky__position"
+            aria-label={`${position.planetName}, ${position.degreeText} ${position.signName}${
+              position.motionText ? `, ${position.motionText}` : ""
+            }`}
+          >
+            <div class="home-today-sky__position-header">
+              <span class="home-today-sky__position-glyph" aria-hidden="true">
+                {position.planetGlyph}
+              </span>
+              {position.motionText ? (
+                <span class="home-today-sky__position-motion">
+                  {position.motionText}
+                </span>
+              ) : null}
+            </div>
+            <p class="home-today-sky__position-name">{position.planetName}</p>
+            <p class="home-today-sky__position-value">
+              {position.degreeText} {position.signName}
+            </p>
+          </div>
+        ))
+          }
+        </div>
+      ) : (
+        <EmptyState
+          class="home-today-sky__unavailable"
+          title={unavailableTitle}
+          description={unavailableDescription}
+          variant="panel"
+          headingLevel={3}
+          showVisual={false}
+        />
+      )
+    }
+  </div>
+</section>

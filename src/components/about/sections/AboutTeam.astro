@@ -1,0 +1,85 @@
+---
+import CardGrid from "../../shared/CardGrid.astro";
+import ProfileSummary from "../../shared/ProfileSummary.astro";
+import SectionHeading from "../../shared/SectionHeading.astro";
+import "../../../styles/about/sections/about-team.css";
+
+type TeamMember = {
+  name: string;
+  role: string;
+  imageSrc: string;
+  nameEditAttributes?: Record<string, string>;
+  roleEditAttributes?: Record<string, string>;
+};
+
+type Props = {
+  titleAccent: string;
+  titleRest: string;
+  ariaLabel: string;
+  members: TeamMember[];
+  titleAccentEditAttributes?: Record<string, string>;
+  titleRestEditAttributes?: Record<string, string>;
+};
+
+const {
+  titleAccent,
+  titleRest,
+  ariaLabel,
+  members,
+  titleAccentEditAttributes = {},
+  titleRestEditAttributes = {},
+} = Astro.props as Props;
+---
+
+<section
+  class="about-team"
+  aria-labelledby="about-team-title"
+  data-screen-label="About · Team"
+>
+  <div class="about-team__inner">
+    <SectionHeading
+      title=""
+      headingId="about-team-title"
+      alignment="center"
+      measure="full"
+      class="about-team__heading"
+    >
+      <Fragment slot="title">
+        <em {...titleAccentEditAttributes}>{titleAccent}</em>{" "}
+        <span {...titleRestEditAttributes}>{titleRest}</span>
+      </Fragment>
+    </SectionHeading>
+
+    <CardGrid
+      as="ul"
+      columns={4}
+      tabletColumns={2}
+      mobileColumns={2}
+      gap="loose"
+      align="start"
+      ariaLabel={ariaLabel}
+      class="about-team__grid"
+    >
+      {
+        members.map((member) => (
+          <li class="about-team__member">
+            <ProfileSummary
+              name={member.name}
+              subtitle={member.role}
+              layout="stacked"
+              size="standard"
+              nameTag="h3"
+              avatarSrc={member.imageSrc}
+              avatarAlt={member.name}
+              avatarFallback="placeholder"
+              avatarSize="large"
+              nameEditAttributes={member.nameEditAttributes}
+              subtitleEditAttributes={member.roleEditAttributes}
+              class="about-team__profile"
+            />
+          </li>
+        ))
+      }
+    </CardGrid>
+  </div>
+</section>

@@ -1,0 +1,726 @@
+---
+import type { SupportedLocale } from "../../../data/localization-contract.ts";
+import type { TransitFormWizardCopy } from "../../../data/locale/transit/sections/form-wizard.ts";
+import type { BirthChartFormWizardCopy } from "../../../data/locale/birth-chart/sections/form-wizard.ts";
+import { birthMinuteOptions } from "../../../data/time-options.ts";
+import AddProfileForm from "../../shared/AddProfileForm.astro";
+import type { AstrologyProfile } from "../../shared/AstrologyProfileForm.astro";
+import Avatar from "../../shared/Avatar.astro";
+import Badge from "../../shared/Badge.astro";
+import Button from "../../shared/Button.astro";
+import DateSelector from "../../shared/DateSelector.astro";
+import Dialog from "../../shared/Dialog.astro";
+import FormField from "../../shared/FormField.astro";
+import LocationAutocomplete from "../../shared/LocationAutocomplete.astro";
+import StepProgress from "../../shared/StepProgress.astro";
+import TextField from "../../shared/TextField.astro";
+import TimeSelector from "../../shared/TimeSelector.astro";
+import "../../../styles/birth-chart/sections/form-wizard.css";
+import "../../../styles/transit/sections/form-wizard.css";
+
+export type TransitSavedChart = {
+  id: string;
+  name: string;
+  initials?: string;
+  birthSummary: string;
+  bigThreeSummary?: string;
+  birthDate: string;
+  birthTime: string;
+  birthPlace: string;
+  placeId: string;
+  latitude: number;
+  longitude: number;
+  timezone: string;
+  timezoneOffset: string;
+  isDefault?: boolean;
+};
+
+type Props = {
+  copy: TransitFormWizardCopy;
+  birthCopy: BirthChartFormWizardCopy;
+  locale: SupportedLocale;
+  savedCharts?: readonly TransitSavedChart[];
+  isAuthenticated?: boolean;
+  csrfToken?: string;
+  brandHref: string;
+  editAttributes?: (field: string) => Record<string, string>;
+};
+
+const {
+  copy,
+  birthCopy,
+  locale,
+  savedCharts = [],
+  isAuthenticated = false,
+  csrfToken = "",
+  brandHref,
+  editAttributes = () => ({}),
+} = Astro.props as Props;
+const edit = (field: string) => editAttributes(field);
+const now = new Date();
+const months = Array.from({ length: 12 }, (_, index) => ({
+  value: String(index + 1),
+  label: new Intl.DateTimeFormat(locale, { month: "long" }).format(
+    new Date(2024, index, 1),
+  ),
+}));
+const days = Array.from({ length: 31 }, (_, index) => ({
+  value: String(index + 1),
+  label: String(index + 1),
+}));
+const years = Array.from({ length: 41 }, (_, index) => {
+  const value = String(now.getFullYear() - 20 + index);
+  return { value, label: value };
+});
+const birthYears = Array.from({ length: 110 }, (_, index) => {
+  const value = String(now.getFullYear() - index);
+  return { value, label: value };
+});
+const hours = Array.from({ length: 12 }, (_, index) => ({
+  value: String(index + 1),
+  label: String(index + 1),
+}));
+const periods = [
+  { value: "AM", label: "AM" },
+  { value: "PM", label: "PM" },
+];
+const addProfile: AstrologyProfile = {
+  id: "transit-new-profile",
+  title: copy.profile_picker_add_title,
+  badge: "+",
+  tone: "terracotta",
+  nameLabel: birthCopy.name_label,
+  namePlaceholder: birthCopy.name_placeholder,
+  date: {
+    label: birthCopy.date_label,
+    monthLabel: copy.month_field_label,
+    dayLabel: copy.day_field_label,
+    yearLabel: copy.year_field_label,
+    months,
+    days,
+    years: birthYears,
+    monthValue: "1",
+    dayValue: "1",
+    yearValue: String(now.getFullYear() - 30),
+  },
+  time: {
+    label: birthCopy.time_label,
+    hourLabel: birthCopy.hour_label,
+    minuteLabel: birthCopy.minute_label,
+    periodLabel: birthCopy.period_label,
+    unknownLabel: birthCopy.unknown_time_label,
+    unknownDescription: birthCopy.unknown_time_description,
+    hours,
+    minutes: birthMinuteOptions,
+    periods,
+    hourValue: "12",
+    minuteValue: "00",
+    periodValue: "PM",
+  },
+  location: {
+    label: birthCopy.location_label,
+    placeholder: birthCopy.location_placeholder,
+    startText: birthCopy.location_start,
+    searchingText: birthCopy.location_searching,
+    noResultsText: birthCopy.location_empty,
+    unavailableText: birthCopy.location_unavailable,
+    selectedText: birthCopy.location_selected,
+  },
+  required: true,
+};
+const zodiacGlyphs = ["♈", "♉", "♊", "♋", "♌", "♍", "♎", "♏", "♐", "♑", "♒", "♓"];
+---
+
+<section
+  class="birth-chart-wizard transit-wizard"
+  data-transit-wizard
+  data-locale={locale}
+  aria-labelledby="transit-wizard-title"
+>
+  <div class="birth-chart-wizard__layout">
+    <aside class="birth-chart-wizard__story">
+      <div class="birth-chart-wizard__story-copy">
+        <p class="birth-chart-wizard__eyebrow" {...edit("panel_kicker")}>{copy.panel_kicker}</p>
+        <h1 id="transit-wizard-title">
+          <em {...edit("panel_title_accent")}>{copy.panel_title_accent}</em>{" "}
+          <span {...edit("panel_title_rest")}>{copy.panel_title_rest}</span>
+        </h1>
+        <p {...edit("panel_description")}>{copy.panel_description}</p>
+      </div>
+
+      <div class="birth-chart-wizard__wheel transit-wizard__wheel" aria-hidden="true">
+        <svg viewBox="0 0 320 320">
+          <g class="birth-chart-wizard__wheel-ring">
+            <circle cx="160" cy="160" r="150"></circle>
+            {zodiacGlyphs.map((glyph, index) => {
+              const angle = ((index * 30 - 90) * Math.PI) / 180;
+              return <text x={160 + Math.cos(angle) * 135} y={160 + Math.sin(angle) * 135}>{glyph}</text>;
+            })}
+          </g>
+          <g class="transit-wizard__orbit">
+            <circle cx="160" cy="160" r="110"></circle>
+            <circle cx="238" cy="128" r="7"></circle>
+            <circle cx="92" cy="196" r="5"></circle>
+          </g>
+          <circle cx="160" cy="160" r="80" class="transit-wizard__inner-orbit"></circle>
+          <circle cx="160" cy="160" r="34" class="birth-chart-wizard__wheel-core"></circle>
+          <text x="160" y="162" class="birth-chart-wizard__wheel-mark">☉</text>
+        </svg>
+      </div>
+
+      <ol class="birth-chart-wizard__steps">
+        {[
+          [copy.step_chart_label, copy.step_chart_hint],
+          [copy.step_date_label, copy.step_date_hint],
+        ].map(([label, hint], index) => (
+          <li data-transit-summary data-active={index === 0 ? "true" : "false"}>
+            <span class="birth-chart-wizard__step-badge">{index + 1}</span>
+            <span>
+              <strong {...edit(index === 0 ? "step_chart_label" : "step_date_label")}>{label}</strong>
+              <small {...edit(index === 0 ? "step_chart_hint" : "step_date_hint")}>{hint}</small>
+            </span>
+          </li>
+        ))}
+      </ol>
+    </aside>
+
+    <div class="birth-chart-wizard__form-panel">
+      <form id="transit-form" class="transit-wizard__form" data-transit-form>
+        <div data-transit-step="0">
+          <div class="transit-wizard__form-heading">
+            <StepProgress
+              current={1}
+              total={2}
+              stepLabel={copy.progress_step}
+              ofLabel={copy.progress_of}
+              stepLabelEditAttributes={edit("progress_step")}
+              ofLabelEditAttributes={edit("progress_of")}
+            />
+            <div class="transit-wizard__kicker-row">
+              <p class="birth-chart-wizard__eyebrow" {...edit("chart_kicker")}>{copy.chart_kicker}</p>
+              {isAuthenticated ? (
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="compact"
+                  data-dialog-open="transit-profile-picker"
+                >
+                  <span {...edit("new_chart_label")}>{copy.new_chart_label}</span>
+                </Button>
+              ) : null}
+            </div>
+            <h2 {...edit("chart_title")}>{copy.chart_title}</h2>
+            <p {...edit("chart_body")}>{copy.chart_body}</p>
+          </div>
+
+          <input type="hidden" name="profileId" data-transit-profile-id />
+          <div class="transit-wizard__birth-fields" data-transit-birth-fields>
+            <FormField label={birthCopy.name_label} controlId="transit-profile-name" required>
+              <TextField
+                id="transit-profile-name"
+                name="profileName"
+                placeholder={birthCopy.name_placeholder}
+                autocomplete="name"
+                required
+              />
+            </FormField>
+            <DateSelector
+              id="transit-birth-date"
+              label={birthCopy.date_label}
+              monthLabel={copy.month_field_label}
+              dayLabel={copy.day_field_label}
+              yearLabel={copy.year_field_label}
+              months={months}
+              days={days}
+              years={birthYears}
+              monthValue="1"
+              dayValue="1"
+              yearValue={String(now.getFullYear() - 30)}
+              monthName="birthMonth"
+              dayName="birthDay"
+              yearName="birthYear"
+              required
+              density="compact"
+              selectPresentation="popover"
+            />
+            <TimeSelector
+              id="transit-birth-time"
+              label={birthCopy.time_label}
+              hourLabel={birthCopy.hour_label}
+              minuteLabel={birthCopy.minute_label}
+              periodLabel={birthCopy.period_label}
+              unknownLabel={birthCopy.unknown_time_label}
+              unknownDescription={birthCopy.unknown_time_description}
+              hours={hours}
+              minutes={birthMinuteOptions}
+              periods={periods}
+              hourValue="12"
+              minuteValue="00"
+              periodValue="PM"
+              hourName="birthHour"
+              minuteName="birthMinute"
+              periodName="birthPeriod"
+              unknownName="birthTimeUnknown"
+              required
+              density="compact"
+              selectPresentation="popover"
+            />
+            <LocationAutocomplete
+              id="transit-birth-location"
+              label={birthCopy.location_label}
+              name="birthLocation"
+              placeholder={birthCopy.location_placeholder}
+              startText={birthCopy.location_start}
+              searchingText={birthCopy.location_searching}
+              noResultsText={birthCopy.location_empty}
+              unavailableText={birthCopy.location_unavailable}
+              selectedText={birthCopy.location_selected}
+              dateInputId="transit-birth-date-year"
+              timeInputId="transit-birth-time-hour"
+              required
+            />
+          </div>
+        </div>
+
+        <div data-transit-step="1" hidden>
+          <div class="transit-wizard__form-heading">
+            <StepProgress
+              current={2}
+              total={2}
+              stepLabel={copy.progress_step}
+              ofLabel={copy.progress_of}
+              stepLabelEditAttributes={edit("progress_step")}
+              ofLabelEditAttributes={edit("progress_of")}
+            />
+            <p class="birth-chart-wizard__eyebrow" {...edit("date_kicker")}>{copy.date_kicker}</p>
+            <h2 {...edit("date_title")}>{copy.date_title}</h2>
+            <p {...edit("date_body")}>{copy.date_body}</p>
+          </div>
+
+          <div class="transit-wizard__quick-dates" aria-label={copy.date_title}>
+            {[
+              [copy.today_label, 0],
+              [copy.tomorrow_label, 1],
+              [copy.week_label, 7],
+              [copy.month_label, 30],
+            ].map(([label, offset], index) => (
+              <button
+                type="button"
+                data-date-offset={String(offset)}
+                data-active={index === 0 ? "true" : "false"}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          <DateSelector
+            id="transit-date"
+            label={copy.transit_date_label}
+            monthLabel={copy.month_field_label}
+            dayLabel={copy.day_field_label}
+            yearLabel={copy.year_field_label}
+            months={months}
+            days={days}
+            years={years}
+            monthValue={String(now.getMonth() + 1)}
+            dayValue={String(now.getDate())}
+            yearValue={String(now.getFullYear())}
+            monthName="transitMonth"
+            dayName="transitDay"
+            yearName="transitYear"
+            required
+            selectPresentation="popover"
+            class="transit-wizard__date-selector"
+            labelEditAttributes={edit("transit_date_label")}
+          />
+
+          <p class="transit-wizard__date-summary" aria-live="polite">
+            <span aria-hidden="true">☉</span>
+            <span>
+              <span {...edit("date_summary_prefix")}>{copy.date_summary_prefix}</span>{" "}
+              <strong data-transit-date-summary></strong>
+            </span>
+          </p>
+        </div>
+
+        <div class="transit-wizard__actions">
+          <span data-transit-home-wrap>
+            <Button href={brandHref} variant="outline" shape="pill">
+              <span {...edit("back_label")}>{copy.back_label}</span>
+            </Button>
+          </span>
+          <span data-transit-back-wrap hidden>
+            <Button id="transit-back" type="button" variant="outline" shape="pill">
+              <span {...edit("back_label")}>{copy.back_label}</span>
+            </Button>
+          </span>
+          <Button
+            type="button"
+            shape="pill"
+            fullWidth
+            id="transit-continue"
+          >
+            <span {...edit("continue_label")}>{copy.continue_label}</span>
+          </Button>
+          <span data-transit-cast-wrap hidden>
+            <Button id="transit-cast" type="submit" shape="pill" fullWidth>
+              <span {...edit("cast_label")}>{copy.cast_label}</span>
+            </Button>
+          </span>
+        </div>
+      </form>
+      <p class="transit-wizard__status" data-transit-status role="status" aria-live="polite"></p>
+    </div>
+  </div>
+
+  {isAuthenticated ? (
+    <Dialog
+      id="transit-profile-picker"
+      eyebrow={copy.chart_kicker}
+      title={copy.chart_title}
+      description={copy.chart_body}
+      closeLabel={copy.back_label}
+      width="standard"
+      class="transit-profile-picker"
+    >
+      <div data-transit-profile-list-view>
+        <div
+          class="transit-profile-picker__list"
+          data-transit-profile-list
+          hidden={savedCharts.length === 0}
+        >
+          {savedCharts.map((profile) => (
+            <button
+              type="button"
+              class="transit-profile-picker__option"
+              data-transit-profile-option
+              data-profile={JSON.stringify(profile)}
+            >
+              <Avatar
+                name={profile.name}
+                initials={profile.initials}
+                fallback="initials"
+                size="standard"
+                tone="accent"
+              />
+              <span class="transit-profile-picker__copy">
+                <span class="transit-profile-picker__name-row">
+                  <strong>{profile.name}</strong>
+                  {profile.isDefault ? <Badge size="compact">Default</Badge> : null}
+                </span>
+                <small>{profile.birthSummary}</small>
+              </span>
+            </button>
+          ))}
+        </div>
+
+        <div
+          class="transit-wizard__empty"
+          role="status"
+          data-transit-profile-empty
+          hidden={savedCharts.length > 0}
+        >
+          <strong {...edit("empty_chart_title")}>{copy.empty_chart_title}</strong>
+          <p {...edit("empty_chart_body")}>{copy.empty_chart_body}</p>
+        </div>
+
+        <div class="transit-profile-picker__add-row">
+          <Button type="button" variant="outline" data-transit-profile-add>
+            <svg slot="leading-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+            </svg>
+            <span {...edit("profile_picker_add_label")}>{copy.profile_picker_add_label}</span>
+          </Button>
+        </div>
+      </div>
+
+      <div data-transit-profile-add-view hidden>
+        <Button type="button" variant="link" class="transit-profile-picker__back" data-transit-profile-back>
+          <svg slot="leading-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <path d="m12.5 4.5-5.5 5.5 5.5 5.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <span {...edit("profile_picker_back_label")}>{copy.profile_picker_back_label}</span>
+        </Button>
+        <AddProfileForm
+          id="transit-add-profile"
+          profile={addProfile}
+          csrfToken={csrfToken}
+          saveLabel={copy.profile_picker_save_label}
+          savingLabel={copy.profile_picker_saving_label}
+          errorMessage={copy.profile_picker_error}
+          saveEditAttributes={edit("profile_picker_save_label")}
+        />
+      </div>
+    </Dialog>
+  ) : null}
+</section>
+
+<script>
+  type PickerProfile = {
+    id: string;
+    name?: string;
+    profileName?: string;
+    birthDate: string;
+    birthTime: string;
+    birthPlace: string;
+    placeId: string;
+    latitude?: number;
+    longitude?: number;
+    placeLat?: number;
+    placeLon?: number;
+    timezone?: string;
+    placeTimezone?: string;
+    timezoneOffset: string;
+    isDefault?: boolean;
+  };
+
+  const initializeTransitWizards = () => {
+    document.querySelectorAll<HTMLElement>("[data-transit-wizard]").forEach((root) => {
+      if (root.dataset.ready === "true") return;
+      const form = root.querySelector<HTMLFormElement>("[data-transit-form]");
+      const formPanel = root.querySelector<HTMLElement>(".birth-chart-wizard__form-panel");
+      const steps = [...root.querySelectorAll<HTMLElement>("[data-transit-step]")];
+      const summaries = [...root.querySelectorAll<HTMLElement>("[data-transit-summary]")];
+      const homeWrap = root.querySelector<HTMLElement>("[data-transit-home-wrap]");
+      const back = root.querySelector<HTMLButtonElement>("#transit-back");
+      const backWrap = root.querySelector<HTMLElement>("[data-transit-back-wrap]");
+      const next = root.querySelector<HTMLButtonElement>("#transit-continue");
+      const castWrap = root.querySelector<HTMLElement>("[data-transit-cast-wrap]");
+      const month = root.querySelector<HTMLSelectElement>("#transit-date-month");
+      const day = root.querySelector<HTMLSelectElement>("#transit-date-day");
+      const year = root.querySelector<HTMLSelectElement>("#transit-date-year");
+      const dateSummary = root.querySelector<HTMLElement>("[data-transit-date-summary]");
+      const profileId = root.querySelector<HTMLInputElement>("[data-transit-profile-id]");
+      const birthFields = root.querySelector<HTMLElement>("[data-transit-birth-fields]");
+      const profileDialog = root.querySelector<HTMLDialogElement>("#transit-profile-picker");
+      const profileListView = profileDialog?.querySelector<HTMLElement>("[data-transit-profile-list-view]");
+      const profileAddView = profileDialog?.querySelector<HTMLElement>("[data-transit-profile-add-view]");
+      const profileList = profileDialog?.querySelector<HTMLElement>("[data-transit-profile-list]");
+      const profileEmpty = profileDialog?.querySelector<HTMLElement>("[data-transit-profile-empty]");
+      const locale = root.dataset.locale || "en";
+      let step = 0;
+      let applyingProfile = false;
+
+      const selectedDate = () => {
+        const selectedYear = Number(year?.value);
+        const selectedMonth = Number(month?.value);
+        const selectedDay = Number(day?.value);
+        return new Date(selectedYear, selectedMonth - 1, selectedDay);
+      };
+
+      const renderDateSummary = () => {
+        if (!dateSummary) return;
+        const date = selectedDate();
+        if (Number.isNaN(date.getTime())) {
+          dateSummary.textContent = "";
+          return;
+        }
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        date.setHours(0, 0, 0, 0);
+        const offset = Math.round((date.getTime() - today.getTime()) / 86400000);
+        const dateText = new Intl.DateTimeFormat(locale, { dateStyle: "long" }).format(date);
+        const relativeText = new Intl.RelativeTimeFormat(locale, { numeric: "auto" }).format(offset, "day");
+        dateSummary.textContent = `${dateText} — ${relativeText}`;
+      };
+
+      const setDate = (date: Date) => {
+        if (month) month.value = String(date.getMonth() + 1);
+        if (day) day.value = String(date.getDate());
+        if (year) year.value = String(date.getFullYear());
+        [month, day, year].forEach((select) => {
+          select?.dispatchEvent(new Event("input", { bubbles: true }));
+          select?.dispatchEvent(new Event("change", { bubbles: true }));
+        });
+        renderDateSummary();
+      };
+
+      const render = () => {
+        steps.forEach((panel, index) => panel.hidden = index !== step);
+        summaries.forEach((summary, index) => summary.dataset.active = index === step ? "true" : "false");
+        if (homeWrap) homeWrap.hidden = step !== 0;
+        if (backWrap) backWrap.hidden = step === 0;
+        if (next) next.hidden = step === 1;
+        if (castWrap) castWrap.hidden = step === 0;
+      };
+
+      const revealStep = (focusTarget?: HTMLElement | null) => {
+        formPanel?.scrollIntoView({ block: "start" });
+        focusTarget?.focus({ preventScroll: true });
+      };
+
+      next?.addEventListener("click", () => {
+        const invalid = steps[0]?.querySelector<HTMLElement>(":invalid");
+        if (invalid) {
+          (invalid as HTMLInputElement | HTMLSelectElement).reportValidity?.();
+          return;
+        }
+        step = 1;
+        render();
+        revealStep(month);
+      });
+      back?.addEventListener("click", () => {
+        step = 0;
+        render();
+        revealStep(root.querySelector<HTMLInputElement>("#transit-profile-name"));
+      });
+      const setSelect = (id: string, value: string) => {
+        const select = root.querySelector<HTMLSelectElement>(`#${CSS.escape(id)}`);
+        if (!select) return;
+        select.value = value;
+        select.dispatchEvent(new Event("input", { bubbles: true }));
+        select.dispatchEvent(new Event("change", { bubbles: true }));
+      };
+      const showProfileList = () => {
+        if (profileListView) profileListView.hidden = false;
+        if (profileAddView) profileAddView.hidden = true;
+      };
+      const showProfileAdd = () => {
+        if (profileListView) profileListView.hidden = true;
+        if (profileAddView) profileAddView.hidden = false;
+        window.requestAnimationFrame(() => profileAddView?.querySelector<HTMLElement>("input")?.focus());
+      };
+      const applyProfile = (profile: PickerProfile) => {
+        try {
+            const profileName = profile.name || profile.profileName || "";
+            const latitude = profile.latitude ?? profile.placeLat;
+            const longitude = profile.longitude ?? profile.placeLon;
+            const timezone = profile.timezone || profile.placeTimezone || "";
+            applyingProfile = true;
+            if (profileId) profileId.value = profile.id;
+            const name = root.querySelector<HTMLInputElement>("#transit-profile-name");
+            if (name) name.value = profileName;
+            const [year, monthValue, dayValue] = profile.birthDate.split("-");
+            setSelect("transit-birth-date-month", String(Number(monthValue)));
+            setSelect("transit-birth-date-day", String(Number(dayValue)));
+            setSelect("transit-birth-date-year", year);
+            const [hourText, minuteValue = "00"] = profile.birthTime.split(":");
+            const hour24 = Number(hourText);
+            setSelect("transit-birth-time-hour", String(hour24 % 12 || 12));
+            setSelect("transit-birth-time-minute", minuteValue);
+            setSelect("transit-birth-time-period", hour24 >= 12 ? "PM" : "AM");
+            const unknown = root.querySelector<HTMLInputElement>('[name="birthTimeUnknown"]');
+            if (unknown?.checked) {
+              unknown.checked = false;
+              unknown.dispatchEvent(new Event("change", { bubbles: true }));
+            }
+            const locationInput = root.querySelector<HTMLInputElement>("#transit-birth-location");
+            const locationRoot = locationInput?.closest<HTMLElement>("[data-sidera-location-autocomplete]");
+            if (locationInput && locationRoot) {
+              locationInput.value = profile.birthPlace;
+              locationInput.setCustomValidity("");
+              const values = {
+                id: profile.placeId,
+                latitude: String(latitude ?? ""),
+                longitude: String(longitude ?? ""),
+                timezone,
+                offset: profile.timezoneOffset,
+              };
+              Object.entries(values).forEach(([key, value]) => {
+                const field = locationRoot.querySelector<HTMLInputElement>(`[data-location-value="${key}"]`);
+                if (field) field.value = value;
+              });
+              const status = locationRoot.querySelector<HTMLElement>("[data-location-status]");
+              const statusText = locationRoot.querySelector<HTMLElement>("[data-location-status-text]");
+              if (status) {
+                status.hidden = false;
+                status.dataset.state = "selected";
+              }
+              if (statusText) statusText.textContent = `${locationRoot.dataset.selectedText || ""}: ${timezone} · ${profile.timezoneOffset}`;
+            }
+            applyingProfile = false;
+            profileDialog?.close("selected");
+            name?.focus();
+        } catch {
+            applyingProfile = false;
+        }
+      };
+      const bindProfileOption = (option: HTMLButtonElement) => {
+        if (option.dataset.profileOptionReady === "true") return;
+        option.addEventListener("click", () => {
+          try {
+            applyProfile(JSON.parse(option.dataset.profile || "{}") as PickerProfile);
+          } catch {
+            return;
+          }
+        });
+        option.dataset.profileOptionReady = "true";
+      };
+      root.querySelectorAll<HTMLButtonElement>("[data-transit-profile-option]").forEach(bindProfileOption);
+      profileDialog?.querySelectorAll<HTMLButtonElement>("[data-transit-profile-add]").forEach((button) => {
+        button.addEventListener("click", showProfileAdd);
+      });
+      profileDialog?.querySelector<HTMLButtonElement>("[data-transit-profile-back]")?.addEventListener("click", showProfileList);
+      profileDialog?.addEventListener("sidera:dialog-close", showProfileList);
+      profileDialog?.addEventListener("sidera:profile-created", (event) => {
+        const profile = (event as CustomEvent<{ profile?: PickerProfile }>).detail?.profile;
+        if (!profile) return;
+        if (profileList) {
+          const option = document.createElement("button");
+          option.type = "button";
+          option.className = "transit-profile-picker__option";
+          option.dataset.transitProfileOption = "";
+          option.dataset.profile = JSON.stringify(profile);
+          const avatar = document.createElement("span");
+          avatar.className = "sidera-avatar sidera-avatar--standard sidera-avatar--accent sidera-avatar--initials";
+          const initial = document.createElement("span");
+          initial.className = "sidera-avatar__initials";
+          initial.setAttribute("aria-hidden", "true");
+          initial.textContent = (profile.profileName || profile.name || "?").slice(0, 1).toUpperCase();
+          avatar.append(initial);
+          const copy = document.createElement("span");
+          copy.className = "transit-profile-picker__copy";
+          const nameRow = document.createElement("span");
+          nameRow.className = "transit-profile-picker__name-row";
+          const strong = document.createElement("strong");
+          strong.textContent = profile.profileName || profile.name || "";
+          nameRow.append(strong);
+          const small = document.createElement("small");
+          small.textContent = `${profile.birthDate} · ${profile.birthTime} · ${profile.birthPlace}`;
+          copy.append(nameRow, small);
+          option.append(avatar, copy);
+          profileList.append(option);
+          profileList.hidden = false;
+          bindProfileOption(option);
+        }
+        if (profileEmpty) profileEmpty.hidden = true;
+        applyProfile(profile);
+      });
+      birthFields?.addEventListener("input", (event) => {
+        if (applyingProfile || !profileId || event.target === profileId) return;
+        profileId.value = "";
+      });
+      root.querySelectorAll<HTMLButtonElement>("[data-date-offset]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const date = new Date();
+          date.setHours(0, 0, 0, 0);
+          date.setDate(date.getDate() + Number(button.dataset.dateOffset ?? 0));
+          setDate(date);
+          root.querySelectorAll<HTMLElement>("[data-date-offset]").forEach(
+            (chip) => chip.dataset.active = chip === button ? "true" : "false",
+          );
+        });
+      });
+      [month, day, year].forEach((select) => select?.addEventListener("change", () => {
+        root.querySelectorAll<HTMLElement>("[data-date-offset]").forEach(
+          (chip) => chip.dataset.active = "false",
+        );
+        renderDateSummary();
+      }));
+      form?.addEventListener("submit", (event) => {
+        if (step !== 1 || !form.checkValidity()) return;
+        event.preventDefault();
+        form.dispatchEvent(new CustomEvent("transitformsubmit", {
+          bubbles: true,
+          detail: { formData: new FormData(form) },
+        }));
+      });
+      renderDateSummary();
+      render();
+      root.dataset.ready = "true";
+    });
+  };
+  initializeTransitWizards();
+  document.addEventListener("astro:page-load", initializeTransitWizards);
+</script>

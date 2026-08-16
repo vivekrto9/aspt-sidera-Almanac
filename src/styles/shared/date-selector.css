@@ -1,0 +1,48 @@
+.sidera-date-selector {
+  min-inline-size: 0;
+}
+
+.sidera-date-selector__fields {
+  inline-size: 100%;
+  min-inline-size: 0;
+  display: flex;
+  align-items: start;
+  gap: 0.625rem;
+}
+
+.sidera-date-selector__part {
+  min-inline-size: 0;
+}
+
+.sidera-date-selector__part--month {
+  flex: 1.4 1 0;
+}
+
+.sidera-date-selector__part--day {
+  flex: 0.8 1 0;
+}
+
+.sidera-date-selector__part--year {
+  flex: 1 1 0;
+}
+
+.sidera-date-selector--compact .sidera-date-selector__fields {
+  gap: 0.5rem;
+}
+
+@media (max-width: 30rem) {
+  .sidera-date-selector__fields {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(4.5rem, 0.75fr);
+  }
+
+  .sidera-date-selector__part--year {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (forced-colors: active) {
+  .sidera-date-selector__fields {
+    border-color: CanvasText;
+  }
+}

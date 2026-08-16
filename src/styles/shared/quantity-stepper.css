@@ -1,0 +1,57 @@
+.quantity-stepper {
+  --quantity-control-size: 2.375rem;
+  --quantity-value-width: 2rem;
+  --quantity-padding: 0.25rem;
+  --quantity-font-size: 0.9375rem;
+
+  inline-size: max-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.125rem;
+  border: 1px solid rgba(var(--color-text-rgb), 0.2);
+  border-radius: 999px;
+  padding: var(--quantity-padding);
+  background: #ffffff;
+  color: var(--color-text);
+}
+
+.quantity-stepper--compact {
+  --quantity-control-size: 2rem;
+  --quantity-value-width: 1.75rem;
+  --quantity-padding: 0.1875rem;
+  --quantity-font-size: 0.875rem;
+}
+
+.quantity-stepper .quantity-stepper__button {
+  --icon-button-size: var(--quantity-control-size);
+  --icon-button-icon-size: 1.125rem;
+
+  border: 0;
+}
+
+.quantity-stepper__value {
+  min-inline-size: var(--quantity-value-width);
+  display: inline-block;
+  color: var(--color-text);
+  font: 600 var(--quantity-font-size) / 1.2 var(--font-sans), system-ui, sans-serif;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.quantity-stepper--disabled {
+  opacity: 0.58;
+}
+
+@media (max-width: 40rem) {
+  .quantity-stepper,
+  .quantity-stepper--compact {
+    --quantity-control-size: 2.75rem;
+    --quantity-value-width: 2rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quantity-stepper .quantity-stepper__button {
+    transition: none;
+  }
+}

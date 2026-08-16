@@ -1,0 +1,716 @@
+---
+import FormField from "./FormField.astro";
+import TextField from "./TextField.astro";
+import "../../styles/shared/location-autocomplete.css";
+
+export type LocationPrediction = {
+  placeId: string;
+  description: string;
+  mainText?: string;
+  secondaryText?: string;
+};
+
+export type SelectedLocation = {
+  placeId: string;
+  formattedAddress: string;
+  lat: number;
+  lon: number;
+  timezone: string;
+  offset: string;
+};
+
+type Props = {
+  id: string;
+  label: string;
+  name?: string;
+  query?: string;
+  initialPredictions?: LocationPrediction[];
+  selectedLocation?: SelectedLocation;
+  placeholder?: string;
+  autocomplete?: string;
+  form?: string;
+  required?: boolean;
+  disabled?: boolean;
+  invalid?: boolean;
+  helpText?: string;
+  errorText?: string;
+  optionalText?: string;
+  autocompleteEndpoint?: string;
+  detailsEndpoint?: string;
+  dateInputId?: string;
+  timeInputId?: string;
+  minCharacters?: number;
+  debounceMs?: number;
+  maxResults?: number;
+  defaultOpen?: boolean;
+  startText?: string;
+  searchingText?: string;
+  noResultsText?: string;
+  unavailableText?: string;
+  detailsLoadingText?: string;
+  detailsUnavailableText?: string;
+  refreshingText?: string;
+  selectedText?: string;
+  chooseFromSuggestionsText?: string;
+  inputEditAttributes?: Record<string, string>;
+  class?: string;
+  [attribute: string]: unknown;
+};
+
+const {
+  id,
+  label,
+  name = "location",
+  query,
+  initialPredictions = [],
+  selectedLocation,
+  placeholder = "Start typing a city…",
+  autocomplete = "off",
+  form,
+  required = false,
+  disabled = false,
+  invalid = false,
+  helpText,
+  errorText,
+  optionalText,
+  autocompleteEndpoint = "/api/astropages/generated-site/places/autocomplete",
+  detailsEndpoint = "/api/astropages/generated-site/places/details",
+  dateInputId,
+  timeInputId,
+  minCharacters = 2,
+  debounceMs = 260,
+  maxResults = 5,
+  defaultOpen = false,
+  startText = "Start typing and choose a location from the suggestions.",
+  searchingText = "Searching locations…",
+  noResultsText = "No matching locations found. Try a nearby city.",
+  unavailableText = "Location suggestions are temporarily unavailable.",
+  detailsLoadingText = "Loading coordinates and time zone…",
+  detailsUnavailableText = "Location details are temporarily unavailable.",
+  refreshingText = "Refreshing the time zone for this date and time…",
+  selectedText = "Coordinates and time zone located",
+  chooseFromSuggestionsText = "Choose a location from the suggestions.",
+  inputEditAttributes = {},
+  class: className,
+  ...rootAttributes
+} = Astro.props as Props;
+
+const initialQuery = query ?? selectedLocation?.formattedAddress ?? "";
+const listboxId = `${id}-listbox`;
+const statusId = `${id}-status`;
+const describedBy = [
+  helpText ? `${id}-help` : undefined,
+  errorText ? `${id}-error` : undefined,
+  statusId,
+]
+  .filter(Boolean)
+  .join(" ");
+const resultLimit = Math.max(1, maxResults);
+const classes = [
+  "sidera-location-autocomplete",
+  disabled && "sidera-location-autocomplete--disabled",
+  (invalid || errorText) && "sidera-location-autocomplete--invalid",
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+const initialStatus = selectedLocation
+  ? `${selectedText}: ${selectedLocation.timezone} · ${selectedLocation.offset}`
+  : "";
+---
+
+<FormField
+  {...rootAttributes}
+  class={classes}
+  label={label}
+  controlId={id}
+  helpText={helpText}
+  errorText={errorText}
+  optionalText={optionalText}
+  required={required}
+  data-sidera-location-autocomplete
+  data-autocomplete-endpoint={autocompleteEndpoint}
+  data-details-endpoint={detailsEndpoint}
+  data-date-input-id={dateInputId}
+  data-time-input-id={timeInputId}
+  data-min-characters={Math.max(1, minCharacters)}
+  data-debounce-ms={Math.max(0, debounceMs)}
+  data-max-results={resultLimit}
+  data-default-open={defaultOpen ? "true" : "false"}
+  data-start-text={startText}
+  data-searching-text={searchingText}
+  data-no-results-text={noResultsText}
+  data-unavailable-text={unavailableText}
+  data-details-loading-text={detailsLoadingText}
+  data-details-unavailable-text={detailsUnavailableText}
+  data-refreshing-text={refreshingText}
+  data-selected-text={selectedText}
+  data-choose-text={chooseFromSuggestionsText}
+  aria-busy="false"
+>
+  <div class="sidera-location-autocomplete__combobox">
+    <span class="sidera-location-autocomplete__search-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none">
+        <circle cx="11" cy="11" r="6.5"></circle>
+        <path d="m16 16 4 4"></path>
+      </svg>
+    </span>
+
+    <TextField
+      {...inputEditAttributes}
+      class="sidera-location-autocomplete__input"
+      type="search"
+      inputmode="search"
+      id={id}
+      name={name}
+      value={initialQuery}
+      placeholder={placeholder}
+      autocomplete={autocomplete}
+      form={form}
+      required={required}
+      disabled={disabled}
+      invalid={invalid || Boolean(errorText)}
+      ariaDescribedby={describedBy}
+      role="combobox"
+      aria-autocomplete="list"
+      aria-controls={listboxId}
+      aria-expanded={defaultOpen && initialPredictions.length > 0 ? "true" : "false"}
+    />
+
+    <span class="sidera-location-autocomplete__marker" aria-hidden="true">⌖</span>
+
+    <div
+      class="sidera-location-autocomplete__popover"
+      hidden={!defaultOpen || initialPredictions.length === 0}
+      data-location-popover
+    >
+      <ul class="sidera-location-autocomplete__listbox" id={listboxId} role="listbox">
+        {
+          initialPredictions.slice(0, resultLimit).map((prediction, index) => (
+            <li
+              class="sidera-location-autocomplete__option"
+              id={`${id}-option-${index}`}
+              role="option"
+              aria-selected={prediction.placeId === selectedLocation?.placeId ? "true" : "false"}
+              data-location-option
+              data-place-id={prediction.placeId}
+              data-description={prediction.description}
+            >
+              <span class="sidera-location-autocomplete__option-icon" aria-hidden="true">⌖</span>
+              <span class="sidera-location-autocomplete__option-copy">
+                <span class="sidera-location-autocomplete__option-label">
+                  {prediction.mainText || prediction.description}
+                </span>
+                <span class="sidera-location-autocomplete__option-secondary">
+                  {prediction.secondaryText || prediction.description}
+                </span>
+              </span>
+              <span class="sidera-location-autocomplete__option-check" aria-hidden="true">✓</span>
+            </li>
+          ))
+        }
+        <li class="sidera-location-autocomplete__empty" role="option" aria-disabled="true" hidden>
+          {noResultsText}
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <input
+    type="hidden"
+    name={`${name}Id`}
+    value={selectedLocation?.placeId ?? ""}
+    form={form}
+    data-location-value="id"
+  />
+  <input
+    type="hidden"
+    name={`${name}Latitude`}
+    value={selectedLocation?.lat}
+    form={form}
+    data-location-value="latitude"
+  />
+  <input
+    type="hidden"
+    name={`${name}Longitude`}
+    value={selectedLocation?.lon}
+    form={form}
+    data-location-value="longitude"
+  />
+  <input
+    type="hidden"
+    name={`${name}Timezone`}
+    value={selectedLocation?.timezone ?? ""}
+    form={form}
+    data-location-value="timezone"
+  />
+  <input
+    type="hidden"
+    name={`${name}TimezoneOffset`}
+    value={selectedLocation?.offset ?? ""}
+    form={form}
+    data-location-value="offset"
+  />
+
+  <p
+    class="sidera-location-autocomplete__status"
+    id={statusId}
+    aria-live="polite"
+    aria-atomic="true"
+    data-location-status
+    data-state={selectedLocation ? "selected" : "idle"}
+    hidden={!selectedLocation}
+  >
+    <span class="sidera-location-autocomplete__status-icon" aria-hidden="true">✓</span>
+    <span data-location-status-text>{initialStatus}</span>
+  </p>
+</FormField>
+
+<script>
+  type PlacePrediction = {
+    placeId: string;
+    description: string;
+    mainText?: string;
+    secondaryText?: string;
+  };
+
+  type PlaceDetails = {
+    placeId: string;
+    formattedAddress: string;
+    lat: number;
+    lon: number;
+    timezone: string;
+    offset: string;
+  };
+
+  const initializeLocationAutocomplete = (root: HTMLElement) => {
+    if (root.dataset.sideraLocationAutocompleteReady === "true") return;
+
+    const input = root.querySelector<HTMLInputElement>('[role="combobox"]');
+    const popover = root.querySelector<HTMLElement>("[data-location-popover]");
+    const listbox = root.querySelector<HTMLElement>('[role="listbox"]');
+    const empty = root.querySelector<HTMLElement>(".sidera-location-autocomplete__empty");
+    const status = root.querySelector<HTMLElement>("[data-location-status]");
+    const statusIcon = status?.querySelector<HTMLElement>(
+      ".sidera-location-autocomplete__status-icon",
+    );
+    const statusText = status?.querySelector<HTMLElement>("[data-location-status-text]");
+    const hiddenValues = new Map(
+      Array.from(root.querySelectorAll<HTMLInputElement>("[data-location-value]")).map(
+        (field) => [field.dataset.locationValue ?? "", field],
+      ),
+    );
+
+    if (
+      !input ||
+      !popover ||
+      !listbox ||
+      !empty ||
+      !status ||
+      !statusIcon ||
+      !statusText
+    ) {
+      return;
+    }
+
+    const autocompleteEndpoint = root.dataset.autocompleteEndpoint ?? "";
+    const detailsEndpoint = root.dataset.detailsEndpoint ?? "";
+    const minCharacters = Number(root.dataset.minCharacters ?? "2");
+    const debounceMs = Number(root.dataset.debounceMs ?? "260");
+    const maxResults = Number(root.dataset.maxResults ?? "5");
+    const dateInput = root.dataset.dateInputId
+      ? document.getElementById(root.dataset.dateInputId)
+      : null;
+    const timeInput = root.dataset.timeInputId
+      ? document.getElementById(root.dataset.timeInputId)
+      : null;
+    const copy = {
+      start: root.dataset.startText ?? "",
+      searching: root.dataset.searchingText ?? "",
+      noResults: root.dataset.noResultsText ?? "",
+      unavailable: root.dataset.unavailableText ?? "",
+      detailsLoading: root.dataset.detailsLoadingText ?? "",
+      detailsUnavailable: root.dataset.detailsUnavailableText ?? "",
+      refreshing: root.dataset.refreshingText ?? "",
+      selected: root.dataset.selectedText ?? "",
+      choose: root.dataset.chooseText ?? "",
+    };
+
+    let activeIndex = -1;
+    let searchTimer: number | undefined;
+    let searchController: AbortController | undefined;
+    let detailsController: AbortController | undefined;
+    let sessionToken = "";
+    let searchSequence = 0;
+    let detailsSequence = 0;
+
+    const randomToken = () =>
+      window.crypto?.randomUUID?.() ??
+      `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const optionElements = () =>
+      Array.from(listbox.querySelectorAll<HTMLElement>("[data-location-option]"));
+    const getField = (key: string) => hiddenValues.get(key);
+    const selectedPlaceId = () => getField("id")?.value ?? "";
+    const hasSelectedLocation = () =>
+      Boolean(selectedPlaceId()) &&
+      Boolean(getField("latitude")?.value) &&
+      Boolean(getField("longitude")?.value) &&
+      Number.isFinite(Number(getField("latitude")?.value)) &&
+      Number.isFinite(Number(getField("longitude")?.value)) &&
+      Boolean(getField("timezone")?.value) &&
+      /^UTC[+-]\d{2}:\d{2}$/.test(getField("offset")?.value ?? "");
+
+    const setBusy = (busy: boolean) => {
+      root.setAttribute("aria-busy", busy ? "true" : "false");
+      input.setAttribute("aria-busy", busy ? "true" : "false");
+    };
+
+    const setStatus = (
+      message: string,
+      state: "idle" | "loading" | "selected" | "error",
+    ) => {
+      status.dataset.state = state;
+      statusIcon.textContent =
+        state === "selected" ? "✓" : state === "error" ? "!" : state === "loading" ? "◌" : "⌖";
+      statusText.textContent = message;
+      status.hidden = !message;
+    };
+
+    const setOpen = (open: boolean) => {
+      if (input.disabled) open = false;
+      popover.hidden = !open;
+      input.setAttribute("aria-expanded", open ? "true" : "false");
+      if (!open) {
+        activeIndex = -1;
+        input.removeAttribute("aria-activedescendant");
+        optionElements().forEach((option) => option.removeAttribute("data-active"));
+      }
+    };
+
+    const setActive = (index: number) => {
+      const options = optionElements();
+      options.forEach((option) => option.removeAttribute("data-active"));
+      if (options.length === 0) {
+        activeIndex = -1;
+        input.removeAttribute("aria-activedescendant");
+        return;
+      }
+
+      activeIndex = (index + options.length) % options.length;
+      const activeOption = options[activeIndex];
+      activeOption.dataset.active = "true";
+      input.setAttribute("aria-activedescendant", activeOption.id);
+      activeOption.scrollIntoView({ block: "nearest" });
+    };
+
+    const clearSelection = () => {
+      optionElements().forEach((option) => option.setAttribute("aria-selected", "false"));
+      hiddenValues.forEach((field) => {
+        field.value = "";
+      });
+    };
+
+    const applyPlaceDetails = (place: PlaceDetails, description: string) => {
+      input.value = place.formattedAddress || description;
+      const values = {
+        id: place.placeId,
+        latitude: String(place.lat),
+        longitude: String(place.lon),
+        timezone: place.timezone,
+        offset: place.offset,
+      };
+      for (const [key, value] of Object.entries(values)) {
+        const field = getField(key);
+        if (field) field.value = value;
+      }
+      input.setCustomValidity("");
+      setStatus(
+        `${copy.selected}: ${place.timezone} · ${place.offset}`,
+        "selected",
+      );
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+      root.dispatchEvent(
+        new CustomEvent("sidera:location-select", {
+          bubbles: true,
+          detail: place,
+        }),
+      );
+    };
+
+    const loadPlaceDetails = async ({
+      placeId,
+      description,
+      refreshing = false,
+    }: {
+      placeId: string;
+      description: string;
+      refreshing?: boolean;
+    }) => {
+      detailsController?.abort();
+      const controller = new AbortController();
+      detailsController = controller;
+      const sequence = ++detailsSequence;
+      setBusy(true);
+      setStatus(refreshing ? copy.refreshing : copy.detailsLoading, "loading");
+
+      try {
+        if (!sessionToken) sessionToken = randomToken();
+        const params = new URLSearchParams({
+          placeId,
+          sessionToken,
+          date: dateInput instanceof HTMLInputElement ? dateInput.value : "",
+          time: timeInput instanceof HTMLInputElement ? timeInput.value : "",
+        });
+        const response = await fetch(`${detailsEndpoint}?${params}`, {
+          signal: controller.signal,
+          headers: { accept: "application/json" },
+        });
+        const payload = await response.json().catch(() => ({}));
+
+        if (
+          sequence !== detailsSequence ||
+          controller.signal.aborted
+        ) {
+          return;
+        }
+        if (
+          !response.ok ||
+          payload.status !== "ready" ||
+          !payload.data?.place
+        ) {
+          throw new Error(payload.message || copy.detailsUnavailable);
+        }
+
+        applyPlaceDetails(payload.data.place as PlaceDetails, description);
+        sessionToken = "";
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        clearSelection();
+        input.setCustomValidity(copy.choose);
+        setStatus(
+          error instanceof Error ? error.message : copy.detailsUnavailable,
+          "error",
+        );
+      } finally {
+        if (sequence === detailsSequence) setBusy(false);
+      }
+    };
+
+    const createOption = (prediction: PlacePrediction, index: number) => {
+      const option = document.createElement("li");
+      option.className = "sidera-location-autocomplete__option";
+      option.id = `${input.id}-option-${index}`;
+      option.role = "option";
+      option.setAttribute("aria-selected", "false");
+      option.dataset.locationOption = "";
+      option.dataset.placeId = prediction.placeId;
+      option.dataset.description = prediction.description;
+
+      const icon = document.createElement("span");
+      icon.className = "sidera-location-autocomplete__option-icon";
+      icon.setAttribute("aria-hidden", "true");
+      icon.textContent = "⌖";
+      const copyContainer = document.createElement("span");
+      copyContainer.className = "sidera-location-autocomplete__option-copy";
+      const label = document.createElement("span");
+      label.className = "sidera-location-autocomplete__option-label";
+      label.textContent = prediction.mainText || prediction.description;
+      const secondary = document.createElement("span");
+      secondary.className = "sidera-location-autocomplete__option-secondary";
+      secondary.textContent = prediction.secondaryText || prediction.description;
+      const check = document.createElement("span");
+      check.className = "sidera-location-autocomplete__option-check";
+      check.setAttribute("aria-hidden", "true");
+      check.textContent = "✓";
+      copyContainer.append(label, secondary);
+      option.append(icon, copyContainer, check);
+      return option;
+    };
+
+    const renderPredictions = (predictions: PlacePrediction[]) => {
+      optionElements().forEach((option) => option.remove());
+      const limitedPredictions = predictions
+        .filter((prediction) => prediction.placeId && prediction.description)
+        .slice(0, maxResults);
+      limitedPredictions.forEach((prediction, index) => {
+        listbox.insertBefore(createOption(prediction, index), empty);
+      });
+      empty.textContent = copy.noResults;
+      empty.hidden = limitedPredictions.length > 0;
+      setOpen(true);
+      if (limitedPredictions.length === 0) {
+        setStatus(copy.noResults, "error");
+      } else {
+        setStatus("", "idle");
+      }
+    };
+
+    const searchPlaces = () => {
+      window.clearTimeout(searchTimer);
+      searchController?.abort();
+      detailsController?.abort();
+      detailsSequence += 1;
+      const query = input.value.trim();
+      clearSelection();
+      input.setCustomValidity("");
+
+      if (query.length < minCharacters) {
+        setOpen(false);
+        setBusy(false);
+        setStatus(copy.start, "idle");
+        return;
+      }
+
+      const requestedQuery = query;
+      const sequence = ++searchSequence;
+      setStatus(copy.searching, "loading");
+      setBusy(true);
+      searchTimer = window.setTimeout(async () => {
+        const controller = new AbortController();
+        searchController = controller;
+        if (!sessionToken) sessionToken = randomToken();
+
+        try {
+          const params = new URLSearchParams({
+            input: requestedQuery,
+            sessionToken,
+            language: document.documentElement.lang || "en",
+          });
+          const response = await fetch(`${autocompleteEndpoint}?${params}`, {
+            signal: controller.signal,
+            headers: { accept: "application/json" },
+          });
+          const payload = await response.json().catch(() => ({}));
+
+          if (
+            sequence !== searchSequence ||
+            controller.signal.aborted ||
+            input.value.trim() !== requestedQuery
+          ) {
+            return;
+          }
+          if (!response.ok || payload.status !== "ready") {
+            throw new Error(payload.message || copy.unavailable);
+          }
+          renderPredictions(
+            Array.isArray(payload.data?.predictions)
+              ? payload.data.predictions
+              : [],
+          );
+        } catch (error) {
+          if (controller.signal.aborted) return;
+          setOpen(false);
+          setStatus(
+            error instanceof Error ? error.message : copy.unavailable,
+            "error",
+          );
+        } finally {
+          if (sequence === searchSequence) setBusy(false);
+        }
+      }, debounceMs);
+    };
+
+    const selectOption = (option: HTMLElement) => {
+      const placeId = option.dataset.placeId ?? "";
+      const description = option.dataset.description ?? "";
+      if (!placeId || !description) return;
+
+      window.clearTimeout(searchTimer);
+      searchController?.abort();
+      searchSequence += 1;
+      optionElements().forEach((item) =>
+        item.setAttribute("aria-selected", item === option ? "true" : "false"),
+      );
+      input.value = description;
+      setOpen(false);
+      void loadPlaceDetails({ placeId, description });
+    };
+
+    input.addEventListener("input", searchPlaces);
+    input.addEventListener("focus", () => {
+      if (!hasSelectedLocation() && input.value.trim().length >= minCharacters) {
+        searchPlaces();
+      }
+    });
+    input.addEventListener("keydown", (event) => {
+      const options = optionElements();
+      if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+        event.preventDefault();
+        if (popover.hidden && options.length > 0) setOpen(true);
+        setActive(activeIndex + (event.key === "ArrowDown" ? 1 : -1));
+      } else if (event.key === "Home" && !popover.hidden) {
+        event.preventDefault();
+        setActive(0);
+      } else if (event.key === "End" && !popover.hidden) {
+        event.preventDefault();
+        setActive(options.length - 1);
+      } else if (event.key === "Enter" && activeIndex >= 0) {
+        event.preventDefault();
+        selectOption(options[activeIndex]);
+      } else if (event.key === "Escape") {
+        event.preventDefault();
+        searchController?.abort();
+        setOpen(false);
+      } else if (event.key === "Tab") {
+        setOpen(false);
+      }
+    });
+
+    listbox.addEventListener("pointermove", (event) => {
+      const option =
+        event.target instanceof Element
+          ? event.target.closest<HTMLElement>("[data-location-option]")
+          : null;
+      if (!option) return;
+      const index = optionElements().indexOf(option);
+      if (index >= 0) setActive(index);
+    });
+    listbox.addEventListener("pointerdown", (event) => {
+      const option =
+        event.target instanceof Element
+          ? event.target.closest<HTMLElement>("[data-location-option]")
+          : null;
+      if (!option) return;
+      event.preventDefault();
+      selectOption(option);
+    });
+
+    document.addEventListener("pointerdown", (event) => {
+      if (!root.contains(event.target as Node)) setOpen(false);
+    });
+
+    const refreshSelectedLocation = () => {
+      const placeId = selectedPlaceId();
+      if (!placeId || !hasSelectedLocation()) return;
+      void loadPlaceDetails({
+        placeId,
+        description: input.value,
+        refreshing: true,
+      });
+    };
+    dateInput?.addEventListener("change", refreshSelectedLocation);
+    timeInput?.addEventListener("change", refreshSelectedLocation);
+
+    const ownerForm = input.form;
+    ownerForm?.addEventListener("submit", (event) => {
+      if (!input.required || hasSelectedLocation()) {
+        input.setCustomValidity("");
+        return;
+      }
+      event.preventDefault();
+      input.setCustomValidity(copy.choose);
+      input.reportValidity();
+    });
+
+    root.dataset.sideraLocationAutocompleteReady = "true";
+    if (root.dataset.defaultOpen === "true" && optionElements().length > 0) {
+      setOpen(true);
+    } else {
+      setOpen(false);
+    }
+  };
+
+  document
+    .querySelectorAll<HTMLElement>("[data-sidera-location-autocomplete]")
+    .forEach(initializeLocationAutocomplete);
+</script>

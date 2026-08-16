@@ -1,0 +1,107 @@
+.sidera-loading-indicator {
+  --loading-indicator-color: var(--color-primary);
+  --loading-indicator-label: var(--color-muted);
+  --loading-indicator-size: 1.5rem;
+  --loading-indicator-border: 0.125rem;
+  --loading-indicator-font-size: 0.875rem;
+  --loading-indicator-gap: 0.625rem;
+
+  max-inline-size: 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--loading-indicator-gap);
+  color: var(--loading-indicator-label);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: var(--loading-indicator-font-size);
+  font-weight: 600;
+  line-height: 1.4;
+  vertical-align: middle;
+}
+
+.sidera-loading-indicator__mark {
+  position: relative;
+  inline-size: var(--loading-indicator-size);
+  block-size: var(--loading-indicator-size);
+  flex: none;
+  display: grid;
+  place-items: center;
+  color: var(--loading-indicator-color);
+}
+
+.sidera-loading-indicator__orbit {
+  position: absolute;
+  inset: 0;
+  border: var(--loading-indicator-border) solid currentColor;
+  border-inline-end-color: transparent;
+  border-radius: 50%;
+  animation: sidera-loading-indicator-spin 1s linear infinite;
+}
+
+.sidera-loading-indicator__star {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: calc(var(--loading-indicator-size) * 0.34);
+  line-height: 1;
+}
+
+.sidera-loading-indicator__label {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.sidera-loading-indicator--accent {
+  --loading-indicator-color: var(--color-primary-soft);
+}
+
+.sidera-loading-indicator--inverse {
+  --loading-indicator-color: var(--color-primary-soft);
+  --loading-indicator-label: var(--color-muted-soft);
+}
+
+.sidera-loading-indicator--compact {
+  --loading-indicator-size: 1rem;
+  --loading-indicator-border: 0.09375rem;
+  --loading-indicator-font-size: 0.75rem;
+  --loading-indicator-gap: 0.4375rem;
+}
+
+.sidera-loading-indicator--large {
+  --loading-indicator-size: 3.5rem;
+  --loading-indicator-border: 0.125rem;
+  --loading-indicator-font-size: 1rem;
+  --loading-indicator-gap: 0.875rem;
+}
+
+.sidera-loading-indicator--stacked {
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+}
+
+@keyframes sidera-loading-indicator-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidera-loading-indicator__orbit {
+    animation: none;
+  }
+}
+
+@media (max-width: 40rem) {
+  .sidera-loading-indicator {
+    line-height: 1.45;
+  }
+
+  .sidera-loading-indicator--large {
+    --loading-indicator-size: 3rem;
+  }
+}
+
+@media (forced-colors: active) {
+  .sidera-loading-indicator__orbit {
+    border-color: CanvasText;
+    border-inline-end-color: transparent;
+  }
+}

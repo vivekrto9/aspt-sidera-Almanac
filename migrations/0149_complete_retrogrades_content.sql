@@ -1,0 +1,10 @@
+ALTER TABLE ec_site_retrogrades ADD COLUMN status_venus_title TEXT;
+ALTER TABLE ec_site_retrogrades ADD COLUMN status_venus_description TEXT;
+ALTER TABLE ec_site_retrogrades ADD COLUMN status_mars_title TEXT;
+ALTER TABLE ec_site_retrogrades ADD COLUMN status_mars_description TEXT;
+ALTER TABLE ec_site_retrogrades ADD COLUMN status_jupiter_title TEXT;
+ALTER TABLE ec_site_retrogrades ADD COLUMN status_jupiter_description TEXT;
+ALTER TABLE ec_site_retrogrades ADD COLUMN status_uranus_title TEXT;
+ALTER TABLE ec_site_retrogrades ADD COLUMN status_uranus_description TEXT;
+ALTER TABLE ec_site_retrogrades ADD COLUMN status_pluto_title TEXT;
+ALTER TABLE ec_site_retrogrades ADD COLUMN status_pluto_description TEXT;

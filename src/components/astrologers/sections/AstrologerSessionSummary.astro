@@ -1,0 +1,254 @@
+---
+import type { BrowseAstrologer } from "../../../data/astrologers/browse.ts";
+import type { AstrologerSessionSummaryCopy } from "../../../data/locale/astrologers/sections/session-summary.ts";
+import Button from "../../shared/Button.astro";
+import OrderSummary from "../../shared/OrderSummary.astro";
+import ProfileSummary from "../../shared/ProfileSummary.astro";
+import RatingStars from "../../shared/RatingStars.astro";
+import TextArea from "../../shared/TextArea.astro";
+import "../../../styles/astrologers/sections/session-summary.css";
+
+type EditAttributes = Record<string, string>;
+type SummaryMode = "live" | "booked" | "sent";
+type Props = {
+  astrologer: BrowseAstrologer;
+  copy: AstrologerSessionSummaryCopy;
+  mode: SummaryMode;
+  sessionType: string;
+  durationSeconds: number;
+  scheduledWhen: string;
+  scheduledLength: string;
+  rate: number;
+  locale: string;
+  bookingHref: string;
+  browseHref: string;
+  homeHref: string;
+  editAttributes?: (field: string) => EditAttributes;
+};
+
+const {
+  astrologer,
+  copy,
+  mode,
+  sessionType,
+  durationSeconds,
+  scheduledWhen,
+  scheduledLength,
+  rate,
+  locale,
+  bookingHref,
+  browseHref,
+  homeHref,
+  editAttributes = () => ({}),
+} = Astro.props as Props;
+
+const firstName = astrologer.name.split(" ")[0];
+const withName = (value: string) => value.replaceAll("{name}", firstName);
+const currency = new Intl.NumberFormat(locale, {
+  style: "currency",
+  currency: "USD",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+const safeDuration = Math.max(0, Math.min(durationSeconds, 24 * 60 * 60));
+const formatDuration = (seconds: number) => {
+  const minutes = String(Math.floor(seconds / 60)).padStart(2, "0");
+  const remainder = String(seconds % 60).padStart(2, "0");
+  return `${minutes}:${remainder}`;
+};
+const billedSeconds = Math.max(0, safeDuration - 180);
+const liveTotal = currency.format((rate * billedSeconds) / 60);
+const scheduledMinutes = Math.max(15, Number.parseInt(scheduledLength, 10) || 30);
+const scheduledTotal = currency.format(rate * scheduledMinutes);
+
+const modes = {
+  live: {
+    icon: "✦",
+    overline: copy.liveOverline,
+    overlineField: "summary_live_overline",
+    title: copy.liveTitle,
+    titleField: "summary_live_title",
+    body: copy.liveBody,
+    bodyField: "summary_live_body",
+    rows: [
+      [copy.sessionTypeLabel, sessionType, "summary_session_type_label"],
+      [copy.durationLabel, formatDuration(safeDuration), "summary_duration_label"],
+      [copy.freeIntroLabel, copy.freeIntroValue, "summary_free_intro_label"],
+      [copy.billedAtLabel, `${currency.format(rate)}/min`, "summary_billed_at_label"],
+    ],
+    totalLabel: copy.totalChargedLabel,
+    totalLabelField: "summary_total_charged_label",
+    totalValue: liveTotal,
+    primaryAction: copy.livePrimaryAction,
+    primaryActionField: "summary_live_primary_action",
+    primaryHref: bookingHref,
+  },
+  booked: {
+    icon: "☉",
+    overline: copy.bookedOverline,
+    overlineField: "summary_booked_overline",
+    title: copy.bookedTitle,
+    titleField: "summary_booked_title",
+    body: withName(copy.bookedBody),
+    bodyField: "summary_booked_body",
+    rows: [
+      [copy.sessionTypeLabel, sessionType, "summary_session_type_label"],
+      [copy.whenLabel, scheduledWhen, "summary_when_label"],
+      [copy.lengthLabel, `${scheduledMinutes} min`, "summary_length_label"],
+    ],
+    totalLabel: copy.estimatedTotalLabel,
+    totalLabelField: "summary_estimated_total_label",
+    totalValue: scheduledTotal,
+    primaryAction: copy.bookedPrimaryAction,
+    primaryActionField: "summary_booked_primary_action",
+    primaryHref: "#add-to-calendar",
+  },
+  sent: {
+    icon: "✉",
+    overline: copy.sentOverline,
+    overlineField: "summary_sent_overline",
+    title: copy.sentTitle,
+    titleField: "summary_sent_title",
+    body: withName(copy.sentBody),
+    bodyField: "summary_sent_body",
+    rows: [
+      [copy.typeLabel, sessionType, "summary_type_label"],
+      [copy.replyByLabel, "24h", "summary_reply_by_label"],
+      [copy.chartLabel, copy.sharedValue, "summary_chart_label"],
+    ],
+    totalLabel: copy.totalChargedLabel,
+    totalLabelField: "summary_total_charged_label",
+    totalValue: currency.format(19),
+    primaryAction: copy.sentPrimaryAction,
+    primaryActionField: "summary_sent_primary_action",
+    primaryHref: browseHref,
+  },
+} as const;
+const view = modes[mode];
+---
+
+<section class="astrologer-summary" data-session-summary data-summary-mode={mode}>
+  <div class="astrologer-summary__stars" aria-hidden="true"></div>
+  <div class="astrologer-summary__inner">
+    <header class="astrologer-summary__intro">
+      <span class="astrologer-summary__icon" aria-hidden="true">{view.icon}</span>
+      <p class="astrologer-summary__overline" {...editAttributes(view.overlineField)}>
+        {view.overline}
+      </p>
+      <h1 {...editAttributes(view.titleField)}>{view.title}</h1>
+      <p class="astrologer-summary__lede" {...editAttributes(view.bodyField)}>{view.body}</p>
+    </header>
+
+    <OrderSummary
+      id="astrologer-session-receipt"
+      variant="receipt"
+      tone="inverse"
+      landmarkLabel={view.overline}
+      rows={view.rows.map(([label, value, field]) => ({
+        label,
+        value,
+        labelEditAttributes: editAttributes(field),
+      }))}
+      totalLabel={view.totalLabel}
+      totalValue={view.totalValue}
+      totalLabelEditAttributes={editAttributes(view.totalLabelField)}
+      class="astrologer-summary__receipt"
+    >
+      <ProfileSummary
+        slot="header"
+        name={astrologer.name}
+        subtitle={astrologer.tradition}
+        ratingValue={astrologer.rating}
+        ratingLabel={`${astrologer.rating} out of 5 stars`}
+        ratingText=""
+        tone="inverse"
+        size="compact"
+        avatarSrc={astrologer.imageUrl}
+        avatarAlt={astrologer.name}
+        avatarInitials={astrologer.name.split(" ").map((part) => part[0]).join("")}
+        avatarFallback="placeholder"
+      />
+    </OrderSummary>
+
+    {
+      mode === "live" ? (
+        <form class="astrologer-summary__rating" action={browseHref}>
+          <h2 {...editAttributes("summary_rating_title")}>{copy.ratingTitle}</h2>
+          <RatingStars
+            interactive
+            name="rating"
+            size="large"
+            tone="inverse"
+            ariaLabel={copy.ratingAriaLabel}
+          />
+          <TextArea
+            name="note"
+            rows={3}
+            maxlength={600}
+            tone="inverse"
+            size="compact"
+            class="astrologer-summary__note"
+            placeholder={withName(copy.notePlaceholder)}
+            ariaLabel={withName(copy.notePlaceholder)}
+            data-builder-placeholder
+            {...editAttributes("summary_note_placeholder")}
+          />
+        </form>
+      ) : null
+    }
+
+    <div class="astrologer-summary__actions">
+      <Button
+        id={mode === "booked" ? "add-to-calendar" : undefined}
+        href={view.primaryHref}
+        variant="secondary"
+        size="large"
+        shape="rounded"
+        class="astrologer-summary__primary"
+        editAttributes={editAttributes(view.primaryActionField)}
+      >
+        {view.primaryAction}
+      </Button>
+      <Button
+        href={browseHref}
+        variant="outline"
+        size="large"
+        shape="rounded"
+        class="astrologer-summary__secondary"
+        editAttributes={editAttributes("summary_back_action")}
+      >
+        {copy.backAction}
+      </Button>
+    </div>
+    <a class="astrologer-summary__home" href={homeHref} {...editAttributes("summary_return_home")}>
+      {copy.returnHome}
+    </a>
+  </div>
+</section>
+
+<script>
+  const calendarAction = document.querySelector<HTMLAnchorElement>("#add-to-calendar");
+  calendarAction?.addEventListener("click", (event) => {
+    event.preventDefault();
+    const start = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const end = new Date(start.getTime() + 30 * 60 * 1000);
+    const stamp = (date: Date) => date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+    const calendar = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//Sidera//Astrologer Session//EN",
+      "BEGIN:VEVENT",
+      `DTSTART:${stamp(start)}`,
+      `DTEND:${stamp(end)}`,
+      "SUMMARY:Sidera astrology session",
+      "END:VEVENT",
+      "END:VCALENDAR",
+    ].join("\r\n");
+    const url = URL.createObjectURL(new Blob([calendar], { type: "text/calendar" }));
+    const download = document.createElement("a");
+    download.href = url;
+    download.download = "sidera-session.ics";
+    download.click();
+    URL.revokeObjectURL(url);
+  });
+</script>

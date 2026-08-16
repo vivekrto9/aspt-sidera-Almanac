@@ -1,0 +1,7 @@
+.sidera-blog-body,
+.sidera-blog {
+  inline-size: 100%;
+  min-inline-size: 0;
+  margin: 0;
+  background: var(--color-surface);
+}

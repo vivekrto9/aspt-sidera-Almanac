@@ -1,0 +1,43 @@
+---
+import "../../styles/shared/status-dot.css";
+
+type StatusTone = "neutral" | "success" | "warning" | "accent" | "danger";
+type StatusContrast = "default" | "inverse";
+type StatusSize = "compact" | "standard";
+type AriaLive = "off" | "polite" | "assertive";
+
+type Props = {
+  label: string;
+  tone?: StatusTone;
+  contrast?: StatusContrast;
+  size?: StatusSize;
+  ariaLive?: AriaLive;
+  class?: string;
+  editAttributes?: Record<string, string>;
+};
+
+const {
+  label,
+  tone = "neutral",
+  contrast = "default",
+  size = "standard",
+  ariaLive = "off",
+  class: className,
+  editAttributes = {},
+} = Astro.props as Props;
+
+const classes = [
+  "sidera-status-dot",
+  `sidera-status-dot--${tone}`,
+  `sidera-status-dot--${contrast}`,
+  `sidera-status-dot--${size}`,
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+---
+
+<span class={classes} aria-live={ariaLive}>
+  <span class="sidera-status-dot__mark" aria-hidden="true"></span>
+  <span class="sidera-status-dot__label" {...editAttributes}>{label}</span>
+</span>

@@ -1,0 +1,68 @@
+.shop-payment-failure {
+  display: grid;
+  place-items: center;
+}
+
+.shop-payment-failure__inner {
+  inline-size: min(100%, 35rem);
+}
+
+.shop-payment-failure__mark {
+  border-color: rgba(var(--color-primary-rgb), 0.52);
+  background: rgba(var(--color-primary-rgb), 0.16);
+  color: #e59a79;
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 2.125rem;
+}
+
+.shop-payment-failure__eyebrow {
+  color: #e59a79;
+}
+
+.shop-payment-failure__context {
+  margin-block-start: 2.25rem;
+  border-block: 1px solid rgba(240, 230, 214, 0.16);
+  padding-block: 1.5rem;
+  text-align: center;
+}
+
+.shop-payment-failure__context h2 {
+  margin: 0;
+  color: var(--color-surface-soft);
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 1.5rem;
+  font-weight: 400;
+  line-height: 1.15;
+}
+
+.shop-payment-failure__context p {
+  max-inline-size: 28rem;
+  margin: 0.625rem auto 0;
+  color: var(--color-line);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.shop-payment-failure__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-block-start: 1.5rem;
+}
+
+@media (max-width: 40rem) {
+  .shop-payment-failure {
+    place-items: start center;
+  }
+
+  .shop-payment-failure__actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (forced-colors: active) {
+  .shop-payment-failure__context,
+  .shop-payment-failure__mark {
+    border-color: CanvasText;
+  }
+}

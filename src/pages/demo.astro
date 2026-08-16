@@ -1,0 +1,17 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+export const prerender = false;
+---
+
+<BaseLayout
+  seo={{
+    seo_title: "Component review · Sidera",
+    seo_description: "Temporary local component review surface.",
+    seo_canonical_path: "/demo",
+    seo_robots: "noindex,nofollow",
+  }}
+  bodyClass="sidera-demo-body"
+>
+  <main aria-label="Component review"></main>
+</BaseLayout>

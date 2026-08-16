@@ -1,0 +1,98 @@
+---
+import MediaThumbnail from "./MediaThumbnail.astro";
+import "../../styles/shared/avatar.css";
+
+type AvatarSize = "compact" | "standard" | "large" | "profile";
+type AvatarTone = "neutral" | "accent";
+type AvatarFallback = "placeholder" | "initials";
+type ImageLoading = "eager" | "lazy";
+type ImageDecoding = "sync" | "async" | "auto";
+
+type Props = {
+  name: string;
+  src?: string;
+  alt?: string;
+  initials?: string;
+  ariaLabel?: string;
+  size?: AvatarSize;
+  tone?: AvatarTone;
+  fallback?: AvatarFallback;
+  loading?: ImageLoading;
+  decoding?: ImageDecoding;
+  decorative?: boolean;
+  class?: string;
+};
+
+const {
+  name,
+  src,
+  alt,
+  initials,
+  ariaLabel,
+  size = "standard",
+  tone = "neutral",
+  fallback = "placeholder",
+  loading = "lazy",
+  decoding = "async",
+  decorative = false,
+  class: className,
+} = Astro.props as Props;
+
+const sizePixels: Record<AvatarSize, number> = {
+  compact: 40,
+  standard: 64,
+  large: 80,
+  profile: 120,
+};
+
+const derivedInitials = name
+  .trim()
+  .split(/\s+/)
+  .filter(Boolean)
+  .slice(0, 2)
+  .map((part) => Array.from(part)[0] ?? "")
+  .join("")
+  .toLocaleUpperCase();
+
+const fallbackText = initials?.trim() || derivedInitials || "✦";
+const content = src ? "image" : fallback;
+const classes = [
+  "sidera-avatar",
+  `sidera-avatar--${size}`,
+  `sidera-avatar--${tone}`,
+  `sidera-avatar--${content}`,
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+---
+
+<span
+  class={classes}
+  role={!src && !decorative ? "img" : undefined}
+  aria-label={!src && !decorative ? (ariaLabel ?? name) : undefined}
+  aria-hidden={decorative ? "true" : undefined}
+>
+  {
+    src ? (
+      <MediaThumbnail
+        class="sidera-avatar__media"
+        src={src}
+        alt={decorative ? "" : (alt ?? name)}
+        width={sizePixels[size]}
+        height={sizePixels[size]}
+        loading={loading}
+        decoding={decoding}
+        decorative={decorative}
+      />
+    ) : fallback === "initials" ? (
+      <MediaThumbnail class="sidera-avatar__media" alt={ariaLabel ?? name} decorative>
+        <span class="sidera-avatar__initials" aria-hidden="true">{fallbackText}</span>
+      </MediaThumbnail>
+    ) : (
+      <MediaThumbnail class="sidera-avatar__media" alt={ariaLabel ?? name} decorative>
+        <span class="sidera-avatar__placeholder" aria-hidden="true" />
+      </MediaThumbnail>
+    )
+  }
+</span>

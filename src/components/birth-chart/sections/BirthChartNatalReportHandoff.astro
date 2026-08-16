@@ -1,0 +1,37 @@
+---
+import type { SupportedLocale } from "../../../data/localization-contract.ts";
+import type { BirthChartResultsCopy } from "../../../data/locale/birth-chart/sections/results.ts";
+import FinalCtaSection from "../../shared/FinalCtaSection.astro";
+
+type Props = {
+  copy: BirthChartResultsCopy;
+  locale: SupportedLocale;
+  editAttributes?: (
+    field: keyof BirthChartResultsCopy,
+  ) => Record<string, string>;
+};
+
+const { copy, locale, editAttributes = () => ({}) } = Astro.props as Props;
+---
+
+<FinalCtaSection
+  id="birth-chart-natal-report"
+  class="birth-chart-results__report-handoff"
+  eyebrow={copy.report_eyebrow}
+  title={copy.report_title}
+  description={copy.report_description}
+  primaryLabel={copy.report_primary_label}
+  primaryHref="/reports"
+  secondaryLabel={copy.report_secondary_label}
+  secondaryHref="/birth-chart"
+  locale={locale}
+  tone="dark"
+  layout="split"
+  surface="panel"
+  ambience
+  eyebrowEditAttributes={editAttributes("report_eyebrow")}
+  titleEditAttributes={editAttributes("report_title")}
+  descriptionEditAttributes={editAttributes("report_description")}
+  primaryEditAttributes={editAttributes("report_primary_label")}
+  secondaryEditAttributes={editAttributes("report_secondary_label")}
+/>

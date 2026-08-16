@@ -1,0 +1,22 @@
+-- Extend the bounded Privacy collection with the approved document and contact fields.
+ALTER TABLE ec_site_privacy ADD COLUMN privacy_section_1_title TEXT;
+ALTER TABLE ec_site_privacy ADD COLUMN privacy_section_1_body TEXT;
+ALTER TABLE ec_site_privacy ADD COLUMN privacy_section_2_title TEXT;
+ALTER TABLE ec_site_privacy ADD COLUMN privacy_section_2_body TEXT;
+ALTER TABLE ec_site_privacy ADD COLUMN privacy_section_3_title TEXT;
+ALTER TABLE ec_site_privacy ADD COLUMN privacy_section_3_body TEXT;
+ALTER TABLE ec_site_privacy ADD COLUMN privacy_section_4_title TEXT;
+ALTER TABLE ec_site_privacy ADD COLUMN privacy_section_4_body TEXT;
+ALTER TABLE ec_site_privacy ADD COLUMN privacy_section_5_title TEXT;
+ALTER TABLE ec_site_privacy ADD COLUMN privacy_section_5_body TEXT;
+ALTER TABLE ec_site_privacy ADD COLUMN privacy_section_6_title TEXT;
+ALTER TABLE ec_site_privacy ADD COLUMN privacy_section_6_body TEXT;
+ALTER TABLE ec_site_privacy ADD COLUMN privacy_section_7_title TEXT;
+ALTER TABLE ec_site_privacy ADD COLUMN privacy_section_7_body TEXT;
+ALTER TABLE ec_site_privacy ADD COLUMN privacy_section_8_title TEXT;
+ALTER TABLE ec_site_privacy ADD COLUMN privacy_section_8_body TEXT;
+ALTER TABLE ec_site_privacy ADD COLUMN privacy_section_9_title TEXT;
+ALTER TABLE ec_site_privacy ADD COLUMN privacy_section_9_body TEXT;
+ALTER TABLE ec_site_privacy ADD COLUMN privacy_section_10_title TEXT;
+ALTER TABLE ec_site_privacy ADD COLUMN privacy_section_10_body TEXT;
+ALTER TABLE ec_site_privacy ADD COLUMN privacy_contact_text TEXT;

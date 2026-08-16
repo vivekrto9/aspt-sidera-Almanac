@@ -1,0 +1,222 @@
+---
+import AspectRow from "../../shared/AspectRow.astro";
+import MoonPhaseItem from "../../shared/MoonPhaseItem.astro";
+import type { SkyAspectDetail } from "../../../data/astronomy/sky-aspects.ts";
+import type { SkyMoonState } from "../../../data/astronomy/sky-moon.ts";
+import type { SkyBodyPosition } from "../../../data/astronomy/sky-strip-positions.ts";
+import type { SupportedLocale } from "../../../data/localization-contract.ts";
+import { getTodaysSkyMoonAspectsCopy } from "../../../data/locale/todays-sky/sections/moon-and-aspects.ts";
+import "../../../styles/todays-sky/sections/todays-sky-moon-aspects.css";
+
+type Props = {
+  locale: SupportedLocale;
+  selectedDateIso: string;
+  content: Record<string, string>;
+  positions: SkyBodyPosition[];
+  aspects: SkyAspectDetail[];
+  moon: SkyMoonState;
+  editAttributes?: Record<string, Record<string, string>>;
+};
+
+const {
+  locale,
+  selectedDateIso,
+  content,
+  positions,
+  aspects,
+  moon,
+  editAttributes = {},
+} = Astro.props as Props;
+
+const defaults = getTodaysSkyMoonAspectsCopy(locale);
+const field = (key: string, fallback = "") => content[key] || fallback;
+const edit = (key: string) => editAttributes[key] ?? {};
+const phaseField = (phase: string, suffix: "name" | "meaning") =>
+  `sky_moon_phase_${phase.replaceAll("-", "_")}_${suffix}`;
+const aspectField = (kind: string, suffix: "label" | "note") =>
+  `sky_aspect_${kind}_${suffix}`;
+const template = (
+  value: string,
+  replacements: Record<string, string | number>,
+) =>
+  Object.entries(replacements).reduce(
+    (result, [key, replacement]) =>
+      result.replaceAll(`{${key}}`, String(replacement)),
+    value,
+  );
+const formatDate = (date: Date) =>
+  new Intl.DateTimeFormat(locale, {
+    month: "short",
+    day: "numeric",
+  }).format(date);
+const moonNameKey = phaseField(moon.phase, "name");
+const moonMeaningKey = phaseField(moon.phase, "meaning");
+const moonDetail = template(
+  field("sky_moon_illuminated_template", defaults.illuminatedTemplate),
+  {
+    percent: `${Math.round(moon.illumination * 100)}%`,
+    sign: positions[1].signName,
+  },
+);
+const aspectRows = aspects.slice(0, 7);
+const formatAspectNote = (aspect: SkyAspectDetail) =>
+  template(
+    field(
+      aspectField(aspect.kind, "note"),
+      defaults.aspects[aspect.kind].note,
+    ),
+    {
+      first: positions[aspect.from].planetName,
+      second: positions[aspect.to].planetName,
+    },
+  );
+---
+
+<section
+  class="todays-sky-moon-aspects"
+  aria-label={defaults.sectionLabel}
+  data-todays-sky-moon-aspects
+  data-locale={locale}
+  data-selected-date={selectedDateIso}
+>
+  <article class="todays-sky-moon-aspects__moon">
+    <div class="todays-sky-moon-aspects__stars" aria-hidden="true">
+      <span></span><span></span><span></span><span></span><span></span>
+    </div>
+    <div class="todays-sky-moon-aspects__moon-content">
+      <p
+        class="todays-sky-moon-aspects__eyebrow"
+        {...edit("sky_moon_eyebrow")}
+      >
+        {field("sky_moon_eyebrow", defaults.moonEyebrow)}
+      </p>
+      <div data-moon-phase>
+        <MoonPhaseItem
+          phase={moon.phase}
+          name={field(moonNameKey, defaults.phases[moon.phase].name)}
+          detail={moonDetail}
+          layout="list"
+          tone="inverse"
+          current={true}
+          nameEditAttributes={edit(moonNameKey)}
+          detailEditAttributes={edit("sky_moon_illuminated_template")}
+        />
+      </div>
+      <p
+        class="todays-sky-moon-aspects__meaning"
+        data-moon-meaning
+        {...edit(moonMeaningKey)}
+      >
+        {field(moonMeaningKey, defaults.phases[moon.phase].meaning)}
+      </p>
+      <div class="todays-sky-moon-aspects__dates">
+        <div>
+          <span {...edit("sky_moon_next_full_label")}>
+            {field("sky_moon_next_full_label", defaults.nextFullLabel)}
+          </span>
+          <strong data-next-full>{formatDate(moon.nextFull)}</strong>
+        </div>
+        <div>
+          <span {...edit("sky_moon_next_new_label")}>
+            {field("sky_moon_next_new_label", defaults.nextNewLabel)}
+          </span>
+          <strong data-next-new>{formatDate(moon.nextNew)}</strong>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <article class="todays-sky-moon-aspects__aspects">
+    <div class="todays-sky-moon-aspects__aspects-header">
+      <div>
+        <h2 {...edit("sky_aspects_title")}>
+          {field("sky_aspects_title", defaults.aspectsTitle)}
+        </h2>
+        <p {...edit("sky_aspects_description")}>
+          {field("sky_aspects_description", defaults.aspectsDescription)}
+        </p>
+      </div>
+      <span
+        data-aspect-count
+        {...edit("sky_aspects_count_template")}
+      >
+        {
+          template(
+            field(
+              "sky_aspects_count_template",
+              defaults.aspectsCountTemplate,
+            ),
+            { count: aspects.length },
+          )
+        }
+      </span>
+    </div>
+
+    <div class="todays-sky-moon-aspects__list">
+      {
+        aspectRows.map((item, index) => {
+          const phaseKey = item.applying
+            ? "sky_aspect_applying_label"
+            : "sky_aspect_separating_label";
+          return (
+            <AspectRow
+              firstLabel={positions[item.from].planetName}
+              secondLabel={positions[item.to].planetName}
+              aspectLabel={field(
+                aspectField(item.kind, "label"),
+                defaults.aspects[item.kind].label,
+              )}
+              aspectGlyph={item.glyph}
+              orb={template(
+                field("sky_aspect_orb_template", defaults.orbTemplate),
+                { orb: item.orb.toFixed(1) },
+              )}
+              phaseLabel={field(
+                phaseKey,
+                item.applying
+                  ? defaults.applyingLabel
+                  : defaults.separatingLabel,
+              )}
+              phaseTone={item.applying ? "accent" : "neutral"}
+              tone={item.tone}
+              size="compact"
+              appearance="sky"
+              class="todays-sky-moon-aspects__aspect"
+              data-aspect-index={index}
+              aspectLabelEditAttributes={edit(
+                aspectField(item.kind, "label"),
+              )}
+              phaseLabelEditAttributes={edit(phaseKey)}
+              interpretationEditAttributes={edit(
+                aspectField(item.kind, "note"),
+              )}
+            >
+              <span slot="interpretation">{formatAspectNote(item)}</span>
+            </AspectRow>
+          );
+        })
+      }
+    </div>
+
+    <div class="todays-sky-moon-aspects__empty" hidden={aspects.length > 0}>
+      <strong {...edit("sky_aspects_empty_title")}>
+        {field("sky_aspects_empty_title", defaults.emptyTitle)}
+      </strong>
+      <span {...edit("sky_aspects_empty_description")}>
+        {field("sky_aspects_empty_description", defaults.emptyDescription)}
+      </span>
+    </div>
+
+    <div class="todays-sky-moon-aspects__legend" aria-label="Aspect tones">
+      <span class="todays-sky-moon-aspects__legend-conjunction" {...edit("sky_aspects_legend_conjunction")}>
+        {field("sky_aspects_legend_conjunction", defaults.legendConjunction)}
+      </span>
+      <span class="todays-sky-moon-aspects__legend-harmonious" {...edit("sky_aspects_legend_harmonious")}>
+        {field("sky_aspects_legend_harmonious", defaults.legendHarmonious)}
+      </span>
+      <span class="todays-sky-moon-aspects__legend-challenging" {...edit("sky_aspects_legend_challenging")}>
+        {field("sky_aspects_legend_challenging", defaults.legendChallenging)}
+      </span>
+    </div>
+  </article>
+</section>

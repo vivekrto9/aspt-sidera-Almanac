@@ -1,0 +1,148 @@
+.astrologer-profile-picker__list {
+  display: grid;
+  gap: 0.625rem;
+  max-block-size: min(25rem, 55vh);
+  overflow-y: auto;
+  padding: 0.125rem;
+  scrollbar-width: thin;
+}
+
+.astrologer-profile-picker__error {
+  margin: 0 0 var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid color-mix(in srgb, var(--color-danger) 42%, transparent);
+  border-radius: var(--radius-md, 0.75rem);
+  color: var(--color-danger);
+  background: color-mix(in srgb, var(--color-danger) 7%, var(--color-panel));
+  font-size: var(--text-sm);
+}
+
+.astrologer-profile-picker__progress {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0 0 var(--space-2);
+  color: var(--color-primary-strong);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.astrologer-profile-picker [hidden] {
+  display: none;
+}
+
+.astrologer-profile-picker__actions {
+  justify-content: center;
+}
+
+.astrologer-profile-picker__back {
+  margin-block-end: 0.875rem;
+}
+
+.astrologer-profile-picker [data-astrologer-profile-add-view] {
+  min-inline-size: 0;
+}
+
+.astrologer-profile-picker .sidera-add-profile-form {
+  max-inline-size: none;
+}
+
+.astrologer-profile-picker__option {
+  inline-size: 100%;
+  min-inline-size: 0;
+  display: grid;
+  grid-template-columns: 2.75rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.875rem;
+  border: 1px solid rgba(var(--color-text-rgb), 0.12);
+  border-radius: 0.875rem;
+  padding: 0.875rem 1rem;
+  background: var(--color-panel);
+  color: var(--color-text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    transform 160ms ease;
+}
+
+.astrologer-profile-picker__option:hover {
+  border-color: rgba(135, 61, 44, 0.38);
+  background: #f7efe4;
+  transform: translateY(-1px);
+}
+
+.astrologer-profile-picker__option.is-primary-selected {
+  border-color: var(--color-primary-strong);
+  background: #f4e7da;
+  box-shadow: inset 0 0 0 1px var(--color-primary-strong);
+}
+
+.astrologer-profile-picker__option:focus-visible {
+  outline: 2px solid var(--color-primary-strong);
+  outline-offset: 2px;
+}
+
+.astrologer-profile-picker__initial {
+  inline-size: 2.75rem;
+  block-size: 2.75rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #ead9cc;
+  color: #6d392b;
+  font-weight: 700;
+}
+
+.astrologer-profile-picker__copy {
+  min-inline-size: 0;
+  display: grid;
+  gap: 0.1875rem;
+}
+
+.astrologer-profile-picker__name-row {
+  min-inline-size: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.astrologer-profile-picker__name-row strong {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.astrologer-profile-picker__copy small {
+  overflow: hidden;
+  color: var(--color-muted);
+  font-size: 0.78125rem;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 40rem) {
+  .astrologer-profile-picker__actions .sidera-button {
+    inline-size: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .astrologer-profile-picker__option {
+    transition: none;
+  }
+
+  .astrologer-profile-picker__option:hover {
+    transform: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .astrologer-profile-picker__option {
+    border-color: CanvasText;
+  }
+}

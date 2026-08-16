@@ -1,0 +1,84 @@
+---
+import ArticleCard from "../../shared/ArticleCard.astro";
+import PageIntro from "../../shared/PageIntro.astro";
+import "../../../styles/blog/sections/blog-index-featured.css";
+
+type EditAttributes = Record<string, string>;
+
+type Props = {
+  eyebrow: string;
+  titleAccent: string;
+  titleRest: string;
+  featuredEyebrow: string;
+  featuredTitle: string;
+  featuredExcerpt: string;
+  featuredAuthor: string;
+  featuredReadTime: string;
+  featuredHref: string;
+  coverSrc?: string;
+  coverAlt?: string;
+  coverWidth?: number;
+  coverHeight?: number;
+  editAttributes?: (field: string) => EditAttributes;
+};
+
+const {
+  eyebrow,
+  titleAccent,
+  titleRest,
+  featuredEyebrow,
+  featuredTitle,
+  featuredExcerpt,
+  featuredAuthor,
+  featuredReadTime,
+  featuredHref,
+  coverSrc,
+  coverAlt,
+  coverWidth,
+  coverHeight,
+  editAttributes = () => ({}),
+} = Astro.props as Props;
+---
+
+<section class="blog-index-featured">
+  <div class="blog-index-featured__inner">
+    <PageIntro
+      id="blog-index-intro"
+      class="blog-index-featured__intro"
+      title={`${titleAccent} ${titleRest}`}
+      {eyebrow}
+      alignment="left"
+      density="standard"
+      headingMeasure="full"
+      eyebrowEditAttributes={editAttributes("blog_intro_eyebrow")}
+    >
+      <Fragment slot="title">
+        <em {...editAttributes("blog_intro_title_accent")}>{titleAccent}</em>{" "}
+        <span {...editAttributes("blog_intro_title_rest")}>{titleRest}</span>
+      </Fragment>
+    </PageIntro>
+
+    <ArticleCard
+      class="blog-index-featured__card"
+      variant="featured"
+      headingLevel={2}
+      eyebrow={featuredEyebrow}
+      title={featuredTitle}
+      excerpt={featuredExcerpt}
+      author={featuredAuthor}
+      readTime={featuredReadTime}
+      href={featuredHref}
+      {coverSrc}
+      {coverAlt}
+      {coverWidth}
+      {coverHeight}
+      glyph="⊗"
+      coverTone="terracotta"
+      eyebrowEditAttributes={editAttributes("blog_featured_eyebrow")}
+      titleEditAttributes={editAttributes("blog_featured_title")}
+      excerptEditAttributes={editAttributes("blog_featured_excerpt")}
+      authorEditAttributes={editAttributes("blog_featured_author")}
+      readTimeEditAttributes={editAttributes("blog_featured_read_time")}
+    />
+  </div>
+</section>

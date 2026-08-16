@@ -1,0 +1,45 @@
+---
+import "../../styles/shared/step-progress.css";
+
+type Props = {
+  current: number;
+  total: number;
+  stepLabel: string;
+  ofLabel: string;
+  ariaLabel?: string;
+  class?: string;
+  stepLabelEditAttributes?: Record<string, string>;
+  ofLabelEditAttributes?: Record<string, string>;
+};
+
+const {
+  current,
+  total,
+  stepLabel,
+  ofLabel,
+  ariaLabel = `${stepLabel} ${current} ${ofLabel}`,
+  class: className,
+  stepLabelEditAttributes = {},
+  ofLabelEditAttributes = {},
+} = Astro.props as Props;
+
+if (
+  !Number.isInteger(current) ||
+  !Number.isInteger(total) ||
+  total < 1 ||
+  current < 1 ||
+  current > total
+) {
+  throw new Error("StepProgress requires current to be within 1..total.");
+}
+
+const classes = ["step-progress", className].filter(Boolean).join(" ");
+---
+
+<div class={classes} role="group" aria-label={ariaLabel}>
+  <span class="step-progress__copy">
+    <span {...stepLabelEditAttributes}>{stepLabel}</span>
+    <strong aria-hidden="true">{current}</strong>
+    <span {...ofLabelEditAttributes}>{ofLabel}</span>
+  </span>
+</div>

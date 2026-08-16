@@ -1,0 +1,46 @@
+---
+import type { SupportedLocale } from "../../../data/localization-contract.ts";
+import type { HomeFinalCtaCopy } from "../../../data/locale/home/sections/final-cta.ts";
+import FinalCtaSection from "../../shared/FinalCtaSection.astro";
+import "../../../styles/home/sections/home-final-cta.css";
+
+type EditAttributes = Record<string, string>;
+type HomeFinalCtaField = "title_accent" | "title_rest" | "action_label";
+
+type Props = {
+  copy: HomeFinalCtaCopy;
+  locale: SupportedLocale;
+  actionHref: string;
+  editAttributes?: (field: HomeFinalCtaField) => EditAttributes;
+};
+
+const {
+  copy,
+  locale,
+  actionHref,
+  editAttributes = () => ({}),
+} = Astro.props as Props;
+const title = `${copy.titleAccent} ${copy.titleRest}`;
+---
+
+<FinalCtaSection
+  id="final-cta"
+  class="home-final-cta"
+  title={title}
+  primaryLabel={copy.actionLabel}
+  primaryHref={actionHref}
+  primaryAppearance="text"
+  primaryArrow="→"
+  tone="dark"
+  layout="centered"
+  surface="band"
+  ambience
+  locale={locale}
+  primaryEditAttributes={editAttributes("action_label")}
+>
+  <Fragment slot="title">
+    <em {...editAttributes("title_accent")}>{copy.titleAccent}</em>{" "}<span
+      {...editAttributes("title_rest")}>{copy.titleRest}</span
+    >
+  </Fragment>
+</FinalCtaSection>

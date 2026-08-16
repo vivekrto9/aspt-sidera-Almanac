@@ -1,0 +1,31 @@
+.transit-casting[hidden] {
+  display: none;
+}
+
+.sidera-casting-state.transit-casting {
+  inline-size: 100vw;
+  min-block-size: calc(100svh - 4.625rem);
+  margin-inline: calc(50% - 50vw);
+}
+
+@media (max-width: 63.999rem) {
+  .sidera-casting-state.transit-casting {
+    min-block-size: calc(100svh - 4.25rem);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .transit-casting:not([hidden]) {
+    animation: transit-casting-enter 280ms ease-out both;
+  }
+}
+
+@keyframes transit-casting-enter {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}

@@ -1,0 +1,77 @@
+---
+import ArticleCard from "../../shared/ArticleCard.astro";
+import CardGrid from "../../shared/CardGrid.astro";
+import SectionHeading from "../../shared/SectionHeading.astro";
+import "../../../styles/blog/sections/blog-related-articles.css";
+
+type Props = {
+  title: string;
+  articles: Array<{
+    key: string;
+    glyph: string;
+    coverTone: "terracotta" | "ochre" | "rose" | "slate" | "olive" | "stone";
+    categoryField: string;
+    titleField: string;
+    category: string;
+    title: string;
+    href: string;
+    image: {
+      src: string;
+      alt: string;
+      width: number;
+      height: number;
+    };
+  }>;
+  editAttributes?: (field: string) => Record<string, string>;
+};
+
+const {
+  title,
+  articles,
+  editAttributes = () => ({}),
+} = Astro.props as Props;
+---
+
+<section
+  class="blog-related-articles"
+  aria-labelledby="blog-related-articles-title"
+>
+  <div class="blog-related-articles__inner">
+    <SectionHeading
+      title={title}
+      headingId="blog-related-articles-title"
+      class="blog-related-articles__heading"
+      titleEditAttributes={editAttributes("blog_related_title")}
+    />
+
+    <CardGrid
+      columns={3}
+      tabletColumns={2}
+      mobileColumns={1}
+      gap="loose"
+      align="start"
+      class="blog-related-articles__grid"
+      ariaLabelledby="blog-related-articles-title"
+    >
+      {
+        articles.map((article) => (
+          <ArticleCard
+            variant="compact"
+            headingLevel={3}
+            eyebrow={article.category}
+            title={article.title}
+            href={article.href}
+            coverSrc={article.image.src}
+            coverAlt={article.image.alt}
+            coverWidth={article.image.width}
+            coverHeight={article.image.height}
+            glyph={article.glyph}
+            coverTone={article.coverTone}
+            eyebrowEditAttributes={editAttributes(article.categoryField)}
+            titleEditAttributes={editAttributes(article.titleField)}
+          />
+        ))
+      }
+    </CardGrid>
+  </div>
+</section>

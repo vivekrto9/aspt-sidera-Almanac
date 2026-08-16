@@ -1,0 +1,90 @@
+.sidera-status-dot {
+  --status-dot-color: var(--color-muted-soft);
+  --status-dot-label: var(--color-muted);
+  --status-dot-size: 0.5rem;
+  --status-dot-font-size: 0.8125rem;
+  --status-dot-gap: 0.5rem;
+
+  max-inline-size: 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--status-dot-gap);
+  color: var(--status-dot-label);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: var(--status-dot-font-size);
+  font-weight: 600;
+  line-height: 1.35;
+  vertical-align: middle;
+}
+
+.sidera-status-dot__mark {
+  inline-size: var(--status-dot-size);
+  block-size: var(--status-dot-size);
+  flex: none;
+  border-radius: 50%;
+  background: var(--status-dot-color);
+}
+
+.sidera-status-dot__label {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.sidera-status-dot--success {
+  --status-dot-color: var(--color-success);
+  --status-dot-label: var(--color-success);
+}
+
+.sidera-status-dot--warning {
+  --status-dot-color: var(--color-primary-soft);
+  --status-dot-label: #80591f;
+}
+
+.sidera-status-dot--accent {
+  --status-dot-color: var(--color-primary);
+  --status-dot-label: #8d432f;
+}
+
+.sidera-status-dot--danger {
+  --status-dot-color: var(--color-primary);
+  --status-dot-label: var(--color-primary-strong);
+}
+
+.sidera-status-dot--inverse {
+  --status-dot-label: var(--color-line);
+}
+
+.sidera-status-dot--inverse.sidera-status-dot--success {
+  --status-dot-color: #8fce9f;
+  --status-dot-label: #8fce9f;
+}
+
+.sidera-status-dot--inverse.sidera-status-dot--warning {
+  --status-dot-color: var(--color-primary-soft);
+  --status-dot-label: var(--color-primary-soft);
+}
+
+.sidera-status-dot--inverse.sidera-status-dot--accent,
+.sidera-status-dot--inverse.sidera-status-dot--danger {
+  --status-dot-color: var(--color-primary-soft);
+  --status-dot-label: var(--color-primary-soft);
+}
+
+.sidera-status-dot--compact {
+  --status-dot-size: 0.4375rem;
+  --status-dot-font-size: 0.75rem;
+  --status-dot-gap: 0.375rem;
+}
+
+@media (max-width: 40rem) {
+  .sidera-status-dot {
+    line-height: 1.45;
+  }
+}
+
+@media (forced-colors: active) {
+  .sidera-status-dot__mark {
+    border: 1px solid currentColor;
+    background: currentColor;
+  }
+}

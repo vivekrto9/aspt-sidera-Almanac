@@ -1,0 +1,48 @@
+---
+import PageIntro from "../../shared/PageIntro.astro";
+import "../../../styles/about/sections/about-page-intro.css";
+
+type EditAttributes = Record<string, string>;
+
+type Props = {
+  eyebrow: string;
+  titleLead: string;
+  titleEmphasis: string;
+  description: string;
+  eyebrowEditAttributes?: EditAttributes;
+  titleLeadEditAttributes?: EditAttributes;
+  titleEmphasisEditAttributes?: EditAttributes;
+  descriptionEditAttributes?: EditAttributes;
+};
+
+const {
+  eyebrow,
+  titleLead,
+  titleEmphasis,
+  description,
+  eyebrowEditAttributes = {},
+  titleLeadEditAttributes = {},
+  titleEmphasisEditAttributes = {},
+  descriptionEditAttributes = {},
+} = Astro.props as Props;
+---
+
+<section class="about-page-intro-shell">
+  <PageIntro
+    id="about-page-intro"
+    class="about-page-intro"
+    title={`${titleLead} ${titleEmphasis}`}
+    {eyebrow}
+    {description}
+    alignment="center"
+    density="standard"
+    eyebrowEditAttributes={eyebrowEditAttributes}
+    descriptionEditAttributes={descriptionEditAttributes}
+  >
+    <Fragment slot="title">
+      <span {...titleLeadEditAttributes}>{titleLead}</span>
+      {" "}
+      <em {...titleEmphasisEditAttributes}>{titleEmphasis}</em>
+    </Fragment>
+  </PageIntro>
+</section>

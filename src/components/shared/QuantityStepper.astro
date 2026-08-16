@@ -1,0 +1,151 @@
+---
+import IconButton from "./IconButton.astro";
+import "../../styles/shared/quantity-stepper.css";
+
+type QuantityStepperSize = "compact" | "standard";
+
+type Props = {
+  value?: number;
+  min?: number;
+  max?: number;
+  step?: number;
+  size?: QuantityStepperSize;
+  name?: string;
+  label?: string;
+  valueLabel?: string;
+  decrementLabel?: string;
+  incrementLabel?: string;
+  disabled?: boolean;
+  class?: string;
+};
+
+const {
+  value = 1,
+  min = 1,
+  max,
+  step = 1,
+  size = "standard",
+  name,
+  label = "Quantity",
+  valueLabel = "Current quantity",
+  decrementLabel = "Decrease quantity",
+  incrementLabel = "Increase quantity",
+  disabled = false,
+  class: className,
+} = Astro.props as Props;
+
+const safeStep = Number.isFinite(step) && step > 0 ? step : 1;
+const safeMin = Number.isFinite(min) ? min : 1;
+const safeMax = max !== undefined && Number.isFinite(max)
+  ? Math.max(max, safeMin)
+  : undefined;
+const safeValue = Number.isFinite(value) ? value : safeMin;
+const boundedValue = Math.min(Math.max(safeValue, safeMin), safeMax ?? Infinity);
+
+const classes = [
+  "quantity-stepper",
+  `quantity-stepper--${size}`,
+  disabled && "quantity-stepper--disabled",
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+---
+
+<div
+  class={classes}
+  role="group"
+  aria-label={label}
+  data-quantity-stepper
+  data-min={safeMin}
+  data-max={safeMax}
+  data-step={safeStep}
+  data-disabled={disabled ? "true" : undefined}
+>
+  <IconButton
+    class="quantity-stepper__button quantity-stepper__decrement"
+    ariaLabel={decrementLabel}
+    variant="ghost"
+    size={size}
+    shape="circle"
+    disabled={disabled || boundedValue <= safeMin}
+  >
+    <span aria-hidden="true">−</span>
+  </IconButton>
+
+  <output
+    class="quantity-stepper__value"
+    aria-label={valueLabel}
+    aria-live="polite"
+    aria-atomic="true"
+    data-quantity-value
+  >
+    {boundedValue}
+  </output>
+
+  <IconButton
+    class="quantity-stepper__button quantity-stepper__increment"
+    ariaLabel={incrementLabel}
+    variant="ghost"
+    size={size}
+    shape="circle"
+    disabled={disabled || (safeMax !== undefined && boundedValue >= safeMax)}
+  >
+    <span aria-hidden="true">+</span>
+  </IconButton>
+
+  {name && <input type="hidden" name={name} value={boundedValue} data-quantity-input />}
+</div>
+
+<script>
+  const enhanceQuantityStepper = (root: HTMLElement) => {
+    if (root.dataset.quantityBound === "true") return;
+    root.dataset.quantityBound = "true";
+
+    const decrement = root.querySelector<HTMLButtonElement>(".quantity-stepper__decrement");
+    const increment = root.querySelector<HTMLButtonElement>(".quantity-stepper__increment");
+    const output = root.querySelector<HTMLOutputElement>("[data-quantity-value]");
+    const input = root.querySelector<HTMLInputElement>("[data-quantity-input]");
+
+    if (!decrement || !increment || !output) return;
+
+    const min = Number(root.dataset.min);
+    const max = root.dataset.max ? Number(root.dataset.max) : Infinity;
+    const step = Number(root.dataset.step);
+    const isDisabled = root.dataset.disabled === "true";
+
+    const update = (nextValue: number) => {
+      const value = Math.min(Math.max(nextValue, min), max);
+
+      output.value = String(value);
+      output.textContent = String(value);
+      decrement.disabled = isDisabled || value <= min;
+      increment.disabled = isDisabled || value >= max;
+
+      if (input) {
+        input.value = String(value);
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        input.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+
+      root.dispatchEvent(
+        new CustomEvent("quantitychange", {
+          bubbles: true,
+          detail: { value },
+        }),
+      );
+    };
+
+    decrement.addEventListener("click", () => update(Number(output.value) - step));
+    increment.addEventListener("click", () => update(Number(output.value) + step));
+  };
+
+  const enhanceQuantitySteppers = () => {
+    document
+      .querySelectorAll<HTMLElement>("[data-quantity-stepper]")
+      .forEach(enhanceQuantityStepper);
+  };
+
+  enhanceQuantitySteppers();
+  document.addEventListener("astro:page-load", enhanceQuantitySteppers);
+</script>

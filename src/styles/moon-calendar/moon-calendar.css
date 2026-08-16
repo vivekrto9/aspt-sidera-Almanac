@@ -1,0 +1,14 @@
+.moon-calendar-body {
+  min-inline-size: 0;
+  margin: 0;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.moon-calendar-page {
+  inline-size: 100%;
+  min-inline-size: 0;
+  margin: 0;
+  background: var(--color-surface);
+  color: var(--color-text);
+}

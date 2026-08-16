@@ -1,0 +1,24 @@
+.reports-catalog-grid-shell {
+  inline-size: 100%;
+  padding: 1.875rem 2.125rem 6rem;
+  background: var(--color-surface);
+}
+
+.reports-catalog-grid {
+  --sidera-card-grid-gap: 1.5rem;
+
+  max-inline-size: 70rem;
+  margin-inline: auto;
+}
+
+@media (max-width: 42rem) {
+  .reports-catalog-grid-shell {
+    padding: 1.25rem 1.25rem 4rem;
+  }
+}
+
+@media (forced-colors: active) {
+  .reports-catalog-grid-shell {
+    border-block-start: 1px solid CanvasText;
+  }
+}

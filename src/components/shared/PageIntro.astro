@@ -1,0 +1,146 @@
+---
+import type { SupportedLocale } from "../../data/localization-contract.ts";
+import Breadcrumb from "./Breadcrumb.astro";
+import SectionHeading from "./SectionHeading.astro";
+import "../../styles/shared/page-intro.css";
+
+type PageIntroAlignment = "left" | "center";
+type PageIntroDensity = "standard" | "compact";
+type PageIntroTone = "default" | "inverse";
+type PageIntroHeadingMeasure = "default" | "full";
+type BreadcrumbSeparator = "chevron" | "slash";
+
+type BreadcrumbItem = {
+  label: string;
+  href?: string;
+  current?: boolean;
+  editAttributes?: Record<string, string>;
+};
+
+type Props = {
+  title: string;
+  eyebrow?: string;
+  description?: string;
+  meta?: string;
+  alignment?: PageIntroAlignment;
+  density?: PageIntroDensity;
+  tone?: PageIntroTone;
+  headingMeasure?: PageIntroHeadingMeasure;
+  breadcrumbs?: BreadcrumbItem[];
+  breadcrumbAriaLabel?: string;
+  breadcrumbSeparator?: BreadcrumbSeparator;
+  locale?: SupportedLocale;
+  actionLabel?: string;
+  actionHref?: string;
+  actionAriaLabel?: string;
+  id?: string;
+  headingId?: string;
+  class?: string;
+  eyebrowEditAttributes?: Record<string, string>;
+  titleEditAttributes?: Record<string, string>;
+  descriptionEditAttributes?: Record<string, string>;
+  metaEditAttributes?: Record<string, string>;
+  actionEditAttributes?: Record<string, string>;
+};
+
+const {
+  title,
+  eyebrow,
+  description,
+  meta,
+  alignment = "left",
+  density = "standard",
+  tone = "default",
+  headingMeasure = "default",
+  breadcrumbs = [],
+  breadcrumbAriaLabel,
+  breadcrumbSeparator = "chevron",
+  locale,
+  actionLabel,
+  actionHref,
+  actionAriaLabel,
+  id,
+  headingId = id ? `${id}-heading` : undefined,
+  class: className,
+  eyebrowEditAttributes = {},
+  titleEditAttributes = {},
+  descriptionEditAttributes = {},
+  metaEditAttributes = {},
+  actionEditAttributes = {},
+} = Astro.props as Props;
+
+const hasTitleSlot = Astro.slots.has("title");
+const hasActionSlot = Astro.slots.has("action");
+const classes = [
+  "sidera-page-intro",
+  `sidera-page-intro--${alignment}`,
+  `sidera-page-intro--${density}`,
+  `sidera-page-intro--${tone}`,
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+const headingProps = {
+  title,
+  eyebrow,
+  description,
+  headingLevel: 1 as const,
+  headingId,
+  alignment,
+  tone,
+  measure: headingMeasure,
+  size: density === "standard" ? ("page" as const) : ("section" as const),
+  actionLabel,
+  actionHref,
+  actionAriaLabel,
+  eyebrowEditAttributes,
+  titleEditAttributes,
+  descriptionEditAttributes,
+  actionEditAttributes,
+};
+---
+
+<section id={id} class={classes} aria-labelledby={headingId}>
+  <div class="sidera-page-intro__inner">
+    {
+      breadcrumbs.length > 0 && breadcrumbAriaLabel ? (
+        <Breadcrumb
+          items={breadcrumbs}
+          ariaLabel={breadcrumbAriaLabel}
+          separator={breadcrumbSeparator}
+          locale={locale}
+          class="sidera-page-intro__breadcrumb"
+        />
+      ) : null
+    }
+
+    {
+      hasTitleSlot ? (
+        hasActionSlot ? (
+          <SectionHeading {...headingProps}>
+            <Fragment slot="title"><slot name="title" /></Fragment>
+            <Fragment slot="action"><slot name="action" /></Fragment>
+          </SectionHeading>
+        ) : (
+          <SectionHeading {...headingProps}>
+            <Fragment slot="title"><slot name="title" /></Fragment>
+          </SectionHeading>
+        )
+      ) : hasActionSlot ? (
+        <SectionHeading {...headingProps}>
+          <Fragment slot="action"><slot name="action" /></Fragment>
+        </SectionHeading>
+      ) : (
+        <SectionHeading {...headingProps} />
+      )
+    }
+
+    {
+      meta ? (
+        <p class="sidera-page-intro__meta" {...metaEditAttributes}>
+          {meta}
+        </p>
+      ) : null
+    }
+  </div>
+</section>

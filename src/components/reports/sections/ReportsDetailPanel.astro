@@ -1,0 +1,336 @@
+---
+import Button from "../../shared/Button.astro";
+import MediaThumbnail from "../../shared/MediaThumbnail.astro";
+import PriceDisplay from "../../shared/PriceDisplay.astro";
+import SelectField from "../../shared/SelectField.astro";
+import type { CommerceOrder } from "../../../server/aggregator/commerce-orders.ts";
+import "../../../styles/reports/sections/detail-panel.css";
+
+type EditAttributes = Record<string, string>;
+
+type Chapter = {
+  title: string;
+  description: string;
+  titleEditAttributes?: EditAttributes;
+  descriptionEditAttributes?: EditAttributes;
+};
+
+type Props = {
+  title: string;
+  glyph: string;
+  pagesLabel: string;
+  price: string;
+  coverTone: "terracotta" | "ochre" | "rose" | "olive" | "slate";
+  coverSrc?: string;
+  coverAlt?: string;
+  coverWidth?: number;
+  coverHeight?: number;
+  pdfLabel: string;
+  deliveryLabel: string;
+  buyLabel: string;
+  purchaseHref: string;
+  loginHref?: string;
+  reportSlug?: string;
+  profiles?: Array<{ value: string; label: string }>;
+  csrfToken?: string;
+  paymentOrder?: CommerceOrder | null;
+  paymentAttemptId?: string;
+  stripeSessionId?: string;
+  paymentState?: string;
+  locale?: string;
+  runtimeCopy?: {
+    profileLabel: string; addProfile: string; preparing: string;
+    createError: string; checkoutError: string; confirmed: string;
+    confirming: string; pending: string; cancelled: string;
+  };
+  purchaseNote: string;
+  longDescription: string;
+  insideLabel: string;
+  chapters: Chapter[];
+  sampleLabel: string;
+  sample: string;
+  titleEditAttributes?: EditAttributes;
+  pdfLabelEditAttributes?: EditAttributes;
+  deliveryLabelEditAttributes?: EditAttributes;
+  buyLabelEditAttributes?: EditAttributes;
+  purchaseNoteEditAttributes?: EditAttributes;
+  longDescriptionEditAttributes?: EditAttributes;
+  insideLabelEditAttributes?: EditAttributes;
+  sampleLabelEditAttributes?: EditAttributes;
+  sampleEditAttributes?: EditAttributes;
+};
+
+const {
+  title,
+  glyph,
+  pagesLabel,
+  price,
+  coverTone,
+  coverSrc,
+  coverAlt = title,
+  coverWidth,
+  coverHeight,
+  pdfLabel,
+  deliveryLabel,
+  buyLabel,
+  purchaseHref,
+  loginHref = purchaseHref,
+  reportSlug = "",
+  profiles = [],
+  csrfToken = "",
+  paymentOrder,
+  paymentAttemptId = "",
+  stripeSessionId = "",
+  paymentState = "",
+  locale = "en",
+  runtimeCopy = { profileLabel: "Birth profile", addProfile: "Add a birth profile before purchasing this report.", preparing: "Preparing secure checkout…", createError: "Report order could not be created.", checkoutError: "Secure checkout could not be started.", confirmed: "Payment confirmed. Your report is queued for generation.", confirming: "Confirming your payment…", pending: "Payment confirmation is still pending.", cancelled: "Payment was not completed. No charge was made." },
+  purchaseNote,
+  longDescription,
+  insideLabel,
+  chapters,
+  sampleLabel,
+  sample,
+  titleEditAttributes = {},
+  pdfLabelEditAttributes = {},
+  deliveryLabelEditAttributes = {},
+  buyLabelEditAttributes = {},
+  purchaseNoteEditAttributes = {},
+  longDescriptionEditAttributes = {},
+  insideLabelEditAttributes = {},
+  sampleLabelEditAttributes = {},
+  sampleEditAttributes = {},
+} = Astro.props as Props;
+---
+
+<section
+  class="reports-detail-panel-shell"
+  data-report-purchase
+  data-report-slug={reportSlug}
+  data-csrf-token={csrfToken}
+  data-locale={locale}
+  data-payment-order={JSON.stringify(paymentOrder ?? null)}
+  data-payment-attempt-id={paymentAttemptId}
+  data-stripe-session-id={stripeSessionId}
+  data-runtime-copy={JSON.stringify(runtimeCopy)}
+>
+  <div class="reports-detail-panel">
+    <aside class="reports-detail-panel__purchase" aria-labelledby="report-title">
+      <div
+        class:list={[
+          "reports-detail-panel__cover",
+          `reports-detail-panel__cover--${coverTone}`,
+        ]}
+        aria-hidden="true"
+      >
+        {
+          coverSrc ? (
+            <MediaThumbnail
+              class="reports-detail-panel__thumbnail"
+              src={coverSrc}
+              alt={coverAlt}
+              width={coverWidth}
+              height={coverHeight}
+              loading="eager"
+              decorative
+            />
+          ) : (
+            <span>{glyph}</span>
+          )
+        }
+      </div>
+      <h1
+        id="report-title"
+        class="reports-detail-panel__title"
+        {...titleEditAttributes}
+      >
+        {title}
+      </h1>
+      <p class="reports-detail-panel__meta">
+        <span>{pagesLabel}</span>
+        <span aria-hidden="true">·</span>
+        <span {...pdfLabelEditAttributes}>{pdfLabel}</span>
+        <span aria-hidden="true">·</span>
+        <span {...deliveryLabelEditAttributes}>{deliveryLabel}</span>
+      </p>
+      <div class="reports-detail-panel__commerce">
+        <PriceDisplay
+          current={price}
+          size="large"
+          class="reports-detail-panel__price"
+        />
+        <Button
+          href={!csrfToken ? loginHref : profiles.length === 0 ? purchaseHref : undefined}
+          type={csrfToken && profiles.length > 0 ? "submit" : undefined}
+          form={csrfToken && profiles.length > 0 ? "report-purchase-form" : undefined}
+          loading={false}
+          loadingLabel={runtimeCopy.preparing}
+          variant="primary"
+          size="standard"
+          shape="rounded"
+          class="reports-detail-panel__buy"
+          editAttributes={buyLabelEditAttributes}
+        >
+          {buyLabel}
+        </Button>
+      </div>
+      {csrfToken && profiles.length > 0 ? (
+        <form id="report-purchase-form" class="reports-detail-panel__purchase-form">
+          <SelectField
+            name="profileId"
+            options={profiles}
+            value={profiles[0].value}
+            ariaLabel={runtimeCopy.profileLabel}
+            required
+          />
+          <p role="status" aria-live="polite" data-report-purchase-status></p>
+        </form>
+      ) : null}
+      {csrfToken && profiles.length === 0 ? (
+        <p class="reports-detail-panel__purchase-status"><a href={purchaseHref}>{runtimeCopy.addProfile}</a></p>
+      ) : null}
+      {paymentOrder ? (
+        <p class="reports-detail-panel__purchase-status" role="status" data-report-payment-status>
+          {paymentOrder.status === "paid" ? runtimeCopy.confirmed : runtimeCopy.confirming}
+        </p>
+      ) : null}
+      {paymentState === "cancelled" ? (
+        <p class="reports-detail-panel__purchase-status" role="status">{runtimeCopy.cancelled}</p>
+      ) : null}
+      <p
+        class="reports-detail-panel__purchase-note"
+        {...purchaseNoteEditAttributes}
+      >
+        {purchaseNote}
+      </p>
+    </aside>
+
+    <div class="reports-detail-panel__content">
+      <p
+        class="reports-detail-panel__long-description"
+        {...longDescriptionEditAttributes}
+      >
+        {longDescription}
+      </p>
+
+      <h2
+        class="reports-detail-panel__section-label"
+        {...insideLabelEditAttributes}
+      >
+        {insideLabel}
+      </h2>
+      <ol class="reports-detail-panel__chapters">
+        {
+          chapters.map((chapter, index) => (
+            <li class="reports-detail-panel__chapter">
+              <span class="reports-detail-panel__chapter-number" aria-hidden="true">
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              <div>
+                <h3
+                  class="reports-detail-panel__chapter-title"
+                  {...(chapter.titleEditAttributes ?? {})}
+                >
+                  {chapter.title}
+                </h3>
+                <p
+                  class="reports-detail-panel__chapter-description"
+                  {...(chapter.descriptionEditAttributes ?? {})}
+                >
+                  {chapter.description}
+                </p>
+              </div>
+            </li>
+          ))
+        }
+      </ol>
+
+      <aside
+        class="reports-detail-panel__sample"
+        aria-labelledby="report-sample-title"
+      >
+        <h2
+          id="report-sample-title"
+          class="reports-detail-panel__section-label"
+          {...sampleLabelEditAttributes}
+        >
+          {sampleLabel}
+        </h2>
+        <p {...sampleEditAttributes}>{sample}</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { setActionLoading } from "../../../scripts/action-loading.ts";
+
+  const initializeReportPurchase = (root: HTMLElement) => {
+    if (root.dataset.reportPurchaseBound === "true") return;
+    root.dataset.reportPurchaseBound = "true";
+    const form = root.querySelector<HTMLFormElement>("#report-purchase-form");
+    const submit = root.querySelector<HTMLButtonElement>("[form='report-purchase-form']");
+    const copy = JSON.parse(root.dataset.runtimeCopy || "{}") as Record<string, string>;
+    form?.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const status = root.querySelector<HTMLElement>("[data-report-purchase-status]");
+      if (submit?.disabled) return;
+      setActionLoading(submit, true, copy.preparing);
+      if (status) status.textContent = "";
+      try {
+        const profileId = new FormData(form).get("profileId")?.toString() || "";
+        const requestStorageKey = `sidera-report-order-${root.dataset.reportSlug || "report"}`;
+        let requestKey = "";
+        try { requestKey = sessionStorage.getItem(requestStorageKey) || ""; } catch {}
+        if (!requestKey) {
+          requestKey = crypto.randomUUID();
+          try { sessionStorage.setItem(requestStorageKey, requestKey); } catch {}
+        }
+        const orderResponse = await fetch("/api/astropages/generated-site/report-orders", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "content-type": "application/json", "x-astropages-customer-csrf": root.dataset.csrfToken || "", "x-idempotency-key": requestKey },
+          body: JSON.stringify({ reportSlug: root.dataset.reportSlug, profileId }),
+        });
+        const orderBody = await orderResponse.json() as { message?: string; data?: { order?: { id?: string }; attempt?: { id?: string } } };
+        if (!orderResponse.ok || !orderBody.data?.order?.id || !orderBody.data.attempt?.id) throw new Error(orderBody.message || copy.createError);
+        const checkoutResponse = await fetch("/api/astropages/generated-site/commerce-checkout-intents", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "content-type": "application/json", "x-astropages-customer-csrf": root.dataset.csrfToken || "" },
+          body: JSON.stringify({ orderId: orderBody.data.order.id, attemptId: orderBody.data.attempt.id, locale: root.dataset.locale }),
+        });
+        const checkoutBody = await checkoutResponse.json() as { message?: string; data?: { checkoutUrl?: string } };
+        if (!checkoutResponse.ok || !checkoutBody.data?.checkoutUrl) throw new Error(checkoutBody.message || copy.checkoutError);
+        window.location.assign(checkoutBody.data.checkoutUrl);
+      } catch (error) {
+        setActionLoading(submit, false);
+        if (status) status.textContent = error instanceof Error ? error.message : copy.checkoutError;
+      }
+    });
+    const order = JSON.parse(root.dataset.paymentOrder || "null") as { id?: string; status?: string } | null;
+    if (order?.status === "paid") {
+      try { sessionStorage.removeItem(`sidera-report-order-${root.dataset.reportSlug || "report"}`); } catch {}
+    }
+    if (order?.status !== "pending_payment" || !root.dataset.paymentAttemptId || !root.dataset.stripeSessionId) return;
+    void fetch("/api/astropages/generated-site/payments/stripe/commerce-confirm", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "content-type": "application/json", "x-astropages-customer-csrf": root.dataset.csrfToken || "" },
+      body: JSON.stringify({ orderId: order.id, attemptId: root.dataset.paymentAttemptId, sessionId: root.dataset.stripeSessionId }),
+    }).then(async (response) => {
+      const body = await response.json() as { message?: string };
+      const status = root.querySelector<HTMLElement>("[data-report-payment-status]");
+      if (status) status.textContent = response.ok ? copy.confirmed : body.message || copy.pending;
+      if (response.ok) {
+        try { sessionStorage.removeItem(`sidera-report-order-${root.dataset.reportSlug || "report"}`); } catch {}
+      }
+    });
+  };
+  const initializeReportPurchases = () => document.querySelectorAll<HTMLElement>("[data-report-purchase]").forEach(initializeReportPurchase);
+  const resetReportPurchaseLoading = () => document
+    .querySelectorAll<HTMLButtonElement>("[data-report-purchase] [form='report-purchase-form']")
+    .forEach((submit) => setActionLoading(submit, false));
+  initializeReportPurchases();
+  document.addEventListener("astro:page-load", initializeReportPurchases);
+  window.addEventListener("pageshow", resetReportPurchaseLoading);
+</script>

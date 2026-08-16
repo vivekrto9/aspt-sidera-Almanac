@@ -1,0 +1,42 @@
+---
+import type { SupportedLocale } from "../../../data/localization-contract.ts";
+import type { RetrogradesFinalCtaCopy } from "../../../data/locale/retrogrades/sections/final-cta.ts";
+import FinalCtaSection from "../../shared/FinalCtaSection.astro";
+import "../../../styles/retrogrades/sections/final-cta.css";
+
+type EditAttributes = Record<string, string>;
+type RetrogradesFinalCtaField =
+  | "title_accent"
+  | "title_rest"
+  | "action_label";
+
+type Props = {
+  copy: RetrogradesFinalCtaCopy;
+  locale: SupportedLocale;
+  editAttributes?: (field: RetrogradesFinalCtaField) => EditAttributes;
+};
+
+const { copy, locale, editAttributes = () => ({}) } = Astro.props as Props;
+const title = `${copy.titleAccent}${copy.titleRest}`;
+---
+
+<FinalCtaSection
+  id="retrogrades-final-cta"
+  class="retrogrades-final-cta"
+  title={title}
+  primaryLabel={copy.actionLabel}
+  primaryHref="/birth-chart"
+  primaryAppearance="text"
+  primaryArrow="→"
+  tone="dark"
+  layout="centered"
+  surface="band"
+  locale={locale}
+  primaryEditAttributes={editAttributes("action_label")}
+>
+  <Fragment slot="title">
+    <em {...editAttributes("title_accent")}>{copy.titleAccent}</em><span
+      {...editAttributes("title_rest")}>{copy.titleRest}</span
+    >
+  </Fragment>
+</FinalCtaSection>

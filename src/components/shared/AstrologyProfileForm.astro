@@ -1,0 +1,429 @@
+---
+import Button from "./Button.astro";
+import DateSelector from "./DateSelector.astro";
+import FormField from "./FormField.astro";
+import LocationAutocomplete, {
+  type LocationPrediction,
+  type SelectedLocation,
+} from "./LocationAutocomplete.astro";
+import type { SelectFieldOption } from "./SelectField.astro";
+import TextField from "./TextField.astro";
+import TimeSelector from "./TimeSelector.astro";
+import "../../styles/shared/astrology-profile-form.css";
+
+type DatePart = "month" | "day" | "year";
+type ProfileTone = "terracotta" | "forest";
+type ProfileField = "name" | "date" | "time" | "location";
+type FormMethod = "get" | "post";
+
+export type AstrologyProfileDate = {
+  label: string;
+  monthLabel: string;
+  dayLabel: string;
+  yearLabel: string;
+  months: readonly SelectFieldOption[];
+  days: readonly SelectFieldOption[];
+  years: readonly SelectFieldOption[];
+  monthValue?: string | number;
+  dayValue?: string | number;
+  yearValue?: string | number;
+  monthPlaceholder?: string;
+  dayPlaceholder?: string;
+  yearPlaceholder?: string;
+  order?: readonly DatePart[];
+  helpText?: string;
+  errorText?: string;
+  labelEditAttributes?: Record<string, string>;
+};
+
+export type AstrologyProfileTime = {
+  label: string;
+  hourLabel: string;
+  minuteLabel: string;
+  periodLabel: string;
+  unknownLabel: string;
+  hours: readonly SelectFieldOption[];
+  minutes: readonly SelectFieldOption[];
+  periods: readonly SelectFieldOption[];
+  hourValue?: string | number;
+  minuteValue?: string | number;
+  periodValue?: string | number;
+  hourPlaceholder?: string;
+  minutePlaceholder?: string;
+  periodPlaceholder?: string;
+  unknown?: boolean;
+  unknownDescription?: string;
+  helpText?: string;
+  errorText?: string;
+  labelEditAttributes?: Record<string, string>;
+  unknownLabelEditAttributes?: Record<string, string>;
+  unknownDescriptionEditAttributes?: Record<string, string>;
+};
+
+export type AstrologyProfileLocation = {
+  label: string;
+  query?: string;
+  placeholder?: string;
+  initialPredictions?: LocationPrediction[];
+  selectedLocation?: SelectedLocation;
+  helpText?: string;
+  errorText?: string;
+  selectedText?: string;
+  startText?: string;
+  searchingText?: string;
+  noResultsText?: string;
+  unavailableText?: string;
+  required?: boolean;
+  labelEditAttributes?: Record<string, string>;
+  inputEditAttributes?: Record<string, string>;
+};
+
+export type AstrologyProfileSummaryItem = {
+  label: string;
+  value: string;
+  muted?: boolean;
+};
+
+export type AstrologyProfile = {
+  id: string;
+  title: string;
+  badge?: string;
+  tone?: ProfileTone;
+  visibleFields?: readonly ProfileField[];
+  nameLabel?: string;
+  nameOptionalText?: string;
+  nameValue?: string;
+  namePlaceholder?: string;
+  nameAutocomplete?: string;
+  nameLabelEditAttributes?: Record<string, string>;
+  namePlaceholderEditAttributes?: Record<string, string>;
+  date?: AstrologyProfileDate;
+  time?: AstrologyProfileTime;
+  location?: AstrologyProfileLocation;
+  summary?: readonly AstrologyProfileSummaryItem[];
+  required?: boolean;
+  disabled?: boolean;
+  titleEditAttributes?: Record<string, string>;
+};
+
+type Props = {
+  id: string;
+  profiles: readonly AstrologyProfile[];
+  action?: string;
+  method?: FormMethod;
+  formName?: string;
+  layout?: "single" | "paired";
+  surface?: "plain" | "cards";
+  connectorLabel?: string;
+  submitLabel?: string;
+  submitAriaLabel?: string;
+  submitDisabled?: boolean;
+  footerText?: string;
+  density?: "standard" | "compact";
+  class?: string;
+  footerEditAttributes?: Record<string, string>;
+  submitEditAttributes?: Record<string, string>;
+  [attribute: string]: unknown;
+};
+
+const {
+  id,
+  profiles,
+  action,
+  method = "post",
+  formName,
+  layout = profiles.length > 1 ? "paired" : "single",
+  surface = layout === "paired" ? "cards" : "plain",
+  connectorLabel = "&",
+  submitLabel = "Continue",
+  submitAriaLabel,
+  submitDisabled = false,
+  footerText,
+  density = layout === "paired" ? "compact" : "standard",
+  class: className,
+  footerEditAttributes = {},
+  submitEditAttributes = {},
+  ...rootAttributes
+} = Astro.props as Props;
+
+if (profiles.length === 0 || profiles.length > 2) {
+  throw new Error("AstrologyProfileForm requires one or two profiles.");
+}
+
+const safeLayout = profiles.length === 1 ? "single" : layout;
+const classes = [
+  "astrology-profile-form",
+  `astrology-profile-form--${safeLayout}`,
+  `astrology-profile-form--${surface}`,
+  `astrology-profile-form--${density}`,
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+const hasCustomActions = Astro.slots.has("actions");
+const hasIntro = Astro.slots.has("intro");
+const hasBeforeProfiles = Astro.slots.has("before-profiles");
+const hasAfterProfiles = Astro.slots.has("after-profiles");
+---
+
+<form
+  {...rootAttributes}
+  class={classes}
+  id={id}
+  name={formName}
+  action={action}
+  method={method}
+  data-astrology-profile-form
+  data-layout={safeLayout}
+>
+  {
+    hasIntro ? (
+      <div class="astrology-profile-form__intro">
+        <slot name="intro" />
+      </div>
+    ) : null
+  }
+
+  {
+    hasBeforeProfiles ? (
+      <div class="astrology-profile-form__extension astrology-profile-form__extension--before">
+        <slot name="before-profiles" />
+      </div>
+    ) : null
+  }
+
+  <div class="astrology-profile-form__profiles">
+    {
+      profiles.map((profile, index) => {
+        const prefix = profile.id;
+        const visibleFields = profile.visibleFields ?? ["name", "date", "time", "location"];
+        const isSummary = Boolean(profile.summary?.length);
+        const profileClasses = [
+          "astrology-profile-form__profile",
+          `astrology-profile-form__profile--${profile.tone ?? (index === 1 ? "forest" : "terracotta")}`,
+          isSummary && "astrology-profile-form__profile--summary",
+        ]
+          .filter(Boolean)
+          .join(" ");
+
+        return (
+          <>
+            <section class={profileClasses} aria-labelledby={`${id}-${prefix}-title`}>
+              <header class="astrology-profile-form__profile-heading">
+                {profile.badge ? (
+                  <span class="astrology-profile-form__badge" aria-hidden="true">
+                    {profile.badge}
+                  </span>
+                ) : null}
+                <h2
+                  class="astrology-profile-form__profile-title"
+                  id={`${id}-${prefix}-title`}
+                  {...profile.titleEditAttributes}
+                >
+                  {profile.title}
+                </h2>
+                {index === 0 && Astro.slots.has("profile-one-heading-action") ? (
+                  <div class="astrology-profile-form__profile-heading-action">
+                    <slot name="profile-one-heading-action" />
+                  </div>
+                ) : null}
+                {index === 1 && Astro.slots.has("profile-two-heading-action") ? (
+                  <div class="astrology-profile-form__profile-heading-action">
+                    <slot name="profile-two-heading-action" />
+                  </div>
+                ) : null}
+              </header>
+
+              {isSummary ? (
+                <dl class="astrology-profile-form__summary">
+                  {profile.summary?.map((item) => (
+                    <div class="astrology-profile-form__summary-item">
+                      <dt>{item.label}</dt>
+                      <dd class:list={[item.muted && "astrology-profile-form__summary-value--muted"]}>
+                        {item.value}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              ) : (
+                <div class="astrology-profile-form__fields">
+                  {visibleFields.includes("name") ? (
+                    <FormField
+                      label={profile.nameLabel ?? "Name"}
+                      controlId={`${id}-${prefix}-name`}
+                      optionalText={profile.nameOptionalText}
+                      required={profile.required}
+                      labelEditAttributes={profile.nameLabelEditAttributes}
+                    >
+                      <TextField
+                        id={`${id}-${prefix}-name`}
+                        name={`${prefix}[name]`}
+                        value={profile.nameValue}
+                        placeholder={profile.namePlaceholder}
+                        autocomplete={profile.nameAutocomplete ?? `section-${prefix} name`}
+                        required={profile.required}
+                        disabled={profile.disabled}
+                        form={id}
+                        {...profile.namePlaceholderEditAttributes}
+                      />
+                    </FormField>
+                  ) : null}
+
+                  {visibleFields.includes("date") && profile.date ? (
+                    <DateSelector
+                      id={`${id}-${prefix}-date`}
+                      label={profile.date.label}
+                      monthLabel={profile.date.monthLabel}
+                      dayLabel={profile.date.dayLabel}
+                      yearLabel={profile.date.yearLabel}
+                      months={profile.date.months}
+                      days={profile.date.days}
+                      years={profile.date.years}
+                      monthValue={profile.date.monthValue}
+                      dayValue={profile.date.dayValue}
+                      yearValue={profile.date.yearValue}
+                      monthName={`${prefix}[month]`}
+                      dayName={`${prefix}[day]`}
+                      yearName={`${prefix}[year]`}
+                      monthPlaceholder={profile.date.monthPlaceholder}
+                      dayPlaceholder={profile.date.dayPlaceholder}
+                      yearPlaceholder={profile.date.yearPlaceholder}
+                      order={profile.date.order}
+                      autocompleteSection={prefix}
+                      helpText={profile.date.helpText}
+                      errorText={profile.date.errorText}
+                      required={profile.required}
+                      disabled={profile.disabled}
+                      form={id}
+                      density={density}
+                      selectPresentation="popover"
+                      labelEditAttributes={profile.date.labelEditAttributes}
+                    />
+                  ) : null}
+
+                  {visibleFields.includes("time") && profile.time ? (
+                    <TimeSelector
+                      id={`${id}-${prefix}-time`}
+                      label={profile.time.label}
+                      hourLabel={profile.time.hourLabel}
+                      minuteLabel={profile.time.minuteLabel}
+                      periodLabel={profile.time.periodLabel}
+                      unknownLabel={profile.time.unknownLabel}
+                      hours={profile.time.hours}
+                      minutes={profile.time.minutes}
+                      periods={profile.time.periods}
+                      hourValue={profile.time.hourValue}
+                      minuteValue={profile.time.minuteValue}
+                      periodValue={profile.time.periodValue}
+                      hourName={`${prefix}[hour]`}
+                      minuteName={`${prefix}[minute]`}
+                      periodName={`${prefix}[period]`}
+                      unknownName={`${prefix}[timeUnknown]`}
+                      hourPlaceholder={profile.time.hourPlaceholder}
+                      minutePlaceholder={profile.time.minutePlaceholder}
+                      periodPlaceholder={profile.time.periodPlaceholder}
+                      unknown={profile.time.unknown}
+                      unknownDescription={profile.time.unknownDescription}
+                      helpText={profile.time.helpText}
+                      errorText={profile.time.errorText}
+                      required={profile.required}
+                      disabled={profile.disabled}
+                      form={id}
+                      density={density}
+                      selectPresentation="popover"
+                      labelEditAttributes={profile.time.labelEditAttributes}
+                      unknownLabelEditAttributes={profile.time.unknownLabelEditAttributes}
+                      unknownDescriptionEditAttributes={
+                        profile.time.unknownDescriptionEditAttributes
+                      }
+                    />
+                  ) : null}
+
+                  {visibleFields.includes("location") && profile.location ? (
+                    <LocationAutocomplete
+                      id={`${id}-${prefix}-location`}
+                      label={profile.location.label}
+                      name={`${prefix}[location]`}
+                      query={profile.location.query}
+                      placeholder={profile.location.placeholder}
+                      initialPredictions={profile.location.initialPredictions}
+                      selectedLocation={profile.location.selectedLocation}
+                      helpText={profile.location.helpText}
+                      errorText={profile.location.errorText}
+                      startText={profile.location.startText}
+                      searchingText={profile.location.searchingText}
+                      noResultsText={profile.location.noResultsText}
+                      unavailableText={profile.location.unavailableText}
+                      selectedText={profile.location.selectedText}
+                      required={profile.location.required ?? profile.required}
+                      disabled={profile.disabled}
+                      form={id}
+                      dateInputId={`${id}-${prefix}-date-year`}
+                      timeInputId={`${id}-${prefix}-time-hour`}
+                      labelEditAttributes={profile.location.labelEditAttributes}
+                      inputEditAttributes={profile.location.inputEditAttributes}
+                    />
+                  ) : null}
+                </div>
+              )}
+
+              {index === 0 && Astro.slots.has("profile-one-extra") ? (
+                <div class="astrology-profile-form__profile-extra">
+                  <slot name="profile-one-extra" />
+                </div>
+              ) : null}
+              {index === 1 && Astro.slots.has("profile-two-extra") ? (
+                <div class="astrology-profile-form__profile-extra">
+                  <slot name="profile-two-extra" />
+                </div>
+              ) : null}
+            </section>
+
+            {safeLayout === "paired" && index === 0 ? (
+              <div class="astrology-profile-form__connector" aria-hidden="true">
+                <span class="astrology-profile-form__connector-line" />
+                <span class="astrology-profile-form__connector-label">{connectorLabel}</span>
+                <span class="astrology-profile-form__connector-line" />
+              </div>
+            ) : null}
+          </>
+        );
+      })
+    }
+  </div>
+
+  {
+    hasAfterProfiles ? (
+      <div class="astrology-profile-form__extension astrology-profile-form__extension--after">
+        <slot name="after-profiles" />
+      </div>
+    ) : null
+  }
+
+  <footer class="astrology-profile-form__footer">
+    {
+      hasCustomActions ? (
+        <slot name="actions" />
+      ) : (
+        <Button
+          type="submit"
+          form={id}
+          size="standard"
+          fullWidth={safeLayout === "single"}
+          disabled={submitDisabled}
+          ariaLabel={submitAriaLabel}
+          editAttributes={submitEditAttributes}
+        >
+          {submitLabel}
+        </Button>
+      )
+    }
+    {
+      footerText ? (
+        <p class="astrology-profile-form__footer-text" {...footerEditAttributes}>
+          {footerText}
+        </p>
+      ) : null
+    }
+  </footer>
+</form>

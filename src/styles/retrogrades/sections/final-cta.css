@@ -1,0 +1,35 @@
+.retrogrades-final-cta .sidera-final-cta__inner {
+  min-block-size: 0;
+  padding: 6.25rem 2.125rem;
+}
+
+.retrogrades-final-cta .sidera-final-cta__content {
+  max-inline-size: 74rem;
+}
+
+.retrogrades-final-cta .sidera-section-heading__content {
+  inline-size: 100%;
+  max-inline-size: none;
+}
+
+.retrogrades-final-cta .sidera-section-heading__title {
+  inline-size: 100%;
+  max-inline-size: none;
+  font-size: clamp(2.625rem, 7vw, 5.25rem);
+  letter-spacing: -0.02em;
+  line-height: 0.95;
+}
+
+.retrogrades-final-cta .sidera-final-cta__actions {
+  margin-block-start: 1.75rem;
+}
+
+.retrogrades-final-cta .sidera-final-cta__primary--text {
+  border-block-end-color: rgb(240 230 214 / 50%);
+}
+
+@media (max-width: 42rem) {
+  .retrogrades-final-cta .sidera-final-cta__inner {
+    padding: 4.5rem 1.25rem;
+  }
+}

@@ -1,0 +1,47 @@
+.home-astrologers {
+  scroll-margin-top: 5rem;
+  padding: 6.25rem 2.125rem;
+  overflow: hidden;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.home-astrologers__inner {
+  inline-size: min(100%, 75rem);
+  margin-inline: auto;
+}
+
+.home-astrologers__heading {
+  margin-block-end: 2.5rem;
+}
+
+.home-astrologers__grid {
+  --sidera-card-grid-gap: 1.25rem;
+}
+
+.home-astrologers__card {
+  max-inline-size: none;
+  block-size: 100%;
+}
+
+@media (max-width: 40rem) {
+  .home-astrologers {
+    padding: 4rem 1.25rem;
+  }
+
+  .home-astrologers__heading {
+    margin-block-end: 2rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-astrologers__card {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .home-astrologers {
+    border-block: 1px solid CanvasText;
+  }
+}
