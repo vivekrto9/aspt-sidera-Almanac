@@ -43,7 +43,7 @@ test("Home Final CTA forwards exact visible-copy edit identities", async () => {
   }
 });
 
-test("Home Final CTA preserves the Meridian full-bleed reference", async () => {
+test("Home Final CTA preserves the Almanac full-bleed reference", async () => {
   const styles = await readFile(stylesPath, "utf8");
 
   assert.match(styles, /--sidera-final-cta-background: var\(--color-dark\)/);

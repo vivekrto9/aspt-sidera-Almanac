@@ -1,8 +1,39 @@
 import { getRuntimeConfigValue } from "./runtime-config.ts";
-import { resolveSecretBinding } from "./runtime-bindings.ts";
 import { safeString, type RuntimeEnv } from "./runtime.ts";
+import {
+  astrologyProviderMessage,
+  resolveAstrologyApiKey,
+} from "./astrology-api-config.ts";
 import type { CustomerUserProfile } from "./customer-profiles.ts";
 
+const defaultChatBaseUrl = ["https://json-chat", "astrologyapi", "com"].join(".");
+const legacyChatHostname = "api.astrologyapi.com";
+const normalizeConfiguredBaseUrl = (value: unknown) =>
+  safeString(value).replace(/\/+$/, "");
+
+const isLegacyChatBaseUrl = (parsed: URL) => {
+  const host = parsed.hostname.toLowerCase();
+  return host === legacyChatHostname || host.endsWith(`.${legacyChatHostname}`);
+};
+
+const resolveChatBaseUrl = async (env: RuntimeEnv) => {
+  const configured = normalizeConfiguredBaseUrl(
+    await getRuntimeConfigValue(env, "ASTROLOGYAPI_CHAT_BASE_URL"),
+  );
+  if (!configured) return defaultChatBaseUrl;
+  try {
+    const parsed = new URL(configured);
+    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+      return defaultChatBaseUrl;
+    }
+    if (isLegacyChatBaseUrl(parsed)) {
+      return defaultChatBaseUrl;
+    }
+    return parsed.toString().replace(/\/+$/, "");
+  } catch {
+    return defaultChatBaseUrl;
+  }
+};
 const parseTimezoneHours = (offset: string) => {
   const match = safeString(offset)
     .toUpperCase()
@@ -63,13 +94,64 @@ const parseObject = (value: unknown) => {
 const providerAnswer = (body: Record<string, unknown>) => {
   const result = parseObject(body.result);
   const response = parseObject(body.response);
+  const data = parseObject(body.data);
   return (
     safeString(body.answer) ||
     safeString(body.message) ||
+    safeString(body.response) ||
+    safeString(data.answer) ||
+    safeString(data.message) ||
     safeString(result.answer) ||
     safeString(result.message) ||
     safeString(response.answer) ||
-    safeString(response.message)
+    safeString(response.message) ||
+    safeString(response.response) ||
+    safeString(data.response) ||
+    safeString(data.output) ||
+    safeString(data.text)
+  );
+};
+
+const parseProviderFlag = (value: unknown) => {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value !== 0;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    return (
+      normalized === "true" ||
+      normalized === "1" ||
+      normalized === "yes" ||
+      normalized === "ok" ||
+      normalized === "success"
+    );
+  }
+  return false;
+};
+
+const providerTransportDetails = (error: unknown) => {
+  const errorObject = parseObject(error);
+  const cause = parseObject(errorObject.cause);
+  const code = safeString(cause.code) || safeString(errorObject.code);
+  const name = safeString(errorObject.name);
+  return {
+    providerErrorCode: code || undefined,
+    providerErrorName: name || undefined,
+  };
+};
+
+const hasProviderSuccess = (body: Record<string, unknown>) => {
+  const result = parseObject(body.result);
+  const response = parseObject(body.response);
+  const data = parseObject(body.data);
+  return (
+    parseProviderFlag(body.status) ||
+    parseProviderFlag(body.success) ||
+    parseProviderFlag(result.status) ||
+    parseProviderFlag(result.success) ||
+    parseProviderFlag(response.status) ||
+    parseProviderFlag(response.success) ||
+    parseProviderFlag(data.status) ||
+    parseProviderFlag(data.success)
   );
 };
 
@@ -88,31 +170,22 @@ export const callAstrologyChatProvider = async ({
   message: string;
   fetcher?: typeof fetch;
 }) => {
-  const [apiKey, configuredBaseUrl] = await Promise.all([
-    resolveSecretBinding(env, "X_ASTROLOGYAPI_KEY"),
-    getRuntimeConfigValue(env, "ASTROLOGYAPI_CHAT_BASE_URL"),
-  ]);
-  if (!apiKey || !configuredBaseUrl) {
+  let apiKey = "";
+  try {
+    apiKey = await resolveAstrologyApiKey(env);
+  } catch {
+    apiKey = "";
+  }
+  if (!apiKey) {
     return {
       ok: false as const,
       reason: "missing-provider" as const,
       message: "Astrology chat provider is not configured.",
-      missingSecretNames: !apiKey ? ["X_ASTROLOGYAPI_KEY"] : [],
+      missingSecretNames: ["X_ASTROLOGYAPI_KEY"],
     };
   }
-  let baseUrl: URL;
-  try {
-    baseUrl = new URL(configuredBaseUrl);
-    if (baseUrl.protocol !== "https:" && baseUrl.protocol !== "http:") {
-      throw new Error("invalid protocol");
-    }
-  } catch {
-    return {
-      ok: false as const,
-      reason: "invalid-provider" as const,
-      message: "Astrology chat provider URL is invalid.",
-    };
-  }
+  const resolvedChatBaseUrl = await resolveChatBaseUrl(env);
+  const baseUrl = new URL(resolvedChatBaseUrl);
   const data = providerData(profile);
   if (!data) {
     return {
@@ -148,6 +221,7 @@ export const callAstrologyChatProvider = async ({
       ).toString();
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 45_000);
+  let providerErrorPhase = "request";
   try {
     const response = await fetcher(endpoint, {
       method: "POST",
@@ -166,17 +240,31 @@ export const callAstrologyChatProvider = async ({
       }),
       signal: controller.signal,
     });
-    const body = (await response.json().catch(() => ({}))) as Record<
-      string,
-      unknown
-    >;
-    const answer =
-      body.status === true || body.success === true ? providerAnswer(body) : "";
-    if (!response.ok || !answer) {
+    providerErrorPhase = "response-json";
+    const body = await response.json().catch(() => ({})) as Record<string, unknown>;
+    providerErrorPhase = "response-parse";
+    const answer = providerAnswer(body);
+    const providerStatus = hasProviderSuccess(body);
+    const providerStatusCode = response.status;
+    const providerMessage = astrologyProviderMessage(
+      "The astrologer could not reply right now. Please try again.",
+      {
+        ...body,
+        status: providerStatus ? true : response.status,
+        message:
+          safeString(body.message) ||
+          safeString(body.error) ||
+          safeString(parseObject(body.data).message),
+      },
+    );
+    if (!response.ok || (!providerStatus && !answer)) {
       return {
         ok: false as const,
         reason: "provider-error" as const,
-        message: "The astrologer could not reply right now. Please try again.",
+        message:
+          providerMessage ||
+          "The astrologer could not reply right now. Please try again.",
+        providerStatusCode,
       };
     }
     return {
@@ -192,6 +280,8 @@ export const callAstrologyChatProvider = async ({
       message: timedOut
         ? "The astrologer is taking longer than usual. Please try again."
         : "The astrologer could not reply right now. Please try again.",
+      providerErrorPhase,
+      ...providerTransportDetails(error),
     };
   } finally {
     clearTimeout(timeout);

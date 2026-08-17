@@ -181,6 +181,7 @@
 .wallet-notice__icon { width: 2.25rem; height: 2.25rem; display: grid; flex: none; place-items: center; border-radius: 50%; background: var(--color-success); color: white; }
 .wallet-notice p { margin: 0.15rem 0 0; color: #6f5d55; }
 .wallet-notice > a { margin-left: auto; color: #6a3629; font-weight: 700; }
+[data-wallet-notice-action][hidden] { display: none !important; }
 
 .sidera-header__wallet { text-decoration: none; transition: border-color 160ms ease, background-color 160ms ease, transform 160ms ease; }
 .sidera-header__wallet:hover { border-color: rgba(var(--color-primary-rgb), 0.5); background: #fff8ee; transform: translateY(-1px); }

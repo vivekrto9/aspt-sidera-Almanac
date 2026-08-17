@@ -14,6 +14,12 @@ export type AstrologerLiveSessionCopy = {
   securePrivate: string;
   backToAstrologers: string;
   loadMore: string;
+  deleteSessionLabel: string;
+  deleteSessionTitle: string;
+  deleteSessionDescription: string;
+  deleteSessionConfirm: string;
+  deleteSessionDeleting: string;
+  deleteSessionCancel: string;
   connected: string;
   walletLabel: string;
   meterLabel: string;
@@ -59,6 +65,13 @@ const en: AstrologerLiveSessionCopy = {
   securePrivate: "100% secure & private",
   backToAstrologers: "Back to astrologers",
   loadMore: "Load more",
+  deleteSessionLabel: "Delete chat session",
+  deleteSessionTitle: "Delete this chat?",
+  deleteSessionDescription:
+    "This permanently deletes the session and its message history. This action cannot be undone.",
+  deleteSessionConfirm: "Delete session",
+  deleteSessionDeleting: "Deleting session",
+  deleteSessionCancel: "Keep session",
   connected: "connected",
   walletLabel: "Wallet",
   meterLabel: "per question",
@@ -114,6 +127,13 @@ const copyByLocale: Record<SupportedLocale, AstrologerLiveSessionCopy> = {
     securePrivate: "100 % seguro y privado",
     backToAstrologers: "Volver a astrólogos",
     loadMore: "Cargar más",
+    deleteSessionLabel: "Eliminar sesión de chat",
+    deleteSessionTitle: "¿Eliminar este chat?",
+    deleteSessionDescription:
+      "Esto elimina permanentemente la sesión y su historial de mensajes. Esta acción no se puede deshacer.",
+    deleteSessionConfirm: "Eliminar sesión",
+    deleteSessionDeleting: "Eliminando sesión",
+    deleteSessionCancel: "Conservar sesión",
     connected: "conectada",
     walletLabel: "Cartera",
     meterLabel: "por pregunta",
@@ -147,6 +167,13 @@ const copyByLocale: Record<SupportedLocale, AstrologerLiveSessionCopy> = {
     securePrivate: "100 % sécurisé et privé",
     backToAstrologers: "Retour aux astrologues",
     loadMore: "Afficher plus",
+    deleteSessionLabel: "Supprimer la session de chat",
+    deleteSessionTitle: "Supprimer ce chat ?",
+    deleteSessionDescription:
+      "Cette action supprime définitivement la session et son historique de messages. Elle est irréversible.",
+    deleteSessionConfirm: "Supprimer la session",
+    deleteSessionDeleting: "Suppression de la session",
+    deleteSessionCancel: "Conserver la session",
     connected: "connectée",
     walletLabel: "Portefeuille",
     meterLabel: "par question",
@@ -180,6 +207,13 @@ const copyByLocale: Record<SupportedLocale, AstrologerLiveSessionCopy> = {
     securePrivate: "100% seguro e privado",
     backToAstrologers: "Voltar aos astrólogos",
     loadMore: "Carregar mais",
+    deleteSessionLabel: "Excluir sessão de chat",
+    deleteSessionTitle: "Excluir este chat?",
+    deleteSessionDescription:
+      "Isso exclui permanentemente a sessão e o histórico de mensagens. Esta ação não pode ser desfeita.",
+    deleteSessionConfirm: "Excluir sessão",
+    deleteSessionDeleting: "Excluindo sessão",
+    deleteSessionCancel: "Manter sessão",
     connected: "conectada",
     walletLabel: "Carteira",
     meterLabel: "por pergunta",
@@ -213,6 +247,13 @@ const copyByLocale: Record<SupportedLocale, AstrologerLiveSessionCopy> = {
     securePrivate: "100% безопасно и конфиденциально",
     backToAstrologers: "Назад к астрологам",
     loadMore: "Загрузить ещё",
+    deleteSessionLabel: "Удалить сеанс чата",
+    deleteSessionTitle: "Удалить этот чат?",
+    deleteSessionDescription:
+      "Сеанс и история сообщений будут удалены навсегда. Это действие нельзя отменить.",
+    deleteSessionConfirm: "Удалить сеанс",
+    deleteSessionDeleting: "Удаление сеанса",
+    deleteSessionCancel: "Сохранить сеанс",
     connected: "подключено",
     walletLabel: "Кошелёк",
     meterLabel: "за вопрос",
@@ -246,6 +287,13 @@ const copyByLocale: Record<SupportedLocale, AstrologerLiveSessionCopy> = {
     securePrivate: "100% sicuro e privato",
     backToAstrologers: "Torna agli astrologi",
     loadMore: "Carica altro",
+    deleteSessionLabel: "Elimina sessione di chat",
+    deleteSessionTitle: "Eliminare questa chat?",
+    deleteSessionDescription:
+      "La sessione e la cronologia dei messaggi verranno eliminate definitivamente. Questa azione non può essere annullata.",
+    deleteSessionConfirm: "Elimina sessione",
+    deleteSessionDeleting: "Eliminazione sessione",
+    deleteSessionCancel: "Mantieni sessione",
     connected: "connessa",
     walletLabel: "Portafoglio",
     meterLabel: "per domanda",
@@ -279,6 +327,13 @@ const copyByLocale: Record<SupportedLocale, AstrologerLiveSessionCopy> = {
     securePrivate: "100% sicher und privat",
     backToAstrologers: "Zurück zu Astrologen",
     loadMore: "Mehr laden",
+    deleteSessionLabel: "Chatsitzung löschen",
+    deleteSessionTitle: "Diesen Chat löschen?",
+    deleteSessionDescription:
+      "Die Sitzung und ihr Nachrichtenverlauf werden dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.",
+    deleteSessionConfirm: "Sitzung löschen",
+    deleteSessionDeleting: "Sitzung wird gelöscht",
+    deleteSessionCancel: "Sitzung behalten",
     connected: "verbunden",
     walletLabel: "Wallet",
     meterLabel: "pro Frage",

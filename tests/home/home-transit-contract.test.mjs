@@ -49,7 +49,7 @@ test("Home Transit composes approved shared primitives without changing AspectRo
   assert.doesNotMatch(source, /editAttributes\(`item_\$\{index \+ 1\}_note`\)/);
 });
 
-test("Home Transit matches the Meridian two-column teaser and responsive safeguards", async () => {
+test("Home Transit matches the Almanac two-column teaser and responsive safeguards", async () => {
   const styles = await readFile(stylesPath, "utf8");
 
   assert.match(styles, /padding: 6\.25rem 2\.125rem/);

@@ -5,6 +5,7 @@ import { safeString, type RuntimeEnv } from "./runtime.ts";
 export const astrologyApiRuntimeNames = {
   apiKey: "X_ASTROLOGYAPI_KEY",
   jsonBaseUrl: "ASTROLOGY_API_BASE_URL",
+  chatBaseUrl: "ASTROLOGYAPI_CHAT_BASE_URL",
   userId: "ASTROLOGYAPI_USER_ID",
   password: "ASTROLOGYAPI_PASSWORD",
 } as const;
@@ -15,8 +16,13 @@ const processValue = (name: string) =>
 const resolveOptionalSecret = async (env: RuntimeEnv, name: string) =>
   (await resolveSecretBinding(env, name)) || processValue(name);
 
+const resolveLegacyAstrologyApiKey = (env: RuntimeEnv) =>
+  resolveSecretBinding(env, "ASTROLOGY_API_KEY") ||
+  Promise.resolve(processValue("ASTROLOGY_API_KEY"));
+
 export const resolveAstrologyApiKey = async (env: RuntimeEnv) => {
   const key =
+    (await resolveLegacyAstrologyApiKey(env)) ||
     (await resolveSecretBinding(env, astrologyApiRuntimeNames.apiKey)) ||
     processValue(astrologyApiRuntimeNames.apiKey);
   if (!key) throw new Error("AstrologyAPI token is not configured.");

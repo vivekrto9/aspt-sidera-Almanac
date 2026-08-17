@@ -345,3 +345,18 @@ The Nocturne local drill required the same explicit repair sequence as Meridian:
 - verify public routes, authenticated redirects, deep edit readiness, schema/Cloudflare/asset/sales/user/secrets contracts, safety scan, typecheck, tests, and build
 
 These steps repair local development only. Preview and production still require their own secrets, controlled migrations/bootstrap, asset seeding, and route verification.
+
+## 23. Almanac local clone completion record
+
+The Almanac clone repeated the full non-UI drill instead of assuming that the Nocturne source tree carried local runtime state:
+
+- copied ignored local development secrets through a permission-restricted local file and confirmed that the variable-name set matches the source without printing values
+- reconciled the partial Content Studio schema, then completed the authenticated bootstrap for all 48 targets / 46 collections, 336 localized entries, and seven locales
+- materialized the runtime auth, profile, chart-reading, provider-cache, Stripe/payment, wallet/chat, scheduling, commerce, and generated-asset schemas; the D1 schema and foreign-key contracts now pass
+- seeded the intended chat-only catalog with exactly Orion Hale (`KUNDLI`) and Selene Marlowe (`MATCHING`) active
+- seeded 33 generated assets into local R2 with matching aliases and records; the project manifest was refreshed for the Almanac logo and revision seeding now assigns the next per-asset revision number so reseeding remains idempotent
+- replaced stale Nocturne preview/production D1 names and temporary secret filenames in the generated deployment workflows, updated example site URLs, and removed stale Nocturne/Meridian runtime and test identity residues
+- aligned the typography contract with Almanac's canonical Bricolage Grotesque / Spectral pair
+- verified the full 844-test suite plus safety, D1 schema, Cloudflare runtime, Content Studio, project asset, sales, users-data, and secrets contracts
+
+The restricted verification environment denied the Cloudflare Astro plugin's local inspector-port bind, so `astro check`, `astro build`, and HTTP route smoke testing must be rerun in a normal local shell before handoff. This record covers local D1/R2 state only; preview and production still require their own secrets, controlled migrations/bootstrap, asset seeding, and route verification.

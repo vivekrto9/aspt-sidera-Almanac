@@ -51,6 +51,12 @@ const historyFields = [
   "live_secure_private",
   "live_back_to_astrologers",
   "live_load_more",
+  "live_delete_session_label",
+  "live_delete_session_title",
+  "live_delete_session_description",
+  "live_delete_session_confirm",
+  "live_delete_session_deleting",
+  "live_delete_session_cancel",
 ];
 
 test("Live session composes approved shared primitives and keeps its workspace private", async () => {
@@ -207,6 +213,9 @@ test("Live session fields use a forward migration and preserve the D1 column cei
   const workspaceMigration = await read(
     "migrations/0155_chat_workspace_content.sql",
   );
+  const deleteDialogMigration = await read(
+    "migrations/0156_chat_delete_dialog_content.sql",
+  );
   const database = new DatabaseSync(":memory:");
   database.exec(setupMigration);
   database.exec(liveMigration);
@@ -227,6 +236,7 @@ test("Live session fields use a forward migration and preserve the D1 column cei
   assert.equal(columns.size <= 100, true);
   database.exec(historyMigration);
   database.exec(workspaceMigration);
+  database.exec(deleteDialogMigration);
   const historyColumns = new Set(
     database
       .prepare("PRAGMA table_info(ec_site_astrologers_chat_history)")
@@ -236,7 +246,7 @@ test("Live session fields use a forward migration and preserve the D1 column cei
   for (const field of historyFields) {
     assert.equal(historyColumns.has(field), true, `missing ${field}`);
   }
-  assert.equal(historyColumns.size < 30, true);
+  assert.equal(historyColumns.size <= 40, true);
 });
 
 test("Live session CSS matches the reference desktop split and mobile stack", async () => {

@@ -123,6 +123,7 @@ const personalizedOpeningMessage = copy.openingMessage.replaceAll(
     sessions={chatSessions}
     transactions={walletTransactions}
     activeSessionId={sessionId}
+    csrfToken={csrfToken}
     activeProfileLabel={activeProfileLabel}
     locale={locale}
     newChatHref={newChatHref}
@@ -226,7 +227,11 @@ const personalizedOpeningMessage = copy.openingMessage.replaceAll(
           sessionId && initialMessages.length ? (
             initialMessages.map((item) => (
               <div class={`astrologer-live__message astrologer-live__message--${item.role === "assistant" ? "reader" : "user"}`}>
-                <p>{item.message}</p>
+                {item.role === "assistant" ? (
+                  <div class="astrologer-live__markdown" data-markdown-message>{item.message}</div>
+                ) : (
+                  <p>{item.message}</p>
+                )}
               </div>
             ))
           ) : sessionId ? (
@@ -396,6 +401,7 @@ const personalizedOpeningMessage = copy.openingMessage.replaceAll(
 
 <script>
   import { isActionLoading, setActionLoading } from "../../../scripts/action-loading.ts";
+  import { renderSafeMarkdown } from "../../../scripts/render-safe-markdown.ts";
 
   const liveSession = document.querySelector<HTMLElement>("[data-live-session]");
   if (liveSession && liveSession.dataset.ready !== "true") {
@@ -417,6 +423,10 @@ const personalizedOpeningMessage = copy.openingMessage.replaceAll(
     const questionText = liveSession.querySelector<HTMLElement>("[data-live-question]");
     let sending = false;
 
+    liveSession.querySelectorAll<HTMLElement>("[data-markdown-message]").forEach((message) => {
+      renderSafeMarkdown(message, message.textContent || "");
+    });
+
     const formatWalletAmount = (cents: number) =>
       new Intl.NumberFormat(document.documentElement.lang || "en", {
         style: "currency",
@@ -432,9 +442,35 @@ const personalizedOpeningMessage = copy.openingMessage.replaceAll(
       if (!messageList || !value.trim()) return;
       const row = document.createElement("div");
       row.className = `astrologer-live__message astrologer-live__message--${role === "assistant" ? "reader" : "user"}`;
-      const message = document.createElement("p");
-      message.textContent = value.trim();
+      const message = document.createElement(role === "assistant" ? "div" : "p");
+      if (role === "assistant") {
+        message.className = "astrologer-live__markdown";
+        message.dataset.markdownMessage = "";
+        renderSafeMarkdown(message, value.trim());
+      } else {
+        message.textContent = value.trim();
+      }
       row.append(message);
+      messageList.append(row);
+      messageList.scrollTop = messageList.scrollHeight;
+      return row;
+    };
+
+    const appendTypingIndicator = () => {
+      if (!messageList) return;
+      const row = document.createElement("div");
+      row.className = "astrologer-live__message astrologer-live__message--reader astrologer-live__message--typing";
+      const bubble = document.createElement("div");
+      bubble.className = "astrologer-live__typing";
+      bubble.setAttribute("aria-label", "Astrologer is replying");
+      bubble.setAttribute("aria-live", "polite");
+      for (let i = 0; i < 3; i += 1) {
+        const dot = document.createElement("span");
+        dot.className = "astrologer-live__typing-dot";
+        dot.style.setProperty("--typing-dot-index", String(i));
+        bubble.append(dot);
+      }
+      row.append(bubble);
       messageList.append(row);
       messageList.scrollTop = messageList.scrollHeight;
       return row;
@@ -452,6 +488,7 @@ const personalizedOpeningMessage = copy.openingMessage.replaceAll(
       });
       if (errorMessage) errorMessage.hidden = true;
       const pending = appendMessage(cleanValue, "user");
+      const typingIndicator = appendTypingIndicator();
       try {
         const response = await fetch("/api/astro-chat/send-message", {
           method: "POST",
@@ -466,11 +503,12 @@ const personalizedOpeningMessage = copy.openingMessage.replaceAll(
           }),
         });
         const payload = await response.json().catch(() => ({}));
-        if (
+          if (
           response.status === 402 &&
           payload?.data?.code === "INSUFFICIENT_WALLET_BALANCE"
         ) {
           pending?.remove();
+          typingIndicator?.remove();
           if (input) {
             input.value = cleanValue;
             input.dataset.requestKey = requestKey;
@@ -484,6 +522,7 @@ const personalizedOpeningMessage = copy.openingMessage.replaceAll(
           walletDialogTrigger?.click();
           return;
         }
+        typingIndicator?.remove();
         if (!response.ok) throw new Error(payload?.message || "Message could not be sent.");
         appendMessage(String(payload?.data?.answer || ""), "assistant");
         const activeHistory = document.querySelector<HTMLElement>(
@@ -511,6 +550,7 @@ const personalizedOpeningMessage = copy.openingMessage.replaceAll(
         }
         if (input) delete input.dataset.requestKey;
       } catch (error) {
+        typingIndicator?.remove();
         pending?.remove();
         if (input) {
           input.value = cleanValue;

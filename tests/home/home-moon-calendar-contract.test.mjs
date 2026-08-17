@@ -62,7 +62,7 @@ test("Home Moon Calendar composes the approved shared heading, button, and phase
   assert.doesNotMatch(source, /fetch\(|localStorage|sessionStorage/);
 });
 
-test("Home Moon Calendar matches the Meridian geometry and responsive safeguards", async () => {
+test("Home Moon Calendar matches the Almanac geometry and responsive safeguards", async () => {
   const styles = await readFile(stylesPath, "utf8");
 
   assert.match(styles, /padding: 6\.25rem 2\.125rem/);

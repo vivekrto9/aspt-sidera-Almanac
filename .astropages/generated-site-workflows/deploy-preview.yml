@@ -187,22 +187,22 @@ jobs:
           set -euo pipefail
           echo "ASTROPAGES_DEPLOY_STAGE=d1_migrations" >> "$GITHUB_ENV"
           started_at="$(date +%s)"
-          pnpm exec wrangler d1 migrations apply sidera-nocturne-preview-site --env preview --remote --config .wrangler/generated/wrangler.preview.jsonc
+          pnpm exec wrangler d1 migrations apply sidera-almanac-preview-site --env preview --remote --config .wrangler/generated/wrangler.preview.jsonc
           echo "D1 migrations completed in $(($(date +%s) - started_at))s" >> "$GITHUB_STEP_SUMMARY"
       - name: Verify D1 EmDash schema
         run: |
           set -euo pipefail
           echo "ASTROPAGES_DEPLOY_STAGE=emdash_d1_schema_check" >> "$GITHUB_ENV"
           started_at="$(date +%s)"
-          pnpm exec wrangler d1 execute sidera-nocturne-preview-site --env preview --remote --config .wrangler/generated/wrangler.preview.jsonc --command "SELECT disabled FROM users LIMIT 0;"
-          pnpm exec wrangler d1 execute sidera-nocturne-preview-site --env preview --remote --config .wrangler/generated/wrangler.preview.jsonc --command "SELECT name FROM _emdash_migrations WHERE name = '009_user_disabled';"
+          pnpm exec wrangler d1 execute sidera-almanac-preview-site --env preview --remote --config .wrangler/generated/wrangler.preview.jsonc --command "SELECT disabled FROM users LIMIT 0;"
+          pnpm exec wrangler d1 execute sidera-almanac-preview-site --env preview --remote --config .wrangler/generated/wrangler.preview.jsonc --command "SELECT name FROM _emdash_migrations WHERE name = '009_user_disabled';"
           echo "EmDash D1 schema verified in $(($(date +%s) - started_at))s" >> "$GITHUB_STEP_SUMMARY"
       - name: Deploy Worker
         run: |
           set -euo pipefail
           echo "ASTROPAGES_DEPLOY_STAGE=worker_deploy" >> "$GITHUB_ENV"
           started_at="$(date +%s)"
-          pnpm exec wrangler deploy --env preview --config .wrangler/generated/wrangler.preview.jsonc --secrets-file "$RUNNER_TEMP/sidera-nocturne-worker-secrets.json"
+          pnpm exec wrangler deploy --env preview --config .wrangler/generated/wrangler.preview.jsonc --secrets-file "$RUNNER_TEMP/sidera-almanac-worker-secrets.json"
           echo "Worker deploy completed in $(($(date +%s) - started_at))s" >> "$GITHUB_STEP_SUMMARY"
       - name: Prepare deployed EmDash
         run: |

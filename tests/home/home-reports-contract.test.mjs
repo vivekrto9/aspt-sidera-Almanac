@@ -66,7 +66,7 @@ test("Home Reports keeps editorial copy editable and operational values dynamic"
   assert.match(source, /editAttributes\("title_rest"\)/);
 });
 
-test("Home Reports matches the Meridian measure and responsive surface", async () => {
+test("Home Reports matches the Almanac measure and responsive surface", async () => {
   const styles = await readFile(stylesPath, "utf8");
 
   assert.match(styles, /padding: 6\.25rem 2\.125rem/);

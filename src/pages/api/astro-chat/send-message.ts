@@ -63,6 +63,39 @@ export const POST: APIRoute = async (context) => {
         { status: 402 },
       );
     }
+    if (
+      "reason" in result &&
+      (result.reason === "provider-error" || result.reason === "provider-timeout")
+    ) {
+      return jsonResponse(
+        {
+          status: "error",
+          state: "error",
+          feature,
+          message: result.message,
+          data: {
+            reason: result.reason,
+            providerStatusCode:
+              "providerStatusCode" in result
+                ? result.providerStatusCode
+                : undefined,
+            providerErrorPhase:
+              "providerErrorPhase" in result
+                ? result.providerErrorPhase
+                : undefined,
+            providerErrorCode:
+              "providerErrorCode" in result
+                ? result.providerErrorCode
+                : undefined,
+            providerErrorName:
+              "providerErrorName" in result
+                ? result.providerErrorName
+                : undefined,
+          },
+        },
+        { status: result.status },
+      );
+    }
     return errorResponse(feature, result.message, result.status);
   }
   return jsonResponse({

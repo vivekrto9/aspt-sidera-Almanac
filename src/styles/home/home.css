@@ -128,7 +128,7 @@
     inset 0 0 0 15.1rem rgba(198, 171, 250, 0.07);
   opacity: 0.76;
   transform: translate(-50%, -50%);
-  animation: nocturne-zodiac-drift 180s linear infinite;
+  animation: almanac-zodiac-drift 180s linear infinite;
   pointer-events: none;
 }
 
@@ -262,7 +262,7 @@
   --sidera-button-hover-color: var(--color-on-dark-strong);
 }
 
-@keyframes nocturne-zodiac-drift {
+@keyframes almanac-zodiac-drift {
   to { transform: translate(-50%, -50%) rotate(360deg); }
 }
 

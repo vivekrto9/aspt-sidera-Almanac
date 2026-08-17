@@ -136,10 +136,10 @@ jobs:
           node scripts/write-worker-secrets-file.mjs
       - run: |
           echo "ASTROPAGES_DEPLOY_STAGE=d1_migrations" >> "$GITHUB_ENV"
-          pnpm exec wrangler d1 migrations apply sidera-nocturne-production-site --env production --remote --config .wrangler/generated/wrangler.production.jsonc
+          pnpm exec wrangler d1 migrations apply sidera-almanac-production-site --env production --remote --config .wrangler/generated/wrangler.production.jsonc
       - run: |
           echo "ASTROPAGES_DEPLOY_STAGE=worker_deploy" >> "$GITHUB_ENV"
-          pnpm exec wrangler deploy --env production --config .wrangler/generated/wrangler.production.jsonc --secrets-file "$RUNNER_TEMP/sidera-nocturne-worker-secrets.json"
+          pnpm exec wrangler deploy --env production --config .wrangler/generated/wrangler.production.jsonc --secrets-file "$RUNNER_TEMP/sidera-almanac-worker-secrets.json"
       - run: |
           echo "ASTROPAGES_DEPLOY_STAGE=prepare_emdash" >> "$GITHUB_ENV"
           node scripts/prepare-deployed-emdash.mjs production

@@ -21,8 +21,13 @@ const opaque = (prefix, value) => `${prefix}_${crypto.createHash('sha256').updat
 const sql = (value) => `'${String(value ?? '').replaceAll("'", "''")}'`;
 const nullable = (value) => value == null ? 'NULL' : sql(value);
 const sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
+const wranglerBinary = path.resolve(
+  'node_modules',
+  '.bin',
+  process.platform === 'win32' ? 'wrangler.cmd' : 'wrangler',
+);
 const runOnce = (args) => new Promise((resolve, reject) => {
-  const child = spawn('pnpm', ['exec', 'wrangler', ...args], { stdio: 'inherit' });
+  const child = spawn(wranglerBinary, args, { stdio: 'inherit' });
   child.on('error', reject);
   child.on('close', (code) => code === 0 ? resolve() : reject(new Error(`wrangler exited with ${code}`)));
 });
@@ -64,7 +69,7 @@ for (const asset of records) {
   statements.push(
     `INSERT INTO media (id, filename, mime_type, size, alt, caption, storage_key, content_hash, status) VALUES (${sql(asset.assetId)}, ${sql(asset.fileName)}, ${sql(asset.mimeType)}, ${asset.sizeBytes}, NULL, NULL, ${sql(asset.storageKey)}, ${sql(asset.contentHash)}, 'ready') ON CONFLICT(id) DO UPDATE SET filename=excluded.filename, mime_type=excluded.mime_type, size=excluded.size, storage_key=excluded.storage_key, content_hash=excluded.content_hash, status='ready';`,
     `INSERT INTO ap_asset_records (asset_id, current_revision_id, display_name, origin, visibility, protected, replaceable, created_at, updated_at) VALUES (${sql(asset.assetId)}, ${sql(asset.revisionId)}, ${sql(asset.displayName)}, 'template', ${sql(asset.visibility ?? 'customer')}, ${asset.protected === false ? 0 : 1}, ${asset.replaceable === false ? 0 : 1}, ${sql(now)}, ${sql(now)}) ON CONFLICT(asset_id) DO UPDATE SET current_revision_id=excluded.current_revision_id, display_name=excluded.display_name, visibility=excluded.visibility, protected=excluded.protected, replaceable=excluded.replaceable, deleted_at=NULL, updated_at=excluded.updated_at;`,
-    `INSERT INTO ap_asset_revisions (revision_id, asset_id, revision_number, storage_key, content_hash, etag, file_name, mime_type, size_bytes, status, scan_status, created_at) VALUES (${sql(asset.revisionId)}, ${sql(asset.assetId)}, 1, ${sql(asset.storageKey)}, ${sql(asset.contentHash)}, ${sql(asset.contentHash)}, ${sql(asset.fileName)}, ${sql(asset.mimeType)}, ${asset.sizeBytes}, 'ready', 'clean', ${sql(now)}) ON CONFLICT(revision_id) DO UPDATE SET status='ready', scan_status='clean';`,
+    `INSERT INTO ap_asset_revisions (revision_id, asset_id, revision_number, storage_key, content_hash, etag, file_name, mime_type, size_bytes, status, scan_status, created_at) VALUES (${sql(asset.revisionId)}, ${sql(asset.assetId)}, COALESCE((SELECT MAX(revision_number) + 1 FROM ap_asset_revisions WHERE asset_id = ${sql(asset.assetId)}), 1), ${sql(asset.storageKey)}, ${sql(asset.contentHash)}, ${sql(asset.contentHash)}, ${sql(asset.fileName)}, ${sql(asset.mimeType)}, ${asset.sizeBytes}, 'ready', 'clean', ${sql(now)}) ON CONFLICT(revision_id) DO UPDATE SET status='ready', scan_status='clean';`,
   );
   if (asset.alias) statements.push(`INSERT INTO ap_asset_aliases (alias, asset_id, origin, protected, created_at, updated_at) VALUES (${sql(asset.alias)}, ${sql(asset.assetId)}, 'template', 1, ${sql(now)}, ${sql(now)}) ON CONFLICT(alias) DO UPDATE SET asset_id=excluded.asset_id, protected=1, updated_at=excluded.updated_at;`);
 }

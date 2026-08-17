@@ -236,6 +236,11 @@ const initialVariant = (product: CheckoutProduct) =>
     totalNodes.forEach((node) => { node.textContent = money.format(totals.grandTotal); });
 
     const form = root.querySelector<HTMLFormElement>("#shop-checkout-form");
+    const resetShopCheckoutSubmit = () => {
+      const submit = root.querySelector<HTMLButtonElement>("[data-shop-place-order]");
+      if (submit) setActionLoading(submit, false);
+    };
+    resetShopCheckoutSubmit();
     form?.addEventListener("submit", async (event) => {
       event.preventDefault();
       if (!form.checkValidity()) {
@@ -292,6 +297,18 @@ const initialVariant = (product: CheckoutProduct) =>
   const initializeShopCheckouts = () => document
     .querySelectorAll<HTMLElement>("[data-shop-checkout]")
     .forEach(initializeShopCheckout);
+  const restoreShopCheckoutActionState = () => document
+    .querySelectorAll<HTMLElement>("[data-shop-checkout]")
+    .forEach((checkoutRoot) => {
+      const submit = checkoutRoot.querySelector<HTMLButtonElement>("[data-shop-place-order]");
+      if (submit) setActionLoading(submit, false);
+    });
   initializeShopCheckouts();
+  window.addEventListener("pageshow", restoreShopCheckoutActionState);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") {
+      restoreShopCheckoutActionState();
+    }
+  });
   document.addEventListener("astro:page-load", initializeShopCheckouts);
 </script>

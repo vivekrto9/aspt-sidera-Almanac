@@ -1714,6 +1714,12 @@ export const getAstrologerChatHistoryDefaults = (
     live_secure_private: live.securePrivate,
     live_back_to_astrologers: live.backToAstrologers,
     live_load_more: live.loadMore,
+    live_delete_session_label: live.deleteSessionLabel,
+    live_delete_session_title: live.deleteSessionTitle,
+    live_delete_session_description: live.deleteSessionDescription,
+    live_delete_session_confirm: live.deleteSessionConfirm,
+    live_delete_session_deleting: live.deleteSessionDeleting,
+    live_delete_session_cancel: live.deleteSessionCancel,
   };
 };
 

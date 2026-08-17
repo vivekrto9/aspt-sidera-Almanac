@@ -101,7 +101,7 @@ test("Home Birth Chart creates a reading and redirects directly to its result", 
   assert.doesNotMatch(source, /localStorage|sessionStorage/);
 });
 
-test("Home Birth Chart preserves the Meridian workbench and responsive safeguards", async () => {
+test("Home Birth Chart preserves the Almanac workbench and responsive safeguards", async () => {
   const styles = await readFile(stylesPath, "utf8");
 
   assert.match(styles, /padding: 6\.25rem 2\.125rem/);

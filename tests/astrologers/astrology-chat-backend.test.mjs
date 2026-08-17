@@ -184,6 +184,56 @@ test("wallet chat is owned, idempotent, and debits only after a provider answer"
   DB.sqlite.close();
 });
 
+test("chat session deletion is owner-scoped and removes its messages", async () => {
+  const DB = createD1();
+  seedCustomer(DB.sqlite, "account_delete");
+  seedCustomer(DB.sqlite, "account_delete_other");
+  const chat = await import("../../src/server/aggregator/astrology-chat.ts");
+  const env = { DB, ASTROPAGES_PROJECT_ID: "chat-delete-test" };
+  const created = await chat.createAstrologyChatSession({
+    env,
+    accountId: "account_delete",
+    profileId: "profile_account_delete",
+    astrologerSlug: "mara-ellison",
+    requestKey: "chat-delete-session",
+  });
+  assert.equal(created.ok, true);
+  DB.sqlite.prepare(`INSERT INTO ap_wallet_chat_messages (
+    id, session_id, role, message, cost_cents, created_at
+  ) VALUES ('delete_message', ?, 'assistant', 'Temporary reply', 0, CURRENT_TIMESTAMP)`)
+    .run(created.session.id);
+
+  const denied = await chat.deleteAstrologyChatSession(
+    env,
+    "account_delete_other",
+    created.session.id,
+  );
+  assert.equal(denied.ok, false);
+  assert.equal(
+    DB.sqlite.prepare("SELECT COUNT(*) AS total FROM ap_wallet_chat_messages WHERE session_id = ?")
+      .get(created.session.id).total,
+    1,
+  );
+
+  const deleted = await chat.deleteAstrologyChatSession(
+    env,
+    "account_delete",
+    created.session.id,
+  );
+  assert.equal(deleted.ok, true);
+  assert.equal(
+    DB.sqlite.prepare("SELECT COUNT(*) AS total FROM ap_wallet_chat_sessions WHERE id = ?")
+      .get(created.session.id).total,
+    0,
+  );
+  assert.equal(
+    DB.sqlite.prepare("SELECT COUNT(*) AS total FROM ap_wallet_chat_messages WHERE session_id = ?")
+      .get(created.session.id).total,
+    0,
+  );
+  DB.sqlite.close();
+});
+
 test("insufficient balance and provider failure never charge or persist a fake transcript", async () => {
   const DB = createD1();
   seedCustomer(DB.sqlite, "account_low", 100);
@@ -267,6 +317,174 @@ test("greeting-only messages are free and keep wallet balance unchanged", async 
   DB.sqlite.close();
 });
 
+test("legacy ASTROLOGYAPI_CHAT_BASE_URL value falls back to json-chat host", async () => {
+  const chatProvider = await import("../../src/server/aggregator/astrology-chat-provider.ts");
+  const profile = {
+    id: "profile_legacy",
+    accountId: "acct_legacy",
+    profileName: "Legacy User",
+    birthDate: "1990-01-01",
+    birthTime: "10:30",
+    birthPlace: "Delhi, India",
+    placeLat: 28.6139,
+    placeLon: 77.209,
+    timezoneOffset: "UTC+05:30",
+  };
+
+  let endpoint;
+  const result = await chatProvider.callAstrologyChatProvider({
+    env: {
+      X_ASTROLOGYAPI_KEY: "test-key",
+      ASTROLOGYAPI_CHAT_BASE_URL: "https://api.astrologyapi.com",
+    },
+    profile,
+    sessionId: "session_legacy",
+    message: "Hello",
+    fetcher: (url) => {
+      endpoint = String(url);
+      return new Response(JSON.stringify({ status: true, answer: "ok" }));
+    },
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(/json-chat\.astrologyapi\.com/.test(endpoint), true);
+});
+
+test("chat provider can fallback to legacy ASTROLOGY_API_KEY", async () => {
+  const chatProvider = await import("../../src/server/aggregator/astrology-chat-provider.ts");
+  const profile = {
+    id: "profile_legacy_key",
+    accountId: "acct_legacy_key",
+    profileName: "Legacy Key User",
+    birthDate: "1990-01-01",
+    birthTime: "10:30",
+    birthPlace: "Delhi, India",
+    placeLat: 28.6139,
+    placeLon: 77.209,
+    timezoneOffset: "UTC+05:30",
+  };
+
+  const result = await chatProvider.callAstrologyChatProvider({
+    env: {
+      ASTROLOGY_API_KEY: "legacy-key",
+      ASTROLOGYAPI_CHAT_BASE_URL: "https://provider.example",
+    },
+    profile,
+    sessionId: "session_legacy_key",
+    message: "Hello",
+    fetcher: () => new Response(JSON.stringify({ status: true, answer: "ok" })),
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.answer, "ok");
+});
+
+test("chat provider prefers ASTROLOGY_API_KEY when X_ASTROLOGYAPI_KEY conflicts", async () => {
+  const chatProvider = await import("../../src/server/aggregator/astrology-chat-provider.ts");
+  const profile = {
+    id: "profile_key_precedence",
+    accountId: "acct_key_precedence",
+    profileName: "Key Precedence User",
+    birthDate: "1990-01-01",
+    birthTime: "10:30",
+    birthPlace: "Delhi, India",
+    placeLat: 28.6139,
+    placeLon: 77.209,
+    timezoneOffset: "UTC+05:30",
+  };
+  let authorization = "";
+
+  const result = await chatProvider.callAstrologyChatProvider({
+    env: {
+      ASTROLOGY_API_KEY: "canonical-key",
+      X_ASTROLOGYAPI_KEY: "stale-key",
+      ASTROLOGYAPI_CHAT_BASE_URL: "https://provider.example",
+    },
+    profile,
+    sessionId: "session_key_precedence",
+    message: "Hello",
+    fetcher: (_url, options) => {
+      authorization = options.headers["x-astrologyapi-key"];
+      return new Response(JSON.stringify({ status: true, answer: "ok" }));
+    },
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(authorization, "canonical-key");
+});
+
+test("chat provider reports safe transport diagnostics when fetch throws", async () => {
+  const chatProvider = await import("../../src/server/aggregator/astrology-chat-provider.ts");
+  const profile = {
+    id: "profile_transport_error",
+    accountId: "acct_transport_error",
+    profileName: "Transport Error User",
+    birthDate: "1990-01-01",
+    birthTime: "10:30",
+    birthPlace: "Delhi, India",
+    placeLat: 28.6139,
+    placeLon: 77.209,
+    timezoneOffset: "UTC+05:30",
+  };
+  const transportError = new TypeError("fetch failed", {
+    cause: Object.assign(new Error("socket closed"), { code: "ECONNRESET" }),
+  });
+
+  const result = await chatProvider.callAstrologyChatProvider({
+    env: {
+      ASTROLOGY_API_KEY: "canonical-key",
+      ASTROLOGYAPI_CHAT_BASE_URL: "https://provider.example",
+    },
+    profile,
+    sessionId: "session_transport_error",
+    message: "Hello",
+    fetcher: async () => {
+      throw transportError;
+    },
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.providerErrorPhase, "request");
+  assert.equal(result.providerErrorCode, "ECONNRESET");
+  assert.equal(result.providerErrorName, "TypeError");
+});
+
+test("chat provider reads JSON directly without materializing the response as text", async () => {
+  const chatProvider = await import("../../src/server/aggregator/astrology-chat-provider.ts");
+  const profile = {
+    id: "profile_json_response",
+    accountId: "acct_json_response",
+    profileName: "JSON Response User",
+    birthDate: "1990-01-01",
+    birthTime: "10:30",
+    birthPlace: "Delhi, India",
+    placeLat: 28.6139,
+    placeLon: 77.209,
+    timezoneOffset: "UTC+05:30",
+  };
+
+  const result = await chatProvider.callAstrologyChatProvider({
+    env: {
+      ASTROLOGY_API_KEY: "canonical-key",
+      ASTROLOGYAPI_CHAT_BASE_URL: "https://provider.example",
+    },
+    profile,
+    sessionId: "session_json_response",
+    message: "Hello",
+    fetcher: async () => ({
+      ok: true,
+      status: 200,
+      json: async () => ({ success: true, response: "Working reply" }),
+      text: async () => {
+        throw new RangeError("response text cannot be materialized");
+      },
+    }),
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.answer, "Working reply");
+});
+
 test("compatibility chat requires two distinct owned profiles and sends both to the Western provider", async () => {
   const DB = createD1();
   seedCustomer(DB.sqlite, "account_match", 1000);
@@ -321,6 +539,8 @@ test("compatibility chat requires two distinct owned profiles and sends both to 
 test("chat routes and visible session UI enforce CSRF, wallet errors, and real API calls", () => {
   const picker = read("src/components/astrologers/shared/AstrologerProfilePicker.astro");
   const live = read("src/components/astrologers/sections/AstrologerLiveSession.astro");
+  const history = read("src/components/astrologers/shared/AstrologerChatHistory.astro");
+  const markdown = read("src/scripts/render-safe-markdown.ts");
   const sendRoute = read("src/pages/api/astro-chat/send-message.ts");
   const sessionRoute = read("src/pages/api/astro-chat/session/[sessionId].ts");
   assert.match(picker, /\/api\/astro-chat\/create-session/);
@@ -333,8 +553,20 @@ test("chat routes and visible session UI enforce CSRF, wallet errors, and real A
   assert.match(live, /\/api\/astro-chat\/send-message/);
   assert.match(live, /INSUFFICIENT_WALLET_BALANCE/);
   assert.match(live, /x-idempotency-key/);
+  assert.match(live, /renderSafeMarkdown/);
+  assert.match(live, /data-markdown-message/);
+  assert.match(history, /data-chat-session-delete/);
+  assert.match(history, /astrologer-chat-delete-session/);
+  assert.match(history, /method: "DELETE"/);
+  assert.match(history, /x-astropages-customer-csrf/);
+  assert.match(markdown, /createDocumentFragment/);
+  assert.match(markdown, /createElement\("strong"\)/);
+  assert.match(markdown, /createElement\(ordered \? "ol" : "ul"\)/);
+  assert.doesNotMatch(markdown, /innerHTML|insertAdjacentHTML/);
   assert.match(sendRoute, /requireCustomerCsrf/);
   assert.match(sendRoute, /status: 402/);
   assert.match(sessionRoute, /requireCustomerSession/);
   assert.match(sessionRoute, /requireCustomerCsrf/);
+  assert.match(sessionRoute, /export const DELETE/);
+  assert.match(sessionRoute, /deleteAstrologyChatSession/);
 });

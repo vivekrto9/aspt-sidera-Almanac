@@ -70,7 +70,7 @@ test("Home Shop keeps editorial copy editable and operational price dynamic", as
   }
 });
 
-test("Home Shop matches the Meridian measure and responsive surface", async () => {
+test("Home Shop matches the Almanac measure and responsive surface", async () => {
   const styles = await readFile(stylesPath, "utf8");
 
   assert.match(styles, /padding: 6\.25rem 2\.125rem/);

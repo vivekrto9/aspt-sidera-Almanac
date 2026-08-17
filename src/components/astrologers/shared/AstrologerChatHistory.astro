@@ -2,6 +2,8 @@
 import type { BrowseAstrologer } from "../../../data/astrologers/browse.ts";
 import type { AstrologerLiveSessionCopy } from "../../../data/locale/astrologers/sections/live-session.ts";
 import Avatar from "../../shared/Avatar.astro";
+import Button from "../../shared/Button.astro";
+import Dialog from "../../shared/Dialog.astro";
 import IconButton from "../../shared/IconButton.astro";
 import "../../../styles/astrologers/shared/chat-history.css";
 
@@ -29,6 +31,7 @@ type Props = {
   sessions: ChatSessionItem[];
   transactions: WalletTransaction[];
   activeSessionId: string;
+  csrfToken: string;
   activeProfileLabel: string;
   locale: string;
   newChatHref: string;
@@ -47,6 +50,7 @@ const {
   sessions,
   transactions,
   activeSessionId,
+  csrfToken,
   activeProfileLabel,
   locale,
   newChatHref,
@@ -83,9 +87,25 @@ const initialsFor = (value: string) =>
     .join("") || "S";
 const chatHref = (sessionId: string) =>
   `/chat/${encodeURIComponent(sessionId)}${locale === "en" ? "" : `?locale=${encodeURIComponent(locale)}`}`;
+const deleteCopy = {
+  label: copy.deleteSessionLabel || "Delete chat session",
+  title: copy.deleteSessionTitle || "Delete this chat?",
+  description:
+    copy.deleteSessionDescription ||
+    "This permanently deletes the session and its message history. This action cannot be undone.",
+  confirm: copy.deleteSessionConfirm || "Delete session",
+  deleting: copy.deleteSessionDeleting || "Deleting session",
+  cancel: copy.deleteSessionCancel || "Keep session",
+};
 ---
 
-<aside id="astrologer-chat-history" class="astrologer-chat-history" data-chat-history-panel>
+<aside
+  id="astrologer-chat-history"
+  class="astrologer-chat-history"
+  data-chat-history-panel
+  data-csrf-token={csrfToken}
+  data-new-chat-href={newChatHref}
+>
   <div class="astrologer-chat-history__head">
     <a
       class="astrologer-chat-history__back"
@@ -138,6 +158,7 @@ const chatHref = (sessionId: string) =>
     data-chat-sidebar-panel="chats"
     data-chat-sidebar-pager
     data-page-size={pageSize}
+    data-empty-message={copy.noHistory}
   >
     {
       sessions.length ? sessions.map((session) => {
@@ -146,7 +167,7 @@ const chatHref = (sessionId: string) =>
         const context = profileLabel(session) || name;
         const title = session.lastMessage || `${copy.chatsLabel} · ${name}`;
         return (
-          <article class:list={["astrologer-chat-history__item", active && "is-active"]} data-chat-history-session={session.id} data-chat-paginated-item>
+          <article class:list={["astrologer-chat-history__item", active && "is-active"]} data-chat-history-session={session.id} data-chat-history-active={active ? "true" : "false"} data-chat-paginated-item>
             <a href={chatHref(session.id)} aria-current={active ? "page" : undefined}>
               <span class="astrologer-chat-history__initials" aria-hidden="true">{initialsFor(context)}</span>
               <span class="astrologer-chat-history__content">
@@ -154,6 +175,20 @@ const chatHref = (sessionId: string) =>
                 <time datetime={session.updatedAt} data-chat-history-time>{formatDate(session.updatedAt)}</time>
               </span>
             </a>
+            <IconButton
+              type="button"
+              variant="danger"
+              shape="circle"
+              size="compact"
+              ariaLabel={deleteCopy.label}
+              class="astrologer-chat-history__delete"
+              data-chat-session-delete={session.id}
+              data-dialog-open="astrologer-chat-delete-session"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5" />
+              </svg>
+            </IconButton>
           </article>
         );
       }) : (
@@ -205,24 +240,59 @@ const chatHref = (sessionId: string) =>
 
 <button class="astrologer-chat-history__backdrop" type="button" aria-label={copy.closeHistory} data-chat-history-close tabindex="-1"></button>
 
+<Dialog
+  id="astrologer-chat-delete-session"
+  eyebrow={copy.historyTitle}
+  title={deleteCopy.title}
+  description={deleteCopy.description}
+  closeLabel={deleteCopy.cancel}
+  width="compact"
+  class="astrologer-chat-history__delete-dialog"
+  eyebrowEditAttributes={editAttributes("live_history_title")}
+  titleEditAttributes={editAttributes("live_delete_session_title")}
+  descriptionEditAttributes={editAttributes("live_delete_session_description")}
+>
+  <p class="astrologer-chat-history__delete-error" data-chat-delete-error hidden></p>
+  <div slot="actions" class="sidera-dialog__actions">
+    <Button type="button" variant="outline" data-chat-delete-cancel editAttributes={editAttributes("live_delete_session_cancel")}>
+      {deleteCopy.cancel}
+    </Button>
+    <Button
+      type="button"
+      variant="danger"
+      loading={false}
+      loadingLabel={deleteCopy.deleting}
+      data-chat-delete-confirm
+      editAttributes={editAttributes("live_delete_session_confirm")}
+    >
+      {deleteCopy.confirm}
+    </Button>
+  </div>
+</Dialog>
+
 <script>
+  import { isActionLoading, setActionLoading } from "../../../scripts/action-loading.ts";
+
   const historyPanel = document.querySelector<HTMLElement>("[data-chat-history-panel]");
   if (historyPanel && historyPanel.dataset.tabsReady !== "true") {
     const tabs = historyPanel.querySelectorAll<HTMLButtonElement>("[data-chat-sidebar-tab]");
     const panels = historyPanel.querySelectorAll<HTMLElement>("[data-chat-sidebar-panel]");
     const refreshPager = (panel: HTMLElement) => {
       const size = Number(panel.dataset.pageSize || 10);
-      const items = Array.from(panel.querySelectorAll<HTMLElement>("[data-chat-paginated-item]"));
       const loadMore = panel.querySelector<HTMLButtonElement>("[data-chat-sidebar-load-more]");
-      let visible = Math.min(size, items.length);
+      let visible = size;
       const render = () => {
+        const items = Array.from(panel.querySelectorAll<HTMLElement>("[data-chat-paginated-item]"));
+        visible = Math.min(visible, items.length);
         items.forEach((item, index) => { item.hidden = index >= visible; });
         if (loadMore) loadMore.hidden = visible >= items.length;
       };
       loadMore?.addEventListener("click", () => {
+        const items = panel.querySelectorAll<HTMLElement>("[data-chat-paginated-item]");
         visible = Math.min(visible + size, items.length);
         render();
       });
+      panel.addEventListener("chat-history:changed", render);
       render();
     };
     panels.forEach(refreshPager);
@@ -236,5 +306,68 @@ const chatHref = (sessionId: string) =>
       panels.forEach((panel) => { panel.hidden = panel.dataset.chatSidebarPanel !== target; });
     }));
     historyPanel.dataset.tabsReady = "true";
+
+    const deleteDialog = document.querySelector<HTMLDialogElement>("#astrologer-chat-delete-session");
+    const deleteConfirm = deleteDialog?.querySelector<HTMLButtonElement>("[data-chat-delete-confirm]");
+    const deleteCancel = deleteDialog?.querySelector<HTMLButtonElement>("[data-chat-delete-cancel]");
+    const deleteError = deleteDialog?.querySelector<HTMLElement>("[data-chat-delete-error]");
+    const chatPanel = historyPanel.querySelector<HTMLElement>('[data-chat-sidebar-panel="chats"]');
+
+    historyPanel.querySelectorAll<HTMLButtonElement>("[data-chat-session-delete]").forEach((trigger) => {
+      trigger.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const row = trigger.closest<HTMLElement>("[data-chat-history-session]");
+        if (!deleteDialog || !row) return;
+        deleteDialog.dataset.sessionId = trigger.dataset.chatSessionDelete || "";
+        deleteDialog.dataset.activeSession = row.dataset.chatHistoryActive || "false";
+        if (deleteError) {
+          deleteError.textContent = "";
+          deleteError.hidden = true;
+        }
+      });
+    });
+
+    deleteCancel?.addEventListener("click", () => deleteDialog?.close("cancel"));
+    deleteConfirm?.addEventListener("click", async () => {
+      if (!deleteDialog || isActionLoading(deleteConfirm)) return;
+      const sessionId = deleteDialog.dataset.sessionId || "";
+      if (!sessionId) return;
+      setActionLoading(deleteConfirm, true, deleteConfirm.dataset.loadingLabel || "Deleting session");
+      if (deleteError) {
+        deleteError.textContent = "";
+        deleteError.hidden = true;
+      }
+      try {
+        const response = await fetch(`/api/astro-chat/session/${encodeURIComponent(sessionId)}`, {
+          method: "DELETE",
+          headers: {
+            "x-astropages-customer-csrf": historyPanel.dataset.csrfToken || "",
+          },
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(payload?.message || "Session could not be deleted.");
+        if (deleteDialog.dataset.activeSession === "true") {
+          window.location.assign(historyPanel.dataset.newChatHref || "/astrologers");
+          return;
+        }
+        historyPanel.querySelector<HTMLElement>(`[data-chat-history-session="${CSS.escape(sessionId)}"]`)?.remove();
+        if (chatPanel && !chatPanel.querySelector("[data-chat-history-session]")) {
+          const empty = document.createElement("p");
+          empty.className = "astrologer-chat-history__empty";
+          empty.textContent = chatPanel.dataset.emptyMessage || "No previous chats yet.";
+          chatPanel.prepend(empty);
+        }
+        chatPanel?.dispatchEvent(new Event("chat-history:changed"));
+        deleteDialog.close("deleted");
+      } catch (error) {
+        if (deleteError) {
+          deleteError.textContent = error instanceof Error ? error.message : "Session could not be deleted.";
+          deleteError.hidden = false;
+        }
+      } finally {
+        setActionLoading(deleteConfirm, false);
+      }
+    });
   }
 </script>

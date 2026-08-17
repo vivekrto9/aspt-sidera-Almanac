@@ -57,7 +57,7 @@ test("Home Hero keeps visible copy and edit bindings caller-owned", async () => 
   );
 });
 
-test("Home Hero preserves the Meridian centered field, wrapping proofs, and responsive safeguards", async () => {
+test("Home Hero preserves the Almanac centered field, wrapping proofs, and responsive safeguards", async () => {
   const styles = await readFile(stylesPath, "utf8");
 
   assert.match(styles, /inline-size: min\(100%, 72\.5rem\)/);

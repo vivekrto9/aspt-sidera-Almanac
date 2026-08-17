@@ -20,6 +20,7 @@ ASTROLOGY_API_BASE_URL=https://json.astrologyapi.com/v1
 ASTROLOGYAPI_USER_ID=replace-with-astrologyapi-user-id
 ASTROLOGYAPI_PASSWORD=replace-with-astrologyapi-password
 X_ASTROLOGYAPI_KEY=replace-with-astrologyapi-key
+ASTROLOGY_API_KEY=replace-with-astrologyapi-key
 ASTROLOGYAPI_CHAT_BASE_URL=https://json-chat.astrologyapi.com
 
 # Transit calculation engine.
@@ -41,7 +42,7 @@ CLOUDFLARE_SECRETS_STORE_ID=replace-with-optional-cloudflare-secret-store-id
 GH_REPOSITORY_VARIABLES_TOKEN=replace-with-github-token
 PREVIEW_SITE_D1_DATABASE_ID=replace-with-preview-d1-id
 PREVIEW_SITE_SESSION_KV_NAMESPACE_ID=replace-with-preview-kv-id
-PREVIEW_SITE_URL=https://aspt-sidera-nocturne-preview.example.workers.dev
+PREVIEW_SITE_URL=https://aspt-sidera-almanac-preview.example.workers.dev
 PRODUCTION_SITE_D1_DATABASE_ID=replace-with-production-d1-id
 PRODUCTION_SITE_SESSION_KV_NAMESPACE_ID=replace-with-production-kv-id
-PRODUCTION_SITE_URL=https://aspt-sidera-nocturne-production.example.workers.dev
+PRODUCTION_SITE_URL=https://aspt-sidera-almanac-production.example.workers.dev

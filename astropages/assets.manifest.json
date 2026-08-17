@@ -195,7 +195,7 @@
       "alias": "logo",
       "displayName": "Logo",
       "mimeType": "image/svg+xml",
-      "contentHash": "sha256:ec7ee3cb5070ff7d0e6e61e06b8754db3445d4ac770024250e6eaffbb8c94bed",
+      "contentHash": "sha256:40acb4541db19bed6539374479890609db1e3e6e7bd657c7503c95d1c8375e8a",
       "visibility": "customer",
       "protected": true,
       "replaceable": true

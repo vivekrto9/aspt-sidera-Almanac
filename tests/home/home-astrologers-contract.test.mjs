@@ -67,7 +67,7 @@ test("Home Astrologers forwards exact visible-copy edit identities", async () =>
   assert.match(source, /showBrowseAction \? \(/);
 });
 
-test("Home Astrologers matches the Meridian measure and responsive surface", async () => {
+test("Home Astrologers matches the Almanac measure and responsive surface", async () => {
   const styles = await readFile(stylesPath, "utf8");
 
   assert.match(styles, /padding: 6\.25rem 2\.125rem/);

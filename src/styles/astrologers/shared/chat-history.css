@@ -205,13 +205,50 @@
 
 .astrologer-chat-history__item > a {
   min-inline-size: 0;
-  padding: 0.6875rem;
+  padding: 0.6875rem 3rem 0.6875rem 0.6875rem;
   display: grid;
   grid-template-columns: 2.375rem minmax(0, 1fr);
   align-items: center;
   gap: 0.625rem;
   color: var(--color-text);
   text-decoration: none;
+}
+
+.astrologer-chat-history__delete {
+  position: absolute;
+  inset: 50% 0.625rem auto auto;
+  z-index: 2;
+  transform: translateY(-50%);
+  opacity: 0.72;
+}
+
+.astrologer-chat-history__delete:hover,
+.astrologer-chat-history__delete:focus-visible {
+  opacity: 1;
+}
+
+.astrologer-chat-history__delete svg {
+  inline-size: 0.9rem;
+  block-size: 0.9rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.astrologer-chat-history__delete-error {
+  margin: 0;
+  border-radius: 0.625rem;
+  background: rgba(var(--color-primary-rgb), 0.12);
+  padding: 0.75rem;
+  color: var(--color-primary);
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.astrologer-chat-history__delete-error[hidden] {
+  display: none;
 }
 
 .astrologer-chat-history__initials {

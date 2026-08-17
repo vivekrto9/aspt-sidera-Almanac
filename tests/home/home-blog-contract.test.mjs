@@ -59,7 +59,7 @@ test("Home Blog forwards exact visible-copy edit identities", async () => {
   }
 });
 
-test("Home Blog preserves the Meridian editorial measure", async () => {
+test("Home Blog preserves the Almanac editorial measure", async () => {
   const styles = await readFile(stylesPath, "utf8");
 
   assert.match(styles, /padding: 6\.25rem 2\.125rem/);

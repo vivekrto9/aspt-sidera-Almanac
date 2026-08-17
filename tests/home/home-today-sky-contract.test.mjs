@@ -69,7 +69,7 @@ test("Home Today's Sky keeps copy, prepared positions, and exact edit bindings c
   assert.doesNotMatch(source, /The sky|Geocentric|Open today's sky|9° Cancer/);
 });
 
-test("Home Today's Sky preserves Meridian rhythm and responsive containment", async () => {
+test("Home Today's Sky preserves Almanac rhythm and responsive containment", async () => {
   const styles = await readFile(stylesPath, "utf8");
 
   assert.match(styles, /padding: 5\.5rem 2\.125rem/);
