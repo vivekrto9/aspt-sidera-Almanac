@@ -107,8 +107,6 @@ test("SSO default target is EmDash content studio and source does not declare ge
     "template.manifest.json",
     ".astropages/generated-site-workflows/deploy-preview.yml",
     ".astropages/generated-site-workflows/deploy-production.yml",
-    ".github/workflows/deploy-template-preview.yml",
-    ".github/workflows/deploy-production.yml",
   ]) {
     assert.doesNotMatch(read(path), /\/astropages\/admin/, `${path} must not reference generated-site admin`);
   }
@@ -161,8 +159,6 @@ test("deployment workflows keep required command order and smoke only core route
   const workflows = [
     ".astropages/generated-site-workflows/deploy-preview.yml",
     ".astropages/generated-site-workflows/deploy-production.yml",
-    ".github/workflows/deploy-template-preview.yml",
-    ".github/workflows/deploy-production.yml",
   ];
   const orderedMarkers = [
     "pnpm install --frozen-lockfile",

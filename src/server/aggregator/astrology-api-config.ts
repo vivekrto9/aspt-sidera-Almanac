@@ -16,13 +16,8 @@ const processValue = (name: string) =>
 const resolveOptionalSecret = async (env: RuntimeEnv, name: string) =>
   (await resolveSecretBinding(env, name)) || processValue(name);
 
-const resolveLegacyAstrologyApiKey = (env: RuntimeEnv) =>
-  resolveSecretBinding(env, "ASTROLOGY_API_KEY") ||
-  Promise.resolve(processValue("ASTROLOGY_API_KEY"));
-
 export const resolveAstrologyApiKey = async (env: RuntimeEnv) => {
   const key =
-    (await resolveLegacyAstrologyApiKey(env)) ||
     (await resolveSecretBinding(env, astrologyApiRuntimeNames.apiKey)) ||
     processValue(astrologyApiRuntimeNames.apiKey);
   if (!key) throw new Error("AstrologyAPI token is not configured.");

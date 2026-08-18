@@ -20,7 +20,6 @@ ASTROLOGY_API_BASE_URL=https://json.astrologyapi.com/v1
 ASTROLOGYAPI_USER_ID=replace-with-astrologyapi-user-id
 ASTROLOGYAPI_PASSWORD=replace-with-astrologyapi-password
 X_ASTROLOGYAPI_KEY=replace-with-astrologyapi-key
-ASTROLOGY_API_KEY=replace-with-astrologyapi-key
 ASTROLOGYAPI_CHAT_BASE_URL=https://json-chat.astrologyapi.com
 
 # Transit calculation engine.

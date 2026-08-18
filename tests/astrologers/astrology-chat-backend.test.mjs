@@ -350,7 +350,7 @@ test("legacy ASTROLOGYAPI_CHAT_BASE_URL value falls back to json-chat host", asy
   assert.equal(/json-chat\.astrologyapi\.com/.test(endpoint), true);
 });
 
-test("chat provider can fallback to legacy ASTROLOGY_API_KEY", async () => {
+test("chat provider authenticates with X_ASTROLOGYAPI_KEY", async () => {
   const chatProvider = await import("../../src/server/aggregator/astrology-chat-provider.ts");
   const profile = {
     id: "profile_legacy_key",
@@ -366,7 +366,7 @@ test("chat provider can fallback to legacy ASTROLOGY_API_KEY", async () => {
 
   const result = await chatProvider.callAstrologyChatProvider({
     env: {
-      ASTROLOGY_API_KEY: "legacy-key",
+      X_ASTROLOGYAPI_KEY: "chat-key",
       ASTROLOGYAPI_CHAT_BASE_URL: "https://provider.example",
     },
     profile,
@@ -379,7 +379,7 @@ test("chat provider can fallback to legacy ASTROLOGY_API_KEY", async () => {
   assert.equal(result.answer, "ok");
 });
 
-test("chat provider prefers ASTROLOGY_API_KEY when X_ASTROLOGYAPI_KEY conflicts", async () => {
+test("chat provider forwards X_ASTROLOGYAPI_KEY header to provider", async () => {
   const chatProvider = await import("../../src/server/aggregator/astrology-chat-provider.ts");
   const profile = {
     id: "profile_key_precedence",
@@ -396,8 +396,7 @@ test("chat provider prefers ASTROLOGY_API_KEY when X_ASTROLOGYAPI_KEY conflicts"
 
   const result = await chatProvider.callAstrologyChatProvider({
     env: {
-      ASTROLOGY_API_KEY: "canonical-key",
-      X_ASTROLOGYAPI_KEY: "stale-key",
+      X_ASTROLOGYAPI_KEY: "canonical-key",
       ASTROLOGYAPI_CHAT_BASE_URL: "https://provider.example",
     },
     profile,
@@ -432,7 +431,7 @@ test("chat provider reports safe transport diagnostics when fetch throws", async
 
   const result = await chatProvider.callAstrologyChatProvider({
     env: {
-      ASTROLOGY_API_KEY: "canonical-key",
+      X_ASTROLOGYAPI_KEY: "canonical-key",
       ASTROLOGYAPI_CHAT_BASE_URL: "https://provider.example",
     },
     profile,
@@ -465,7 +464,7 @@ test("chat provider reads JSON directly without materializing the response as te
 
   const result = await chatProvider.callAstrologyChatProvider({
     env: {
-      ASTROLOGY_API_KEY: "canonical-key",
+      X_ASTROLOGYAPI_KEY: "canonical-key",
       ASTROLOGYAPI_CHAT_BASE_URL: "https://provider.example",
     },
     profile,

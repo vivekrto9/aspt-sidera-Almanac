@@ -29,8 +29,9 @@
   "cloudflare": {
     "runtimeContractStatus": "defined",
     "wranglerConfig": "wrangler.jsonc",
-    "environments": {
-      "preview": {
+    "environments": [
+      {
+        "name": "preview",
         "workerName": "sidera-almanac-preview",
         "d1DatabaseName": "sidera-almanac-preview-site",
         "r2BucketName": "sidera-almanac-preview-media",
@@ -39,7 +40,8 @@
         "d1DatabaseIdVariable": "PREVIEW_SITE_D1_DATABASE_ID",
         "sessionKvNamespaceIdVariable": "PREVIEW_SITE_SESSION_KV_NAMESPACE_ID"
       },
-      "production": {
+      {
+        "name": "production",
         "workerName": "sidera-almanac-production",
         "d1DatabaseName": "sidera-almanac-production-site",
         "r2BucketName": "sidera-almanac-production-media",
@@ -48,7 +50,7 @@
         "d1DatabaseIdVariable": "PRODUCTION_SITE_D1_DATABASE_ID",
         "sessionKvNamespaceIdVariable": "PRODUCTION_SITE_SESSION_KV_NAMESPACE_ID"
       }
-    },
+    ],
     "bindings": [
       {
         "name": "DB",
