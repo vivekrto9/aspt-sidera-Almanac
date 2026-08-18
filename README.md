@@ -68,6 +68,29 @@ Generated-site Worker deploys use only:
 
 Template-source preview/production workflows may still use Builder MCP template secrets for template release bootstrapping.
 
+## Release Checklist
+
+Template CI and deployments are generated centrally by the signed AstroPages
+Control Plane extension. This repository intentionally has no checked-in
+`.woodpecker.yml` and no GitHub template deployment workflows.
+
+- Pull requests and `develop` run only in DEV Woodpecker. A successful current
+  `develop` push may be explicitly deployed to the DEV Cloudflare account with
+  target `preview`.
+- `main` runs only in PROD Woodpecker. A successful current `main` push may be
+  explicitly deployed to the PROD Cloudflare account with target `production`.
+- Do not start template deployments with Woodpecker's manual pipeline action.
+  Use Deploy on the successful current default-branch CI pipeline.
+- Environment credentials remain encrypted repository secrets in the
+  corresponding Woodpecker system.
+- `.github/workflows/ci.yml` remains secretless safety CI only.
+
+1. Commit and push the reviewed template change to `develop`.
+2. Require DEV `template_ci`, then explicitly deploy to `preview`.
+3. Promote `develop` to `main` through an approved pull request.
+4. Require PROD `template_ci`, then explicitly deploy to `production`.
+5. Verify the exact release SHA and semantic version in AstroPages Admin.
+
 ## Commands
 
 ```sh

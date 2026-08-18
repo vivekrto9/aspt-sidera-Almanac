@@ -32,7 +32,7 @@ export const detectWorkflowMode = (root = defaultRoot) => {
   const hasInstalledPreview = exists(root, workflowPaths.installedPreview);
   const hasTemplatePreview = exists(root, workflowPaths.templatePreview);
 
-  if (hasGeneratedPreviewSeed && !hasInstalledPreview && hasTemplatePreview) {
+  if (hasGeneratedPreviewSeed && !hasInstalledPreview && !hasTemplatePreview) {
     return "template-source";
   }
 
@@ -226,8 +226,6 @@ export const assertDeploymentWorkflowContract = (root = defaultRoot) => {
   if (mode === "template-source") {
     for (const path of [
       workflowPaths.ci,
-      workflowPaths.templatePreview,
-      workflowPaths.templateProduction,
       workflowPaths.generatedPreviewSeed,
       workflowPaths.generatedProductionSeed,
     ]) {
@@ -235,13 +233,12 @@ export const assertDeploymentWorkflowContract = (root = defaultRoot) => {
     }
     assertPnpmSetup(root, [
       workflowPaths.ci,
-      workflowPaths.templatePreview,
-      workflowPaths.templateProduction,
       workflowPaths.generatedPreviewSeed,
       workflowPaths.generatedProductionSeed,
     ]);
-    assertTemplateWorkflowOrder(root);
-    assertTemplateSmokes(root);
+    assert.equal(exists(root, workflowPaths.templatePreview), false);
+    assert.equal(exists(root, workflowPaths.templateProduction), false);
+    assert.equal(exists(root, ".woodpecker.yml"), false);
     assertGeneratedWorkflowBasics(root, [
       workflowPaths.generatedPreviewSeed,
       workflowPaths.generatedProductionSeed,

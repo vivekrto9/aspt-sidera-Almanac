@@ -197,18 +197,33 @@
   },
   "workflows": {
     "template": {
-      "ci": ".github/workflows/ci.yml",
-      "preview": ".github/workflows/deploy-template-preview.yml",
-      "production": ".github/workflows/deploy-production.yml"
+      "provider": "woodpecker",
+      "configurationSource": "signed-control-plane-extension",
+      "entrypoint": "pnpm run astropages:pipeline",
+      "purposes": {
+        "ci": "template_ci",
+        "preview": "template_preview",
+        "production": "template_production"
+      },
+      "githubSafetyCi": ".github/workflows/ci.yml",
+      "catalogScreenshots": "admin-managed"
     },
     "generatedSite": {
       "previewSeed": ".astropages/generated-site-workflows/deploy-preview.yml",
       "previewInstalledPath": ".github/workflows/deploy-preview.yml",
+      "previewTrigger": "control-plane-workflow-dispatch",
+      "previewCallback": {
+        "statusRoute": "/callback/preview-deployments/:previewDeploymentId/status",
+        "auth": "service-bearer",
+        "urlSource": "ASTROPAGES_CONTROL_PLANE_CALLBACK_BASE_URL"
+      },
       "productionSeed": ".astropages/generated-site-workflows/deploy-production.yml",
       "productionInstalledPath": ".github/workflows/deploy-production.yml",
-      "statusCallbacks": {
-        "preview": "/callback/preview-deployments/{previewDeploymentId}/status",
-        "production": "/callback/production-deployments/{productionDeploymentId}/status"
+      "productionTrigger": "control-plane-workflow-dispatch",
+      "productionCallback": {
+        "statusRoute": "/callback/production-deployments/:productionDeploymentId/status",
+        "auth": "service-bearer",
+        "urlSource": "ASTROPAGES_CONTROL_PLANE_CALLBACK_BASE_URL"
       }
     }
   },
