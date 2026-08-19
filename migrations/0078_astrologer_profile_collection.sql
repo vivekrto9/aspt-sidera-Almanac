@@ -1,8 +1,6 @@
 -- Move the existing profile field family out of the primary Astrologers table.
 -- This keeps both collections below D1's bounded column limit while preserving
 -- every locale row, publication state, and draft/live revision reference.
-PRAGMA foreign_keys = OFF;
-BEGIN IMMEDIATE;
 
 CREATE TABLE IF NOT EXISTS ec_site_astrologer_profiles (
   id TEXT PRIMARY KEY,
@@ -265,6 +263,3 @@ FROM ec_site_astrologers;
 
 DROP TABLE ec_site_astrologers;
 ALTER TABLE ec_site_astrologers_compact RENAME TO ec_site_astrologers;
-
-COMMIT;
-PRAGMA foreign_keys = ON;
