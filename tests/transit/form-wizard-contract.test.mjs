@@ -166,8 +166,6 @@ test("Transit form fields have executable forward migrations", async () => {
   sqlite.exec(baseMigration);
   sqlite.exec(chartPickerMigration);
   sqlite.exec(`
-    ALTER TABLE ec_site_transit ADD COLUMN live_revision_id TEXT;
-    ALTER TABLE ec_site_transit ADD COLUMN draft_revision_id TEXT;
     CREATE TABLE revisions (
       id TEXT PRIMARY KEY,
       collection TEXT NOT NULL,
