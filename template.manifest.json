@@ -2,6 +2,11 @@
   "templateKey": "sidera-almanac",
   "displayName": "Sidera Almanac",
   "stage": "starter-template",
+  "catalogPreviewUrl": "https://sidera-almanac-preview.alok-prasad.workers.dev",
+  "repo": {
+    "url": "https://github.com/vivekrto9/aspt-sidera-Almanac.git",
+    "commitSha": "RESOLVED_AT_TEMPLATE_REGISTRATION"
+  },
   "runtime": {
     "type": "official-emdash-astro-cloudflare",
     "scaffold": {
