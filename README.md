@@ -2,7 +2,7 @@
 
 `aspt-sidera-Almanac` is the Almanac Sidera theme built on AstroPages. It preserves the reusable Astro, Cloudflare, EmDash, authentication, lead, asset, and deployment infrastructure inherited from the proven Sidera base.
 
-AstroPages Admin owns the semantic version, release notes, and changelog for every released template commit.
+AstroPages Admin owns the semantic version, release notes, and changelog for every released template commit
 
 ## Release Metadata
 
