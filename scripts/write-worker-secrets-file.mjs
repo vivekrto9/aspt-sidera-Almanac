@@ -16,6 +16,19 @@ for (const name of runtimeContract.requiredSecretNames) {
   secrets[name] = value;
 }
 
+const optionalSecretNames = [
+  "ASTROPAGES_CONTROL_PLANE_CALLBACK_TOKEN",
+  "SERVICE_CALLBACK_BEARER_TOKEN",
+  ...runtimeContract.sensitiveProviderSecretBindings.map((item) => item.binding),
+];
+
+for (const name of optionalSecretNames) {
+  const value = process.env[name];
+  if (value) {
+    secrets[name] = value;
+  }
+}
+
 mkdirSync(dirname(outputPath), { recursive: true });
 writeFileSync(outputPath, `${JSON.stringify(secrets)}\n`, { mode: 0o600 });
 console.log(`Worker secrets file written to ${outputPath}`);
