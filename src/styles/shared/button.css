@@ -8,9 +8,9 @@
   --sidera-button-active-background: var(--color-primary-strong);
   --sidera-button-focus: rgba(var(--color-primary-rgb), 0.5);
   --sidera-button-block-size: 2.875rem;
-  --sidera-button-inline-padding: 1.375rem;
-  --sidera-button-font-size: 0.875rem;
-  --sidera-button-radius: 0.625rem;
+  --sidera-button-inline-padding: 1.5rem;
+  --sidera-button-font-size: 0.8125rem;
+  --sidera-button-radius: 0.3125rem;
 
   min-block-size: var(--sidera-button-block-size);
   max-inline-size: 100%;
@@ -18,14 +18,16 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  border: 1px solid var(--sidera-button-border);
+  border: 1.5px solid var(--sidera-button-border);
   border-radius: var(--sidera-button-radius);
   padding: 0.625rem var(--sidera-button-inline-padding);
   background: var(--sidera-button-background);
   color: var(--sidera-button-color);
   cursor: pointer;
   font:
-    600 var(--sidera-button-font-size) / 1.2 var(--font-sans);
+    700 var(--sidera-button-font-size) / 1.2 var(--font-mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   text-align: center;
   text-decoration: none;
   text-underline-offset: 0.2em;
@@ -68,23 +70,23 @@
 }
 
 .sidera-button--secondary {
-  --sidera-button-background: var(--color-surface);
-  --sidera-button-border: var(--color-surface);
+  --sidera-button-background: transparent;
+  --sidera-button-border: var(--color-text);
   --sidera-button-color: var(--color-text);
-  --sidera-button-hover-background: var(--color-white);
-  --sidera-button-hover-border: var(--color-white);
-  --sidera-button-hover-color: var(--color-text);
-  --sidera-button-active-background: var(--color-line);
+  --sidera-button-hover-background: var(--color-text);
+  --sidera-button-hover-border: var(--color-text);
+  --sidera-button-hover-color: var(--color-bg);
+  --sidera-button-active-background: var(--color-text);
 }
 
 .sidera-button--outline {
   --sidera-button-background: transparent;
-  --sidera-button-border: rgba(var(--color-text-rgb), 0.26);
+  --sidera-button-border: var(--color-text);
   --sidera-button-color: var(--color-text);
-  --sidera-button-hover-background: rgba(var(--color-text-rgb), 0.05);
-  --sidera-button-hover-border: rgba(var(--color-text-rgb), 0.38);
-  --sidera-button-hover-color: var(--color-text);
-  --sidera-button-active-background: rgba(var(--color-text-rgb), 0.09);
+  --sidera-button-hover-background: var(--color-text);
+  --sidera-button-hover-border: var(--color-text);
+  --sidera-button-hover-color: var(--color-bg);
+  --sidera-button-active-background: var(--color-text);
 }
 
 .sidera-button--ghost {
@@ -127,17 +129,17 @@
 .sidera-button--compact {
   --sidera-button-block-size: 2.5rem;
   --sidera-button-inline-padding: 1.125rem;
-  --sidera-button-font-size: 0.8125rem;
+  --sidera-button-font-size: 0.75rem;
 }
 
 .sidera-button--large {
   --sidera-button-block-size: 3.125rem;
-  --sidera-button-inline-padding: 1.625rem;
-  --sidera-button-font-size: 0.9375rem;
+  --sidera-button-inline-padding: 1.875rem;
+  --sidera-button-font-size: 0.8125rem;
 }
 
 .sidera-button--rounded {
-  --sidera-button-radius: 0.625rem;
+  --sidera-button-radius: 0.3125rem;
 }
 
 .sidera-button--full-width {

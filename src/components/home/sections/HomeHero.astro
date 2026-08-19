@@ -9,6 +9,18 @@ type ProofItem = {
   editAttributes?: EditAttributes;
 };
 
+type EphemerisItem = {
+  glyph: string;
+  name: string;
+  sign: string;
+  house: string;
+  deg: string;
+  motion: string;
+  color?: string;
+  motionColor?: string;
+  rx?: boolean;
+};
+
 type Props = {
   kicker: string;
   title: string;
@@ -18,6 +30,8 @@ type Props = {
   secondaryCta: string;
   secondaryHref: string;
   proofs: ProofItem[];
+  dateStr?: string;
+  ephemeris?: EphemerisItem[];
   kickerEditAttributes?: EditAttributes;
   titleEditAttributes?: EditAttributes;
   bodyEditAttributes?: EditAttributes;
@@ -34,6 +48,16 @@ const {
   secondaryCta,
   secondaryHref,
   proofs,
+  dateStr = new Intl.DateTimeFormat("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" }).format(new Date()),
+  ephemeris = [
+    { glyph: "☉", name: "Sun", deg: "9°14'", sign: "Cancer", house: "XI", motion: "DIRECT", rx: false, color: "#C23A3A" },
+    { glyph: "☽", name: "Moon", deg: "22°03'", sign: "Libra", house: "II", motion: "WAXING", rx: false, color: "#3F58A8" },
+    { glyph: "☿", name: "Mercury", deg: "14°51'", sign: "Cancer", house: "XI", motion: "RETROGRADE", rx: true, color: "#2E6E8E" },
+    { glyph: "♀", name: "Venus", deg: "2°30'", sign: "Gemini", house: "X", motion: "DIRECT", rx: false, color: "#C23A3A" },
+    { glyph: "♂", name: "Mars", deg: "27°18'", sign: "Leo", house: "XII", motion: "DIRECT", rx: false, color: "#C23A3A" },
+    { glyph: "♃", name: "Jupiter", deg: "11°42'", sign: "Gemini", house: "X", motion: "DIRECT", rx: false, color: "#2E6E8E" },
+    { glyph: "♄", name: "Saturn", deg: "19°07'", sign: "Pisces", house: "VII", motion: "RETROGRADE", rx: true, color: "#3F58A8" },
+  ],
   kickerEditAttributes = {},
   titleEditAttributes = {},
   bodyEditAttributes = {},
@@ -44,61 +68,97 @@ const {
 const titleWords = title.trim().split(/\s+/);
 const titleAccent = titleWords.shift() ?? "";
 const titleRemainder = titleWords.join(" ");
-const zodiacGlyphs = ["♈", "♉", "♊", "♋", "♌", "♍", "♎", "♏", "♐", "♑", "♒", "♓"];
+
+const defaultStatNumbers = ["1.2M", "±0′", "40+"];
 ---
 
-<section class="home-hero" id="top" aria-labelledby="home-hero-title">
-  <div class="home-hero__zodiac" aria-hidden="true">
-    {
-      zodiacGlyphs.map((glyph, index) => (
-        <span style={`--zodiac-index: ${index}`}>{glyph}</span>
-      ))
-    }
-    <i></i>
-  </div>
+<section class="home-hero" id="top" data-screen-label="Hero" aria-labelledby="home-hero-title">
   <div class="home-hero__inner">
-    <div class="home-hero__content">
-      <p class="home-hero__kicker" {...kickerEditAttributes}>{kicker}</p>
-
-      <h1 id="home-hero-title" {...titleEditAttributes}>
-        <em>{titleAccent}</em>{titleRemainder ? ` ${titleRemainder}` : ""}
-      </h1>
-
-      <p class="home-hero__body" {...bodyEditAttributes}>{body}</p>
-
-      <div class="home-hero__actions">
-        <Button
-          href={primaryHref}
-          size="large"
-          class="home-hero__button"
-          editAttributes={primaryCtaEditAttributes}
-        >
-          {primaryCta}
-        </Button>
-        <Button
-          href={secondaryHref}
-          variant="outline"
-          size="large"
-          class="home-hero__button"
-          editAttributes={secondaryCtaEditAttributes}
-        >
-          {secondaryCta}
-        </Button>
-      </div>
-
-      {
-        proofs.length > 0 ? (
-          <ul class="home-hero__proofs" aria-label={kicker}>
-            {proofs.map((proof) => (
-              <li>
-                <span aria-hidden="true">✦</span>
-                <span {...(proof.editAttributes ?? {})}>{proof.label}</span>
-              </li>
-            ))}
-          </ul>
-        ) : null
-      }
+    <div class="home-hero__masthead">
+      <span>THE DAILY EPHEMERIS &mdash; No. 001</span>
+      <span>{dateStr}</span>
+      <span class="home-hero__masthead-accent">GEOCENTRIC / TROPICAL</span>
     </div>
 
+    <div class="home-hero__grid">
+      <div class="home-hero__content">
+        <p class="home-hero__kicker" {...kickerEditAttributes}>{kicker}</p>
+
+        <h1 id="home-hero-title" {...titleEditAttributes}>
+          <em>{titleAccent}</em>{titleRemainder ? ` ${titleRemainder}` : ""}
+        </h1>
+
+        <p class="home-hero__body" {...bodyEditAttributes}>{body}</p>
+
+        <div class="home-hero__actions">
+          <Button
+            href={primaryHref}
+            size="large"
+            class="home-hero__button home-hero__button--primary"
+            editAttributes={primaryCtaEditAttributes}
+          >
+            {primaryCta}
+          </Button>
+          <Button
+            href={secondaryHref}
+            variant="outline"
+            size="large"
+            class="home-hero__button home-hero__button--secondary"
+            editAttributes={secondaryCtaEditAttributes}
+          >
+            {secondaryCta}
+          </Button>
+        </div>
+
+        {
+          proofs.length > 0 ? (
+            <ul class="home-hero__proofs" aria-label={kicker}>
+              {proofs.map((proof, i) => {
+                const statNum = defaultStatNumbers[i] || "";
+                let statLabel = proof.label;
+                if (statNum && statLabel.toLowerCase().startsWith(statNum.toLowerCase())) {
+                  statLabel = statLabel.slice(statNum.length).trim();
+                }
+                return (
+                  <li class="home-hero__proof-item">
+                    <div class="home-hero__stat-num">{statNum}</div>
+                    <div class="home-hero__stat-label" {...(proof.editAttributes ?? {})}>{statLabel}</div>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : null
+        }
+      </div>
+
+      <div class="home-hero__ledger">
+        <div class="home-hero__ledger-head">
+          <span class="home-hero__ledger-title">Planetary Index</span>
+          <span class="home-hero__ledger-meta">POS / MOTION</span>
+        </div>
+        <div class="home-hero__ledger-body">
+          {
+            ephemeris.map((item) => {
+              const glyphCol = item.color || "#C23A3A";
+              const motionCol = item.rx ? "#C23A3A" : "#4A5578";
+              return (
+                <div class="home-hero__ledger-row">
+                  <span class="home-hero__ledger-glyph" style={`color: ${glyphCol};`} aria-hidden="true">{item.glyph}</span>
+                  <div class="home-hero__ledger-info">
+                    <div class="home-hero__ledger-name">{item.name}</div>
+                    <div class="home-hero__ledger-sign">{item.sign} &middot; {item.house}</div>
+                  </div>
+                  <div class="home-hero__ledger-values">
+                    <div class="home-hero__ledger-deg">{item.deg}</div>
+                    <div class="home-hero__ledger-motion" style={`color: ${motionCol};`}>{item.motion}</div>
+                  </div>
+                </div>
+              );
+            })
+          }
+        </div>
+        <a href={secondaryHref} class="home-hero__ledger-link">OPEN FULL EPHEMERIS &rarr;</a>
+      </div>
+    </div>
   </div>
 </section>

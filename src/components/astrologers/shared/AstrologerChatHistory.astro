@@ -97,6 +97,14 @@ const deleteCopy = {
   deleting: copy.deleteSessionDeleting || "Deleting session",
   cancel: copy.deleteSessionCancel || "Keep session",
 };
+const cleanSummary = (text: string) =>
+  text
+    .replace(/\*\*(.*?)\*\*/g, "$1")
+    .replace(/\*(.*?)\*/g, "$1")
+    .replace(/^#+\s+/gm, "")
+    .replace(/[_`~]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 ---
 
 <aside
@@ -165,7 +173,7 @@ const deleteCopy = {
         const active = session.id === activeSessionId;
         const name = session.astrologerName || astrologer.name;
         const context = profileLabel(session) || name;
-        const title = session.lastMessage || `${copy.chatsLabel} · ${name}`;
+        const title = cleanSummary(session.lastMessage || `${copy.chatsLabel} · ${name}`);
         return (
           <article class:list={["astrologer-chat-history__item", active && "is-active"]} data-chat-history-session={session.id} data-chat-history-active={active ? "true" : "false"} data-chat-paginated-item>
             <a href={chatHref(session.id)} aria-current={active ? "page" : undefined}>

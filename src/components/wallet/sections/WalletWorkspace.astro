@@ -132,29 +132,63 @@ const formatDate = (value: unknown) => value ? new Intl.DateTimeFormat(locale, {
   });
   if (root.dataset.state === "verifying") {
     if (noticeAction) noticeAction.hidden = true;
-    if (noticeIcon) noticeIcon.textContent = "✓";
+    if (noticeIcon) noticeIcon.textContent = "⌛";
     if (notice) notice.classList.remove("is-error");
-    fetch("/api/astropages/generated-site/payments/stripe/wallet-confirm", { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json", "x-astropages-customer-csrf": root.dataset.csrf || "" }, body: JSON.stringify({ rechargeId: root.dataset.rechargeId, attemptId: root.dataset.attemptId, sessionId: root.dataset.sessionId, locale: root.dataset.locale }) })
-      .then(async (response) => {
-        const payload = await readPayload(response);
-        if (response.status === 202) {
+    root.querySelector("[data-wallet-notice-title]").textContent = copy.verifying_title || "Verifying payment...";
+    root.querySelector("[data-wallet-notice-body]").textContent = copy.verifying_body || "Waiting for payment confirmation...";
+
+    const pollPaymentStatus = async (rechargeId, attemptsLeft = 20) => {
+      if (attemptsLeft <= 0) {
+        root.querySelector("[data-wallet-notice-body]").textContent = "Payment is processing. Your wallet balance will update shortly once confirmed.";
+        if (noticeIcon) noticeIcon.textContent = "⌛";
+        return;
+      }
+      try {
+        const res = await fetch(`/api/astropages/generated-site/payments/status?payableType=wallet_recharge&payableId=${encodeURIComponent(rechargeId)}`, { credentials: "same-origin" });
+        const data = await readPayload(res);
+        const state = data?.data?.paymentState;
+        if (state === "paid") {
+          const summaryRes = await fetch(`/api/wallet/summary?locale=${encodeURIComponent(root.dataset.locale || "en")}`, { credentials: "same-origin" });
+          const summaryData = await readPayload(summaryRes);
+          if (summaryData?.data?.wallet) {
+            document.querySelectorAll("[data-wallet-balance]").forEach((node) => node.textContent = summaryData.data.wallet.balance);
+            root.querySelector("[data-wallet-balance-main]").textContent = summaryData.data.wallet.balance;
+            renderTransactions(summaryData.data.transactions);
+            updateSummary();
+          }
+          root.querySelector("[data-wallet-notice-title]").textContent = copy.success_title || "Payment successful";
+          root.querySelector("[data-wallet-notice-body]").textContent = copy.success_body;
           if (noticeAction) noticeAction.hidden = true;
           if (noticeIcon) noticeIcon.textContent = "✓";
           if (notice) notice.classList.remove("is-error");
+          history.replaceState({}, "", new URL(window.location.href).pathname + (root.dataset.locale !== "en" ? `?locale=${root.dataset.locale}` : ""));
           return;
         }
-        if (!response.ok || !payload?.data?.wallet) {
+        if (state === "failed" || state === "expired") {
+          throw new Error(copy.failed_body);
+        }
+        setTimeout(() => pollPaymentStatus(rechargeId, attemptsLeft - 1), 1500);
+      } catch (err) {
+        root.querySelector("[data-wallet-notice-title]").textContent = copy.failed_title;
+        root.querySelector("[data-wallet-notice-body]").textContent = err instanceof Error ? err.message : copy.failed_body;
+        if (notice) notice.classList.add("is-error");
+        if (noticeIcon) noticeIcon.textContent = "!";
+        if (noticeAction) noticeAction.hidden = false;
+      }
+    };
+
+    fetch("/api/astropages/generated-site/payments/stripe/wallet-confirm", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "content-type": "application/json", "x-astropages-customer-csrf": root.dataset.csrf || "" },
+      body: JSON.stringify({ rechargeId: root.dataset.rechargeId, attemptId: root.dataset.attemptId, sessionId: root.dataset.sessionId, locale: root.dataset.locale }),
+    })
+      .then(async (response) => {
+        const payload = await readPayload(response);
+        if (!response.ok && response.status !== 202) {
           throw new Error(payload?.message || copy.failed_body);
         }
-        document.querySelectorAll("[data-wallet-balance]").forEach((node) => node.textContent = payload.data.wallet.balance);
-        root.querySelector("[data-wallet-balance-main]").textContent = payload.data.wallet.balance;
-        renderTransactions(payload.data.transactions);
-        updateSummary();
-        root.querySelector("[data-wallet-notice-body]").textContent = copy.success_body;
-        if (noticeAction) noticeAction.hidden = true;
-        if (noticeIcon) noticeIcon.textContent = "✓";
-        if (notice) notice.classList.remove("is-error");
-        history.replaceState({}, "", new URL(window.location.href).pathname + (root.dataset.locale !== "en" ? `?locale=${root.dataset.locale}` : ""));
+        pollPaymentStatus(root.dataset.rechargeId);
       })
       .catch((reason) => {
         root.querySelector("[data-wallet-notice-title]").textContent = copy.failed_title;

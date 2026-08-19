@@ -37,12 +37,12 @@ const classes = [
 {
   href ? (
     <a class={classes} href={href} aria-label={ariaLabel ?? label}>
-      <span class="brand-logo__mark" aria-hidden="true">✦</span>
+      <span class="brand-logo__badge" aria-hidden="true">EST. 2026</span>
       <span class="brand-logo__name" {...editAttributes}>{label}</span>
     </a>
   ) : (
     <span class={classes}>
-      <span class="brand-logo__mark" aria-hidden="true">✦</span>
+      <span class="brand-logo__badge" aria-hidden="true">EST. 2026</span>
       <span class="brand-logo__name" {...editAttributes}>{label}</span>
     </span>
   )

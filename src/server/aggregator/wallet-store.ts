@@ -410,6 +410,70 @@ export const recordWalletCheckout = async ({
   );
 };
 
+export const recordWalletBrowserVerification = async ({
+  env,
+  rechargeId,
+  attemptId,
+  sessionId,
+  paymentIntentId,
+}: {
+  env: RuntimeEnv;
+  rechargeId: string;
+  attemptId: string;
+  sessionId: string;
+  paymentIntentId: string;
+}) => {
+  const [recharge, attempt] = await Promise.all([
+    getWalletRecharge(env, rechargeId),
+    getWalletPaymentAttempt(env, attemptId),
+  ]);
+  if (
+    !recharge ||
+    !attempt ||
+    attempt.payableId !== recharge.id ||
+    attempt.accountId !== recharge.accountId ||
+    attempt.amountCents !== recharge.amountCents ||
+    attempt.currency.toUpperCase() !== recharge.currency.toUpperCase() ||
+    (attempt.providerOrderId && attempt.providerOrderId !== sessionId)
+  ) {
+    return { ok: false as const, message: "Payment attempt does not match." };
+  }
+  const now = nowIso();
+  if (attempt.status !== "paid") {
+    await run(
+      env,
+      `UPDATE ${tables.paymentAttempts}
+       SET provider_order_id = ?, provider_payment_id = ?, status = 'requires_action', updated_at = ?
+       WHERE id = ? AND payable_id = ?`,
+      [sessionId, paymentIntentId || sessionId, now, attemptId, rechargeId],
+    );
+  }
+  await run(
+    env,
+    `INSERT INTO ${tables.paymentEvents} (
+      id, payable_type, payable_id, provider, provider_event_id,
+      status, payload_json, created_at
+    ) VALUES (?, 'wallet_recharge', ?, 'stripe', ?, 'browser_verified', ?, ?)
+    ON CONFLICT(provider, provider_event_id) DO NOTHING`,
+    [
+      createId("pevt"),
+      rechargeId,
+      `browser:${sessionId}`,
+      JSON.stringify({
+        sessionId,
+        source: "browser-confirmation",
+        nextStep: "Webhook is authoritative for paid payment state.",
+      }),
+      now,
+    ],
+  );
+  return {
+    ok: true as const,
+    paymentReference: paymentIntentId || sessionId,
+    authoritativeState: "waiting-for-webhook" as const,
+  };
+};
+
 export const markWalletRechargePaid = async ({
   env,
   rechargeId,

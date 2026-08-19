@@ -60,13 +60,10 @@ const formatPrice = (
     maximumFractionDigits: priceCents % 100 === 0 ? 0 : 2,
   }).format(priceCents / 100);
 
-const resolveImageUrl = (id: ShopProductId, storedUrl: string) =>
-  import.meta.env?.DEV
-    ? `/@fs${
-        new URL(`../../../astropages/assets/shop/${id}.png`, import.meta.url)
-          .pathname
-      }`
-    : storedUrl;
+const resolveImageUrl = (id: ShopProductId, storedUrl: string) => {
+  if (storedUrl && storedUrl.startsWith("/images/")) return storedUrl;
+  return `/images/shop/${id}.png`;
+};
 
 const normalizeRow = (
   row: ShopProductRow,
@@ -82,13 +79,12 @@ const normalizeRow = (
   const tone = number(row.tone);
   const variantKey = text(row.variant_key);
   const optionCount = number(row.variant_option_count);
-  const imageUrl = text(row.image_url);
+  const imageUrl = text(row.image_url) || `/images/shop/${id}.png`;
   if (
     !productIds.has(id) ||
     !slug ||
     !categories.has(category) ||
-    priceCents < 0 ||
-    !imageUrl
+    priceCents < 0
   )
     return undefined;
 
@@ -126,7 +122,7 @@ const localFallback = (locale: SupportedLocale): ShopProduct[] =>
     priceLabel: formatPrice(product.price * 100, "USD", locale),
     imageUrl: resolveImageUrl(
       product.id,
-      `/_assets/aliases/shop-${product.id}/${product.id}.png`,
+      `/images/shop/${product.id}.png`,
     ),
   }));
 
@@ -145,11 +141,12 @@ export const listShopProducts = async (
     const result = await env.DB.prepare(
       `${selectColumns} WHERE active = 1 ORDER BY sort_order ASC, slug ASC`,
     ).all?.<ShopProductRow>();
-    return (result?.results ?? [])
+    const rows = (result?.results ?? [])
       .map((row) => normalizeRow(row, locale))
       .filter(Boolean) as ShopProduct[];
+    return rows.length > 0 ? rows : localFallback(locale);
   } catch {
-    return [];
+    return localFallback(locale);
   }
 };
 
@@ -166,8 +163,9 @@ export const getShopProductBySlug = async (
     )
       .bind(slug)
       .first?.()) as ShopProductRow | null | undefined;
-    return row ? normalizeRow(row, locale) : undefined;
+    const normalized = row ? normalizeRow(row, locale) : undefined;
+    return normalized ?? localFallback(locale).find((product) => product.slug === slug);
   } catch {
-    return undefined;
+    return localFallback(locale).find((product) => product.slug === slug);
   }
 };

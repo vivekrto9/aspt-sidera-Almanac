@@ -42,7 +42,7 @@
 
 .date-navigator__action.icon-button {
   --icon-button-size: 2.625rem;
-  --icon-button-radius: 0.75rem;
+  --icon-button-radius: 0.3125rem;
 }
 
 .date-navigator__action.sidera-button {
@@ -55,7 +55,7 @@
   --sidera-button-active-background: var(--color-surface);
   --sidera-button-block-size: 2.625rem;
   --sidera-button-inline-padding: 1.125rem;
-  --sidera-button-radius: 0.75rem;
+  --sidera-button-radius: 0.3125rem;
 }
 
 .date-navigator--compact .date-navigator__label {
@@ -64,13 +64,13 @@
 
 .date-navigator--compact .date-navigator__action.icon-button {
   --icon-button-size: 2.5rem;
-  --icon-button-radius: 0.6875rem;
+  --icon-button-radius: 0.3125rem;
 }
 
 .date-navigator--compact .date-navigator__action.sidera-button {
   --sidera-button-block-size: 2.5rem;
   --sidera-button-inline-padding: 1rem;
-  --sidera-button-radius: 0.6875rem;
+  --sidera-button-radius: 0.3125rem;
   --sidera-button-font-size: 0.8125rem;
 }
 

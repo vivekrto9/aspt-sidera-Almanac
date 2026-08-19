@@ -1,10 +1,10 @@
 .sidera-footer {
-  --footer-background: var(--color-dark-strong);
-  --footer-color: var(--color-on-dark-muted);
-  --footer-strong: var(--color-on-dark);
-  --footer-accent: var(--color-primary-soft);
-  --footer-muted: #8f88aa;
-  --footer-divider: rgba(237, 234, 248, 0.16);
+  --footer-background: #0E1422;
+  --footer-color: #8791AC;
+  --footer-strong: #F3F5FA;
+  --footer-accent: #E86A6A;
+  --footer-muted: #6B7492;
+  --footer-divider: rgba(135, 145, 172, 0.18);
 
   inline-size: 100%;
   padding: 4.5rem 2.125rem 2.5rem;

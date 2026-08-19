@@ -281,6 +281,49 @@ const homeTodaySkyPositions = homeSky
               : undefined,
       }))
   : [];
+const planetHouseRoman = ["XI", "II", "XI", "X", "XII", "X", "VII"];
+const planetColorMap: Record<string, string> = {
+  sun: "#C23A3A",
+  moon: "#3F58A8",
+  mercury: "#2E6E8E",
+  venus: "#C23A3A",
+  mars: "#C23A3A",
+  jupiter: "#2E6E8E",
+  saturn: "#3F58A8",
+};
+const homeHeroEphemeris = homeSky
+  ? homeSky.positions
+      .filter((position) => homeSkyBodyIds.has(position.id))
+      .map((position, index) => {
+        const isMoon = position.id === "moon";
+        const isRetrograde = Boolean(
+          position.motionText &&
+            position.motionText.toLowerCase().includes("retrograde"),
+        );
+        const motion = isMoon
+          ? homeSky.moon.waxing
+            ? "WAXING"
+            : "WANING"
+          : isRetrograde
+            ? "RETROGRADE"
+            : "DIRECT";
+        return {
+          glyph: position.planetGlyph,
+          name:
+            todaySkyCopy.planetNames[
+              position.id as keyof typeof todaySkyCopy.planetNames
+            ] || position.planetName,
+          sign:
+            localizedSignNames.get(position.signName.toLowerCase()) ||
+            position.signName,
+          house: planetHouseRoman[index] || "I",
+          deg: position.degreeText,
+          motion,
+          rx: isRetrograde,
+          color: planetColorMap[position.id] || "#C23A3A",
+        };
+      })
+  : undefined;
 const providerUnavailable = getProviderUnavailableCopy(locale);
 const homeTransitDateFormatter = new Intl.DateTimeFormat(
   localeMeta?.hreflang ?? "en",
@@ -533,7 +576,10 @@ const shopCopy: HomeShopCopy = {
       category: field("category"),
       price: product?.priceLabel ?? field("price"),
       imageAlt: field("image_alt"),
-      imageSrc: product?.imageUrl,
+      imageSrc:
+        product?.imageUrl ||
+        item.imageSrc ||
+        (productId ? `/images/shop/${productId}.png` : undefined),
       href: product
         ? localizePath(`/shop/${product.slug}`, locale)
         : localizePath("/shop", locale),
@@ -629,6 +675,8 @@ const footerProps = createSharedFooterProps({
       primaryHref={localizePath("/birth-chart", locale)}
       secondaryCta={content.hero_secondary_cta}
       secondaryHref={localizePath("/todays-sky", locale)}
+      dateStr={todayDateLabel}
+      ephemeris={homeHeroEphemeris}
       proofs={[
         {
           label: content.hero_proof_1,

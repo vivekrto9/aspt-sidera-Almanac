@@ -101,13 +101,13 @@ test("wallet page and APIs keep auth, CSRF, success, cancel, and failure contrac
   assert.match(component, /variant="secondary"/);
   assert.match(component, /const readPayload = async/);
   assert.match(component, /const renderTransactions = \(items\)/);
-  assert.match(component, /renderTransactions\(payload\.data\.transactions\)/);
+  assert.match(component, /renderTransactions\(summaryData\.data\.transactions\)/);
   assert.match(component, /data-recent-limit=\{recentLimit\}/);
   assert.match(component, /await response\.text\(\)/);
   assert.doesNotMatch(component, /await response\.json\(\)/);
   assert.match(read("src/pages/api/wallet/recharges.ts"), /errorResponse\(feature, await auth\.response\.text\(\), auth\.response\.status\)/);
   assert.match(read("src/pages/api/astropages/generated-site/payments/stripe/wallet-confirm.ts"), /errorResponse\(feature, await auth\.response\.text\(\), auth\.response\.status\)/);
-  assert.match(read("src/pages/api/astropages/generated-site/payments/stripe/wallet-confirm.ts"), /data: \{ wallet, transactions, recharge: paid\.recharge \}/);
+  assert.match(read("src/pages/api/astropages/generated-site/payments/stripe/wallet-confirm.ts"), /authoritativeState:\s*"waiting-for-webhook"/);
   assert.match(page, /limit: walletRecentTransactionLimit/);
   assert.match(read("src/styles/wallet/wallet.css"), /grid-template-columns: repeat\(4/);
   assert.match(read("src/styles/wallet/wallet.css"), /background: var\(--color-surface\)/);

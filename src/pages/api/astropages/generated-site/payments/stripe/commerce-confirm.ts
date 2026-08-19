@@ -2,7 +2,7 @@ import type { APIRoute } from "astro";
 import {
   getCommerceOrder,
   getCommercePaymentAttempt,
-  markCommercePaymentPaid,
+  recordCommerceBrowserVerification,
 } from "../../../../../../server/aggregator/commerce-orders.ts";
 import { requireCustomerCsrf } from "../../../../../../server/aggregator/customer-auth.ts";
 import {
@@ -52,25 +52,31 @@ export const POST: APIRoute = async (context) => {
     });
     if (!verification.ok)
       return errorResponse(feature, verification.message, 409);
-    const paid = await markCommercePaymentPaid({
+    const verified = await recordCommerceBrowserVerification({
       env,
       orderId,
       attemptId,
       sessionId,
       paymentIntentId: safeString(stripeSession.payment_intent) || sessionId,
-      eventId: `browser:${sessionId}`,
-      eventStatus: "browser_verified",
-      siteOrigin: new URL(context.request.url).origin,
     });
-    if (!paid.ok) return errorResponse(feature, paid.message, 409);
-    return jsonResponse({
-      status: "ready",
-      state: "ready",
-      feature,
-      capabilityKey: "checkout-and-payments",
-      message: "Stripe payment verified.",
-      data: { order: paid.order },
-    });
+    if (!verified.ok) return errorResponse(feature, verified.message, 409);
+    return jsonResponse(
+      {
+        status: "ready",
+        state: "ready",
+        feature,
+        capabilityKey: "checkout-and-payments",
+        message:
+          "Payment verified in browser. Waiting for webhook confirmation.",
+        data: {
+          authoritativeState: "waiting-for-webhook",
+          orderId: order.id,
+          attemptId: attempt.id,
+          paymentReference: verified.paymentReference,
+        },
+      },
+      { status: 202 },
+    );
   } catch (error) {
     return errorResponse(
       feature,

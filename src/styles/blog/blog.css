@@ -3,5 +3,5 @@
   inline-size: 100%;
   min-inline-size: 0;
   margin: 0;
-  background: var(--color-surface);
+  background: var(--color-bg);
 }

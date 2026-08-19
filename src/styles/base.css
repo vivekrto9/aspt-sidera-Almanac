@@ -1,34 +1,35 @@
 :root {
   color-scheme: light;
-  --color-bg: #eceaf6;
-  --color-panel: #faf9ff;
-  --color-surface: #e3e0f0;
-  --color-surface-soft: #f2f0f8;
-  --color-text: #1b1730;
-  --color-muted: #574f70;
-  --color-muted-soft: #6c6482;
-  --color-line: #cbc6dd;
-  --color-primary: #b08cf0;
-  --color-primary-strong: #7c5ebc;
-  --color-primary-soft: #c6abfa;
-  --color-primary-pale: #ddcffc;
-  --color-dark: #171429;
-  --color-dark-strong: #0b0914;
-  --color-on-dark: #edeaf8;
-  --color-on-dark-strong: #f3f0ff;
-  --color-on-dark-muted: #aaa3c5;
-  --color-success: #5fc2d6;
-  --color-info: #6ea9d7;
-  --color-danger: #c86b8a;
-  --color-danger-soft: #f6e8ef;
+  --color-bg: #EDEFEA;
+  --color-panel: #F7F8F4;
+  --color-surface: #EDEFEA;
+  --color-surface-soft: #F7F8F4;
+  --color-text: #182338;
+  --color-muted: #3D4761;
+  --color-muted-soft: #565E74;
+  --color-line: rgba(24, 35, 56, 0.18);
+  --color-primary: #C23A3A;
+  --color-primary-strong: #A32E2E;
+  --color-primary-soft: #E86A6A;
+  --color-primary-pale: #F8DADA;
+  --color-dark: #141C2E;
+  --color-dark-strong: #0E1422;
+  --color-on-dark: #E7EAF2;
+  --color-on-dark-strong: #F3F5FA;
+  --color-on-dark-muted: #8791AC;
+  --color-success: #2E7D4F;
+  --color-info: #3F58A8;
+  --color-danger: #C23A3A;
+  --color-danger-soft: #FBEAEA;
   --color-white: #ffffff;
-  --color-text-rgb: 27, 23, 48;
-  --color-primary-rgb: 176, 140, 240;
-  --color-dark-rgb: 23, 20, 41;
-  --color-surface-rgb: 227, 224, 240;
+  --color-text-rgb: 24, 35, 56;
+  --color-primary-rgb: 194, 58, 58;
+  --color-dark-rgb: 20, 28, 46;
+  --color-surface-rgb: 237, 239, 234;
+  --color-panel-rgb: 247, 248, 244;
   --image-fallback-background: var(--color-surface);
   --image-fallback-pattern:
-    radial-gradient(circle at 22% 18%, rgba(95, 194, 214, 0.2), transparent 30%),
+    radial-gradient(circle at 22% 18%, rgba(194, 58, 58, 0.2), transparent 30%),
     linear-gradient(145deg, rgba(var(--color-primary-rgb), 0.2), transparent 58%),
     radial-gradient(
       circle at 0.125rem 0.125rem,
@@ -41,8 +42,10 @@
     var(--color-panel) 90%,
     transparent
   );
-  --font-sans: "Bricolage Grotesque", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-serif: "Spectral", Georgia, "Times New Roman", serif;
+  --font-sans: "Libre Franklin", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-serif: "Syne", sans-serif;
+  --font-display: "Syne", sans-serif;
+  --font-mono: "Space Mono", monospace, ui-monospace;
 }
 
 * {

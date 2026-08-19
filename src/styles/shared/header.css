@@ -1,36 +1,36 @@
 .sidera-header {
-  --sidera-header-ink: var(--color-on-dark-strong);
-  --sidera-header-muted: var(--color-on-dark);
-  --sidera-header-accent: var(--color-primary-soft);
-  --sidera-header-surface: rgba(19, 17, 31, 0.9);
+  --sidera-header-ink: var(--color-text);
+  --sidera-header-muted: var(--color-muted);
+  --sidera-header-accent: var(--color-primary);
+  --sidera-header-surface: rgba(var(--color-surface-rgb), 0.92);
 
   position: relative;
   z-index: 60;
   inline-size: 100%;
-  border-block-end: 1px solid rgba(198, 171, 250, 0.16);
+  border-block-end: 1px solid var(--color-text);
   background: var(--sidera-header-surface);
   color: var(--sidera-header-ink);
-  font-family: var(--font-sans);
+  font-family: var(--font-mono);
   backdrop-filter: blur(0.875rem);
   -webkit-backdrop-filter: blur(0.875rem);
 }
 
 .sidera-header .brand-logo {
-  --brand-logo-name-color: var(--color-on-dark-strong);
-  --brand-logo-mark-color: var(--color-primary-soft);
-  --brand-logo-hover-color: #ffffff;
+  --brand-logo-name-color: var(--color-text);
+  --brand-logo-mark-color: var(--color-primary);
+  --brand-logo-hover-color: var(--color-primary);
 }
 
 .sidera-header .sidera-language-dropdown {
-  --sidera-language-ink: var(--color-on-dark-strong);
-  --sidera-language-muted: var(--color-on-dark-muted);
-  --sidera-language-accent: var(--color-primary-soft);
-  --sidera-language-surface: var(--color-dark);
+  --sidera-language-ink: var(--color-text);
+  --sidera-language-muted: var(--color-muted);
+  --sidera-language-accent: var(--color-primary);
+  --sidera-language-surface: var(--color-panel);
 }
 
 .sidera-header .sidera-language-dropdown__trigger,
 .sidera-header .sidera-language-dropdown__menu {
-  border-color: rgba(198, 171, 250, 0.2);
+  border-color: rgba(var(--color-text-rgb), 0.2);
 }
 
 .sidera-header--sticky {
@@ -95,6 +95,16 @@
   position: relative;
 }
 
+/* Invisible hover bridge connecting trigger to popover menu */
+.sidera-header__more::before {
+  position: absolute;
+  inset-inline: -1.5rem;
+  inset-block-start: 80%;
+  block-size: 1.5rem;
+  content: "";
+  pointer-events: auto;
+}
+
 .sidera-header__more-trigger {
   gap: 0.4375rem;
   border: 0;
@@ -102,6 +112,15 @@
   background: transparent;
   font-family: inherit;
   cursor: pointer;
+}
+
+.sidera-header__more-trigger[aria-current="page"],
+.sidera-header__more--open .sidera-header__more-trigger {
+  color: var(--sidera-header-accent);
+}
+
+.sidera-header__more-trigger[aria-current="page"] {
+  font-weight: 700;
 }
 
 .sidera-header__more-trigger svg {
@@ -122,15 +141,15 @@
 .sidera-header__more-menu {
   position: absolute;
   z-index: 45;
-  inset-block-start: calc(100% - 0.125rem);
+  inset-block-start: calc(100% + 0.375rem);
   inset-inline-start: 50%;
-  min-inline-size: 9rem;
+  min-inline-size: 9.5rem;
   overflow: hidden;
-  border: 1px solid rgba(198, 171, 250, 0.18);
-  border-radius: 0.5rem;
+  border: 1.5px solid var(--color-text);
+  border-radius: 0.375rem;
   padding: 0.375rem;
-  background: var(--color-dark);
-  box-shadow: 0 1rem 2rem -1.25rem rgba(0, 0, 0, 0.7);
+  background: var(--color-panel);
+  box-shadow: 0 0.5rem 1.5rem rgba(24, 35, 56, 0.15);
   transform: translateX(-50%);
 }
 
@@ -139,23 +158,37 @@
 }
 
 .sidera-header__more-link {
-  min-block-size: 2.5rem;
+  min-block-size: 2.25rem;
   display: flex;
   align-items: center;
-  border-radius: 0.3125rem;
-  padding-inline: 0.75rem;
-  color: var(--sidera-header-muted);
-  font-size: 0.8125rem;
-  font-weight: 600;
+  border-radius: 0.25rem;
+  padding-inline: 0.875rem;
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   text-decoration: none;
+  transition: background-color 160ms ease, color 160ms ease;
 }
 
 .sidera-header__more-link:hover,
-.sidera-header__more-link:focus-visible,
-.sidera-header__more-link[aria-current="page"] {
-  background: rgba(198, 171, 250, 0.1);
-  color: var(--sidera-header-accent);
+.sidera-header__more-link:focus-visible {
+  background: var(--color-text);
+  color: var(--color-bg);
   outline: none;
+}
+
+.sidera-header__more-link[aria-current="page"] {
+  background: var(--color-primary);
+  color: #ffffff;
+  outline: none;
+}
+
+.sidera-header__more-link[aria-current="page"]:hover {
+  background: var(--color-primary-strong);
+  color: #ffffff;
 }
 
 .sidera-header__nav-link:hover,

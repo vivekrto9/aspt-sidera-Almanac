@@ -640,6 +640,70 @@ export const markCommercePaymentFailed = async ({
   );
 };
 
+export const recordCommerceBrowserVerification = async ({
+  env,
+  orderId,
+  attemptId,
+  sessionId,
+  paymentIntentId,
+}: {
+  env: RuntimeEnv;
+  orderId: string;
+  attemptId: string;
+  sessionId: string;
+  paymentIntentId: string;
+}) => {
+  const [order, attempt] = await Promise.all([
+    getCommerceOrder(env, orderId),
+    getCommercePaymentAttempt(env, attemptId),
+  ]);
+  if (
+    !order ||
+    !attempt ||
+    attempt.payableId !== order.id ||
+    attempt.accountId !== order.accountId ||
+    attempt.amountCents !== order.totalCents ||
+    attempt.currency.toUpperCase() !== order.currency.toUpperCase() ||
+    (attempt.providerOrderId && attempt.providerOrderId !== sessionId)
+  ) {
+    return { ok: false as const, message: "Payment attempt does not match." };
+  }
+  const now = nowIso();
+  if (attempt.status !== "paid") {
+    await run(
+      env,
+      `UPDATE ${tables.paymentAttempts}
+       SET provider_order_id = ?, provider_payment_id = ?, status = 'requires_action', updated_at = ?
+       WHERE id = ? AND payable_id = ?`,
+      [sessionId, paymentIntentId || sessionId, now, attemptId, orderId],
+    );
+  }
+  await run(
+    env,
+    `INSERT INTO ${tables.paymentEvents} (
+      id, payable_type, payable_id, provider, provider_event_id,
+      status, payload_json, created_at
+    ) VALUES (?, 'commerce_order', ?, 'stripe', ?, 'browser_verified', ?, ?)
+    ON CONFLICT(provider, provider_event_id) DO NOTHING`,
+    [
+      createId("pevt"),
+      orderId,
+      `browser:${sessionId}`,
+      JSON.stringify({
+        sessionId,
+        source: "browser-confirmation",
+        nextStep: "Webhook is authoritative for paid payment state.",
+      }),
+      now,
+    ],
+  );
+  return {
+    ok: true as const,
+    paymentReference: paymentIntentId || sessionId,
+    authoritativeState: "waiting-for-webhook" as const,
+  };
+};
+
 export const listCommerceOrders = async ({
   env,
   accountId,

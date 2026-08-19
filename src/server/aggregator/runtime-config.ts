@@ -123,7 +123,11 @@ export const getRuntimeConfigValue = async (
   if (configuredValue) return configuredValue;
 
   // Local/template maintenance fallback; production generated sites should use D1 runtime config.
-  return safeString(env[key]) || await resolveRuntimeBinding(env[key]);
+  return (
+    safeString(env[key]) ||
+    (await resolveRuntimeBinding(env[key])) ||
+    (typeof process !== "undefined" ? safeString(process.env?.[key]) : "")
+  );
 };
 
 export const upsertRuntimeConfigRows = async ({

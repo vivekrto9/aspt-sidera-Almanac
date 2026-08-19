@@ -2,7 +2,7 @@
   inline-size: 100%;
   min-inline-size: 0;
   padding-block-end: 2.5rem;
-  background: var(--color-surface);
+  background: var(--color-bg);
 }
 
 .blog-article-header__navigation,
@@ -35,16 +35,16 @@
 
 .blog-article-header__category {
   color: var(--color-primary);
-  font: 600 0.6875rem / 1.4 var(--font-sans), system-ui, sans-serif;
-  letter-spacing: 0.14em;
+  font: 700 0.6875rem / 1.4 var(--font-mono);
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .blog-article-header__title {
   margin-block-start: 0.875rem;
   color: var(--color-text);
-  font: 400 clamp(2.125rem, 4.6vw, 3.375rem) / 1.05 var(--font-serif), Georgia, serif;
-  letter-spacing: -0.01em;
+  font: 800 clamp(2.125rem, 4.6vw, 3.375rem) / 1.05 var(--font-serif);
+  letter-spacing: -0.02em;
   text-wrap: balance;
   overflow-wrap: anywhere;
 }

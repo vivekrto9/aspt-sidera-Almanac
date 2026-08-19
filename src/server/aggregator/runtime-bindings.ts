@@ -102,7 +102,10 @@ export const resolveSecretBinding = async (
 
   const bundled = await resolveBundledSecretBinding(env, bindingName);
   if (bundled) return bundled;
-  return resolveRuntimeBinding(env[bindingName]);
+  return (
+    (await resolveRuntimeBinding(env[bindingName])) ||
+    (typeof process !== "undefined" ? safeString(process.env?.[bindingName]) : "")
+  );
 };
 
 export const hasSecretBinding = async (env: Record<string, unknown>, bindingName: string) =>

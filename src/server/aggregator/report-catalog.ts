@@ -50,13 +50,10 @@ const integer = (value: unknown) => {
   return Number.isInteger(parsed) ? parsed : 0;
 };
 
-const resolveImageUrl = (slug: string, storedUrl: string) =>
-  import.meta.env?.DEV
-    ? `/@fs${new URL(
-        `../../../astropages/assets/reports/${slug}.png`,
-        import.meta.url,
-      ).pathname}`
-    : storedUrl;
+const resolveImageUrl = (slug: string, storedUrl: string) => {
+  if (storedUrl && storedUrl.startsWith("/images/")) return storedUrl;
+  return `/images/reports/${slug}.png`;
+};
 
 const pageUnit: Record<SupportedLocale, string> = {
   en: "pages",
@@ -94,15 +91,14 @@ const normalizeRow = (
   const currency = text(row.currency) || "USD";
   const glyph = text(row.glyph);
   const rawTone = text(row.cover_tone) as ReportCoverTone;
-  const imageUrl = text(row.image_url);
+  const imageUrl = text(row.image_url) || `/images/reports/${slug}.png`;
   if (
     !slug ||
     !reportType ||
     pagesCount <= 0 ||
     priceCents < 0 ||
     !glyph ||
-    !coverTones.has(rawTone) ||
-    !imageUrl
+    !coverTones.has(rawTone)
   )
     return undefined;
 
@@ -137,10 +133,10 @@ const localFallback = (locale: SupportedLocale): ReportProduct[] =>
       currency: "USD",
       glyph: report.glyph,
       coverTone: report.coverTone,
-    imageUrl: resolveImageUrl(
-      report.slug,
-      `/_assets/aliases/reports-${report.slug}/${report.slug}.png`,
-    ),
+      imageUrl: resolveImageUrl(
+        report.slug,
+        `/images/reports/${report.slug}.png`,
+      ),
       providerEndpointKey: undefined,
       sortOrder: (index + 1) * 10,
     }))
@@ -161,11 +157,12 @@ export const listReportProducts = async (
     const result = await env.DB.prepare(
       `${selectColumns} WHERE active = 1 ORDER BY sort_order ASC, slug ASC`,
     ).all?.<ReportProductRow>();
-    return (result?.results ?? [])
+    const rows = (result?.results ?? [])
       .map((row) => normalizeRow(row, locale))
       .filter(Boolean) as ReportProduct[];
+    return rows.length > 0 ? rows : localFallback(locale);
   } catch {
-    return [];
+    return localFallback(locale);
   }
 };
 
@@ -182,8 +179,9 @@ export const getReportProductBySlug = async (
     )
       .bind(slug)
       .first?.()) as ReportProductRow | null | undefined;
-    return row ? normalizeRow(row, locale) : undefined;
+    const normalized = row ? normalizeRow(row, locale) : undefined;
+    return normalized ?? localFallback(locale).find((report) => report.slug === slug);
   } catch {
-    return undefined;
+    return localFallback(locale).find((report) => report.slug === slug);
   }
 };

@@ -19,9 +19,19 @@ export type HomeShopCopy = {
 };
 
 const prices = ["$48", "$16", "$28", "$22"] as const;
+const defaultImages = [
+  "/images/shop/natal-print.png",
+  "/images/shop/pins.png",
+  "/images/shop/almanac.png",
+  "/images/shop/candle.png",
+] as const;
 
 const itemSet = (items: Array<Omit<HomeShopItem, "price">>): HomeShopItem[] =>
-  items.map((item, index) => ({ ...item, price: prices[index] }));
+  items.map((item, index) => ({
+    ...item,
+    price: prices[index],
+    imageSrc: item.imageSrc || defaultImages[index],
+  }));
 
 const copies: Record<SupportedLocale, HomeShopCopy> = {
   en: {

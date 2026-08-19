@@ -57,20 +57,21 @@ test("Home Hero keeps visible copy and edit bindings caller-owned", async () => 
   );
 });
 
-test("Home Hero preserves the Almanac centered field, wrapping proofs, and responsive safeguards", async () => {
+test("Home Hero preserves the Almanac editorial grid, ledger card, and responsive safeguards", async () => {
   const styles = await readFile(stylesPath, "utf8");
 
-  assert.match(styles, /inline-size: min\(100%, 72\.5rem\)/);
-  assert.match(styles, /justify-items: center/);
-  assert.match(styles, /font-size: clamp\(3rem, 7\.4vw, 6\.125rem\)/);
-  assert.match(styles, /\.home-hero__proofs\s*\{[^}]*display: flex[^}]*flex-wrap: wrap/s);
+  assert.match(styles, /inline-size: min\(100%, 78\.75rem\)/);
+  assert.match(styles, /\.home-hero__grid\s*\{[^}]*grid-template-columns: 1\.15fr 0\.85fr/s);
+  assert.match(styles, /font-size: clamp\(3rem, 6\.5vw, 6\.5rem\)/);
+  assert.match(styles, /\.home-hero__ledger/);
+  assert.match(styles, /\.home-hero__masthead/);
   assert.doesNotMatch(styles, /home-hero__visual|home-hero__wheel/);
   assert.match(styles, /@media \(prefers-reduced-motion: no-preference\)/);
   assert.match(styles, /@media \(max-width: 62rem\)/);
   assert.match(styles, /@media \(max-width: 40rem\)/);
   assert.match(styles, /@media \(forced-colors: active\)/);
   assert.doesNotMatch(styles, /\.chart-wheel__/);
-  assert.doesNotMatch(styles, /\.sidera-button/);
+  assert.doesNotMatch(styles, /\.sidera-button\s*\{/);
 });
 
 test("Home route prepares localized chrome and mounts the approved Home sections", async () => {

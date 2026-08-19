@@ -108,9 +108,23 @@ const moreLabel = chromeNavigation?.content.nav_more || sharedHeaderCopy.moreLab
 const walletLabel =
   chromeNavigation?.content.header_wallet_label || sharedHeaderCopy.walletLabel;
 const walletEditAttributes = chromeNavigationEditAttributes("header_wallet_label");
+const rawPath = Astro.url.pathname.replace(/\/+$/, "") || "/";
+const localizedBlogPath = localizePath("/blog", locale).replace(/\/+$/, "") || "/blog";
+const localizedShopPath = localizePath("/shop", locale).replace(/\/+$/, "") || "/shop";
+const isBlogCurrent =
+  rawPath === "/blog" ||
+  rawPath.startsWith("/blog/") ||
+  rawPath === localizedBlogPath ||
+  rawPath.startsWith(`${localizedBlogPath}/`);
+const isShopCurrent =
+  rawPath === "/shop" ||
+  rawPath.startsWith("/shop/") ||
+  rawPath === localizedShopPath ||
+  rawPath.startsWith(`${localizedShopPath}/`);
+
 const isBlogHref = (href: string) =>
-  href === "#blog" || /^\/blog(?:[/?#]|$)/.test(href);
-const isShopHref = (href: string) => /^\/shop(?:[/?#]|$)/.test(href);
+  href === "#blog" || /^\/(?:[a-z]{2}\/)?blog(?:[/?#]|$)/.test(href);
+const isShopHref = (href: string) => /^\/(?:[a-z]{2}\/)?shop(?:[/?#]|$)/.test(href);
 const existingShopItem = navigation.find((item) => isShopHref(item.href));
 const resolvedNavigation: NavigationItem[] = navigation
   .filter((item) => !isShopHref(item.href))
@@ -119,6 +133,7 @@ const resolvedNavigation: NavigationItem[] = navigation
       ? {
           ...item,
           label: blogLabel,
+          current: isBlogCurrent || item.current,
           editAttributes: chromeNavigationEditAttributes("nav_blog") ?? item.editAttributes,
         }
       : item,
@@ -128,7 +143,7 @@ if (blogIndex === -1) {
   resolvedNavigation.push({
     label: blogLabel,
     href: localizePath("/blog", locale),
-    current: Astro.url.pathname === "/blog" || Astro.url.pathname.startsWith("/blog/"),
+    current: isBlogCurrent,
     editAttributes: chromeNavigationEditAttributes("nav_blog"),
   });
   blogIndex = resolvedNavigation.length - 1;
@@ -136,9 +151,9 @@ if (blogIndex === -1) {
 resolvedNavigation.splice(blogIndex + 1, 0, {
   ...(existingShopItem ?? {
     href: localizePath("/shop", locale),
-    current: Astro.url.pathname === "/shop" || Astro.url.pathname.startsWith("/shop/"),
   }),
   label: shopLabel,
+  current: isShopCurrent || existingShopItem?.current,
   editAttributes:
     chromeNavigationEditAttributes("nav_shop") ?? existingShopItem?.editAttributes,
 });
@@ -507,9 +522,12 @@ const classes = [
       const moreMenu = root.querySelector<HTMLElement>("[data-header-more-menu]");
       if (!moreTrigger || !moreMenu) return;
 
-      const items = () =>
-        Array.from(moreMenu.querySelectorAll<HTMLAnchorElement>('[role="menuitem"]'));
+      let closeTimeout: ReturnType<typeof setTimeout> | undefined;
       const setMoreOpen = (open: boolean, focusIndex?: number) => {
+        if (closeTimeout) {
+          clearTimeout(closeTimeout);
+          closeTimeout = undefined;
+        }
         root.classList.toggle("sidera-header__more--open", open);
         moreTrigger.setAttribute("aria-expanded", open ? "true" : "false");
         moreMenu.hidden = !open;
@@ -518,7 +536,10 @@ const classes = [
 
       root.addEventListener("mouseenter", () => setMoreOpen(true));
       root.addEventListener("mouseleave", () => {
-        if (!root.matches(":focus-within")) setMoreOpen(false);
+        if (closeTimeout) clearTimeout(closeTimeout);
+        closeTimeout = setTimeout(() => {
+          if (!root.matches(":focus-within")) setMoreOpen(false);
+        }, 220);
       });
       root.addEventListener("focusin", () => setMoreOpen(true));
       root.addEventListener("focusout", (event) => {

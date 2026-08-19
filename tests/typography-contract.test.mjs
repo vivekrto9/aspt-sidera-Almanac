@@ -31,10 +31,12 @@ test("Almanac loads and declares one canonical visitor typography pair", () => {
   const layout = read("src/layouts/BaseLayout.astro");
   const base = read("src/styles/base.css");
 
-  assert.match(layout, /family=Bricolage\+Grotesque:opsz,wght@12\.\.96,400;12\.\.96,500;12\.\.96,600;12\.\.96,700/);
-  assert.match(layout, /family=Spectral:ital,wght@0,400;0,500;1,400/);
-  assert.match(base, /--font-sans: "Bricolage Grotesque", ui-sans-serif/);
-  assert.match(base, /--font-serif: "Spectral", Georgia/);
+  assert.match(layout, /family=Syne:wght@600;700;800/);
+  assert.match(layout, /family=Libre\+Franklin:ital,wght@0,400;0,500;0,600;1,400/);
+  assert.match(layout, /family=Space\+Mono:wght@400;700/);
+  assert.match(base, /--font-sans: "Libre Franklin", system-ui/);
+  assert.match(base, /--font-serif: "Syne", sans-serif/);
+  assert.match(base, /--font-mono: "Space Mono", monospace/);
   assert.match(base, /body \{[\s\S]*font-family: var\(--font-sans\)/);
   assert.match(base, /h1 \{[\s\S]*font-family: var\(--font-serif\)/);
 });

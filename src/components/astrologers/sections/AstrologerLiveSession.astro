@@ -530,7 +530,16 @@ const personalizedOpeningMessage = copy.openingMessage.replaceAll(
         );
         const historySummary = activeHistory?.querySelector<HTMLElement>("[data-chat-history-summary]");
         const historyTime = activeHistory?.querySelector<HTMLTimeElement>("[data-chat-history-time]");
-        if (historySummary) historySummary.textContent = String(payload?.data?.answer || cleanValue);
+        if (historySummary) {
+          const rawAnswer = String(payload?.data?.answer || cleanValue);
+          historySummary.textContent = rawAnswer
+            .replace(/\*\*(.*?)\*\*/g, "$1")
+            .replace(/\*(.*?)\*/g, "$1")
+            .replace(/^#+\s+/gm, "")
+            .replace(/[_`~]/g, "")
+            .replace(/\s+/g, " ")
+            .trim();
+        }
         if (historyTime) {
           const now = new Date();
           historyTime.dateTime = now.toISOString();
