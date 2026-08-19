@@ -163,29 +163,6 @@ test("birth chart creation calls only the interpretation endpoint and stores a s
   assert.doesNotMatch(JSON.stringify(result.chart), /provider_response|provider_payload/);
 });
 
-test("birth chart creation prefers AstrologyAPI Basic credentials when configured", async () => {
-  const requests = [];
-  await createBirthChartReading({
-    env: {
-      DB: makeDb(),
-      ASTROLOGYAPI_USER_ID: "account-id",
-      ASTROLOGYAPI_PASSWORD: "account-secret",
-      X_ASTROLOGYAPI_KEY: "invalid-local-token",
-      ASTROLOGY_API_BASE_URL: "https://astrology.test/v1",
-      ASTROPAGES_PROJECT_ID: `birth-chart-basic-${Date.now()}`,
-    },
-    request: new Request("https://sidera.test/api/astropages/generated-site/birth-chart", { method: "POST" }),
-    body: inputBody,
-    now: "2026-08-12T00:00:00.000Z",
-    fetcher: async (url, init) => {
-      requests.push({ url, init });
-      return Response.json(providerResponse);
-    },
-  });
-  assert.equal(requests[0].init.headers.authorization, `Basic ${btoa("account-id:account-secret")}`);
-  assert.equal(requests[0].init.headers["x-astrologyapi-key"], undefined);
-});
-
 test("birth chart UI submits the real API and result route loads persisted readings", async () => {
   const experience = await import("node:fs/promises").then(({ readFile }) => readFile(new URL("../../src/components/birth-chart/BirthChartExperience.astro", import.meta.url), "utf8"));
   const resultPage = await import("node:fs/promises").then(({ readFile }) => readFile(new URL("../../src/pages/birth-chart/[slug].astro", import.meta.url), "utf8"));

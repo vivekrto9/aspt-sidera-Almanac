@@ -6,15 +6,15 @@ export const astrologyApiRuntimeNames = {
   apiKey: "X_ASTROLOGYAPI_KEY",
   jsonBaseUrl: "ASTROLOGY_API_BASE_URL",
   chatBaseUrl: "ASTROLOGYAPI_CHAT_BASE_URL",
-  userId: "ASTROLOGYAPI_USER_ID",
-  password: "ASTROLOGYAPI_PASSWORD",
 } as const;
+
+export const resolveAstrologyJsonRequestConfig = async (env: RuntimeEnv) => ({
+  apiKey: await resolveAstrologyApiKey(env),
+  baseUrl: await resolveAstrologyApiBaseUrl(env),
+});
 
 const processValue = (name: string) =>
   typeof process === "undefined" ? "" : safeString(process.env?.[name]);
-
-const resolveOptionalSecret = async (env: RuntimeEnv, name: string) =>
-  (await resolveSecretBinding(env, name)) || processValue(name);
 
 export const resolveAstrologyApiKey = async (env: RuntimeEnv) => {
   const key =
@@ -41,24 +41,6 @@ export const resolveAstrologyApiBaseUrl = async (env: RuntimeEnv) => {
   }
   return value;
 };
-
-export const resolveAstrologyApiRequestHeaders = async (
-  env: RuntimeEnv,
-): Promise<Record<string, string>> => {
-  const [userId, password] = await Promise.all([
-    resolveOptionalSecret(env, astrologyApiRuntimeNames.userId),
-    resolveOptionalSecret(env, astrologyApiRuntimeNames.password),
-  ]);
-  if (userId && password) {
-    return { authorization: `Basic ${btoa(`${userId}:${password}`)}` };
-  }
-  return { "x-astrologyapi-key": await resolveAstrologyApiKey(env) };
-};
-
-export const resolveAstrologyJsonRequestConfig = async (env: RuntimeEnv) => ({
-  baseUrl: await resolveAstrologyApiBaseUrl(env),
-  headers: await resolveAstrologyApiRequestHeaders(env),
-});
 
 export const joinAstrologyApiUrl = (baseUrl: string, endpoint: string) => {
   const base = baseUrl.replace(/\/+$/, "");

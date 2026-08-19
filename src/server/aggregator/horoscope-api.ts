@@ -55,7 +55,7 @@ export const getHoroscopePrediction = async ({ env, sign, period, locale = "en",
   const config = await resolveAstrologyJsonRequestConfig(env);
   const response = await fetcher(joinAstrologyApiUrl(config.baseUrl, endpoint), {
     method: "POST",
-    headers: { "content-type": "application/json", "accept-language": locale, ...config.headers },
+    headers: { "content-type": "application/json", "accept-language": locale, "x-astrologyapi-key": config.apiKey },
     body: JSON.stringify({ timezone: 0 }),
     signal: AbortSignal.timeout(15_000),
   });
