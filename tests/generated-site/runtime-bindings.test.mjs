@@ -68,3 +68,17 @@ test("Google Places resolves its canonical platform binding with legacy fallback
     "legacy-direct-key",
   );
 });
+
+test("generic secrets can fall back to trimmed process environment values", async () => {
+  const { resolveSecretBinding } = await import("../../src/server/aggregator/runtime-bindings.ts");
+  const bindingName = "ASTROPAGES_TEST_PROCESS_SECRET";
+  const previousValue = process.env[bindingName];
+
+  try {
+    process.env[bindingName] = "  process-secret  ";
+    assert.equal(await resolveSecretBinding({}, bindingName), "process-secret");
+  } finally {
+    if (previousValue === undefined) delete process.env[bindingName];
+    else process.env[bindingName] = previousValue;
+  }
+});

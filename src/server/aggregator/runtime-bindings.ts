@@ -104,7 +104,7 @@ export const resolveSecretBinding = async (
   if (bundled) return bundled;
   return (
     (await resolveRuntimeBinding(env[bindingName])) ||
-    (typeof process !== "undefined" ? safeString(process.env?.[bindingName]) : "")
+    (typeof process !== "undefined" ? safeSecretValue(process.env?.[bindingName]) : "")
   );
 };
 

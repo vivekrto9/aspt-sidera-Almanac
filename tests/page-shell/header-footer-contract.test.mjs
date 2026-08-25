@@ -85,6 +85,10 @@ test("shared Header groups Blog and Shop in the localized More menu", () => {
     2,
   );
   assert.match(header, /data-header-more-trigger/);
+  assert.match(
+    header,
+    /const items = \(\) =>\s*Array\.from\(moreMenu\.querySelectorAll<HTMLAnchorElement>/,
+  );
   assert.match(header, /root\.addEventListener\("mouseenter"/);
   assert.match(header, /class="sidera-header__mobile-more"/);
   assert.match(defaults, /nav_more: header\.moreLabel/);

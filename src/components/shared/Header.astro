@@ -522,6 +522,8 @@ const classes = [
       const moreMenu = root.querySelector<HTMLElement>("[data-header-more-menu]");
       if (!moreTrigger || !moreMenu) return;
 
+      const items = () =>
+        Array.from(moreMenu.querySelectorAll<HTMLAnchorElement>('[role="menuitem"]'));
       let closeTimeout: ReturnType<typeof setTimeout> | undefined;
       const setMoreOpen = (open: boolean, focusIndex?: number) => {
         if (closeTimeout) {
