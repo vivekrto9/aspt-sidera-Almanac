@@ -86,6 +86,141 @@ async function warmEmDashRuntime() {
 async function repairKnownEmDashMigrationState() {
   await repairRemovedSectionCategoriesMigration();
   await repairPluginMetadataMigration();
+  await repairLegacyTemplateContentColumns();
+}
+
+async function repairLegacyTemplateContentColumns() {
+  // These fields were added to historical migration files after some preview
+  // databases had already recorded those migrations. Reconcile only missing
+  // columns before bootstrap so both legacy and fresh databases are safe.
+  const legacyTemplateContentColumns = {
+    ec_site_birth_chart: [
+      "panel_kicker",
+      "panel_title_accent",
+      "panel_title_rest",
+      "panel_description",
+      "step_date_label",
+      "step_date_hint",
+      "step_time_label",
+      "step_time_hint",
+      "step_place_label",
+      "step_place_hint",
+      "progress_step",
+      "progress_of",
+      "date_kicker",
+      "date_title",
+      "date_body",
+      "name_label",
+      "name_optional",
+      "name_placeholder",
+      "date_label",
+      "month_label",
+      "day_label",
+      "year_label",
+      "time_kicker",
+      "time_title",
+      "time_body",
+      "time_label",
+      "hour_label",
+      "minute_label",
+      "period_label",
+      "unknown_time_label",
+      "unknown_time_description",
+      "place_kicker",
+      "place_title",
+      "place_body",
+      "location_label",
+      "location_placeholder",
+      "location_start",
+      "location_searching",
+      "location_empty",
+      "location_unavailable",
+      "location_selected",
+      "house_system_label",
+      "house_system_help",
+      "house_placidus",
+      "house_whole_sign",
+      "house_equal",
+      "back_label",
+      "continue_label",
+      "cast_label",
+      "casting_unavailable",
+      "seo_title",
+      "seo_description",
+      "seo_canonical_path",
+      "seo_robots",
+      "og_title",
+      "og_description",
+      "og_image",
+      "og_image_alt",
+      "twitter_card",
+      "twitter_title",
+      "twitter_description",
+      "twitter_image",
+    ],
+    ec_site_todays_sky: [
+      "page_header_eyebrow",
+      "page_header_title_accent",
+      "page_header_title_suffix",
+      "page_header_meta_primary",
+      "page_header_meta_secondary",
+      "header_action_transits",
+      "seo_title",
+      "seo_description",
+      "seo_canonical_path",
+      "seo_robots",
+      "og_title",
+      "og_description",
+      "og_image",
+      "og_image_alt",
+      "twitter_card",
+      "twitter_title",
+      "twitter_description",
+      "twitter_image",
+    ],
+  };
+  const legacyTransitMetadataColumns = {
+    slug: "TEXT",
+    author_id: "TEXT",
+    primary_byline_id: "TEXT",
+    scheduled_at: "TEXT",
+    deleted_at: "TEXT",
+    version: "INTEGER DEFAULT 1",
+    live_revision_id: "TEXT",
+    draft_revision_id: "TEXT",
+    translation_group: "TEXT",
+  };
+
+  for (const [tableName, columns] of Object.entries(legacyTemplateContentColumns)) {
+    await addMissingColumns(
+      tableName,
+      Object.fromEntries(columns.map((column) => [column, "TEXT"])),
+    );
+  }
+
+  await addMissingColumns("ec_site_transit", legacyTransitMetadataColumns);
+  if (await tableExists("ec_site_transit")) {
+    await d1Query(
+      "CREATE UNIQUE INDEX IF NOT EXISTS idx_ec_site_transit_slug_locale ON ec_site_transit (slug, locale);",
+    );
+  }
+}
+
+async function addMissingColumns(tableName, definitions) {
+  if (!(await tableExists(tableName))) return;
+
+  const existingColumns = new Set(
+    (await d1Query(`PRAGMA table_info(${quoteIdentifier(tableName)});`))
+      .map((column) => column.name),
+  );
+  for (const [columnName, definition] of Object.entries(definitions)) {
+    if (existingColumns.has(columnName)) continue;
+    console.log(`Repairing legacy template schema: adding ${tableName}.${columnName}`);
+    await d1Query(
+      `ALTER TABLE ${quoteIdentifier(tableName)} ADD COLUMN ${quoteIdentifier(columnName)} ${definition};`,
+    );
+    existingColumns.add(columnName);
+  }
 }
 
 async function repairRemovedSectionCategoriesMigration() {
@@ -291,7 +426,10 @@ async function postBootstrapBatch({ serviceToken, cursor, limit }) {
       fail(`AstroPages builder content bootstrap failed: ${payload.code ?? payload.error ?? response.status}`);
     }
 
-    console.log(`AstroPages builder content bootstrap returned ${response.status}; retrying...`);
+    const responseMessage = typeof payload.message === "string" ? payload.message.trim() : "";
+    console.log(
+      `AstroPages builder content bootstrap returned ${response.status}${responseMessage ? ` (${responseMessage})` : ""}; retrying...`,
+    );
     await sleep(5_000);
   }
 

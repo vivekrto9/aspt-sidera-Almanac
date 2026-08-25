@@ -301,6 +301,13 @@ test("deployed EmDash preparation bootstraps content through the bounded generat
   assert.match(source, /cursor/);
   assert.match(source, /limit: 10/);
   assert.match(source, /nextCursor/);
+  assert.match(source, /repairLegacyTemplateContentColumns/);
+  assert.match(source, /Repairing legacy template schema: adding/);
+  assert.match(source, /ec_site_birth_chart/);
+  assert.match(source, /ec_site_todays_sky/);
+  assert.match(source, /ec_site_transit/);
+  assert.match(source, /idx_ec_site_transit_slug_locale/);
+  assert.match(source, /payload\.message/);
   assert.doesNotMatch(source, /createCloudflareD1Binding/);
   assert.doesNotMatch(source, /import\("\.\.\/src\/server\/generated-site\/emdash-bootstrap\.ts"\)/);
 });
