@@ -235,6 +235,7 @@
     }
   },
   "routes": {
+    "admin": "/_emdash/admin",
     "visitorRoutes": [
       {
         "method": "GET",
