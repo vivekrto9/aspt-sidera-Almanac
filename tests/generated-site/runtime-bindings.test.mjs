@@ -12,6 +12,24 @@ test("runtime binding resolution times out stalled Secret Store reads", async ()
   assert.ok(Date.now() - startedAt < 2500);
 });
 
+test("secret binding resolution prefers Worker secrets and falls back to the legacy bundle", async () => {
+  const { integrationSecretBundleBinding, resolveSecretBinding } = await import(
+    "../../src/server/aggregator/runtime-bindings.ts"
+  );
+  const env = {
+    DIRECT_ONLY_SECRET: "worker-secret",
+    [integrationSecretBundleBinding]: JSON.stringify({
+      secrets: {
+        DIRECT_ONLY_SECRET: "legacy-secret",
+        LEGACY_ONLY_SECRET: "legacy-secret",
+      },
+    }),
+  };
+
+  assert.equal(await resolveSecretBinding(env, "DIRECT_ONLY_SECRET"), "worker-secret");
+  assert.equal(await resolveSecretBinding(env, "LEGACY_ONLY_SECRET"), "legacy-secret");
+});
+
 test("Google Places resolves its canonical platform binding with legacy fallbacks", async () => {
   const {
     integrationSecretBundleBinding,

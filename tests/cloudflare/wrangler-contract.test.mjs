@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
-  integrationSecretBundleBinding,
   platformGooglePlacesSecretBinding,
   secretStoreBindingsForGeneratedSite,
   loadWranglerConfig,
@@ -84,6 +83,6 @@ test("worker secret contract and generated-site Secret Store bindings match plat
   });
   assert.deepEqual(
     bindings.map((binding) => binding.binding),
-    [integrationSecretBundleBinding, platformGooglePlacesSecretBinding],
+    [platformGooglePlacesSecretBinding],
   );
 });
