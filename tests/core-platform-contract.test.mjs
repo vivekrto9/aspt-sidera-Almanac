@@ -3,10 +3,15 @@ import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
 import { loadWranglerConfig, validateCloudflareRuntimeConfig } from "../scripts/cloudflare-runtime-contract.mjs";
 import { schemaContract } from "../scripts/d1-schema-contract.mjs";
+import { detectWorkflowMode, workflowPaths } from "./cloudflare/workflow-mode.mjs";
 
 const root = new URL("../", import.meta.url);
 const read = (path) => readFileSync(new URL(path, root), "utf8");
 const readJson = (path) => JSON.parse(read(path));
+// Provisioning installs the seeds into .github/workflows and removes the seed directory.
+const deploymentWorkflowPaths = () => detectWorkflowMode(root) === "template-source"
+  ? [workflowPaths.generatedPreviewSeed, workflowPaths.generatedProductionSeed]
+  : [workflowPaths.installedPreview, workflowPaths.installedProduction];
 
 const baseTables = new Set([
   "ap_runtime_config",
@@ -105,8 +110,7 @@ test("SSO default target is EmDash content studio and source does not declare ge
 
   for (const path of [
     "template.manifest.json",
-    ".astropages/generated-site-workflows/deploy-preview.yml",
-    ".astropages/generated-site-workflows/deploy-production.yml",
+    ...deploymentWorkflowPaths(),
   ]) {
     assert.doesNotMatch(read(path), /\/astropages\/admin/, `${path} must not reference generated-site admin`);
   }
@@ -156,10 +160,7 @@ test("D1 schema contract covers the implemented Sidera runtime stores", () => {
 });
 
 test("deployment workflows keep required command order and smoke only core routes", () => {
-  const workflows = [
-    ".astropages/generated-site-workflows/deploy-preview.yml",
-    ".astropages/generated-site-workflows/deploy-production.yml",
-  ];
+  const workflows = deploymentWorkflowPaths();
   const orderedMarkers = [
     "pnpm install --frozen-lockfile",
     "pnpm run test",
