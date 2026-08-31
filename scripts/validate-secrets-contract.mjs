@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
+import { assertProjectSecretRequirement } from "./project-secret-requirement-contract.mjs";
 
 const manifest = JSON.parse(await readFile(new URL("../astropages/secrets.manifest.json", import.meta.url), "utf8"));
 
@@ -38,6 +39,7 @@ for (const integration of manifest.integrations) {
   assert.equal(typeof integration.name, "string");
   assert.ok(Array.isArray(integration.secrets));
   for (const secret of integration.secrets) {
+    assertProjectSecretRequirement(secret, builtInSecretKeys);
     assert.match(secret.key, /^[A-Z][A-Z0-9_]{0,63}$/);
     assert.ok(!declared.has(secret.key), `duplicate secret key ${secret.key}`);
     declared.add(secret.key);
