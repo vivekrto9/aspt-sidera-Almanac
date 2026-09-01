@@ -8,7 +8,7 @@ import { createId, nowIso, safeString, type RuntimeEnv } from "./runtime.ts";
 
 export const synastryFeature = "sidera.synastry";
 export const synastryReadingType = "synastry";
-const positionsEndpoint = "/v1/western/birth-chart/data";
+export const synastryPositionsEndpoint = "/v1/western_horoscope";
 type PersonInput = { name?: unknown; year?: unknown; month?: unknown; day?: unknown; hour?: unknown; minute?: unknown; period?: unknown; timeUnknown?: unknown; location?: unknown; locationId?: unknown; latitude?: unknown; longitude?: unknown; timezone?: unknown; timezoneOffset?: unknown };
 export type SynastryRequest = { locale?: unknown; personA?: PersonInput; personB?: PersonInput };
 const aspectTypes = [
@@ -48,7 +48,20 @@ export const validateSynastryInput = (body: SynastryRequest) => {
   const locale = /^[a-z]{2}(?:-[a-z]{2})?$/i.test(safeString(body.locale)) ? safeString(body.locale).toLowerCase() : "en";
   return { locale, personA: validatePerson(body.personA, "Person A"), personB: validatePerson(body.personB, "Person B") };
 };
-const payloadFor = (person: ReturnType<typeof validatePerson>) => ({ birth_details: { date: person.day, month: person.month, year: person.year, hour: person.hour, minute: person.min, second: 0, latitude: person.lat, longitude: person.lon, timezone_offset: person.tzone }, house_system: "placidus", zodiac_mode: "tropical" });
+export const buildSynastryPersonPayload = (
+  person: ReturnType<typeof validatePerson>,
+) => ({
+  day: person.day,
+  month: person.month,
+  year: person.year,
+  hour: person.hour,
+  min: person.min,
+  lat: person.lat,
+  lon: person.lon,
+  tzone: person.tzone,
+  house_type: "placidus",
+  is_asteroids: false,
+});
 const distance = (a: number, b: number) => { const diff = Math.abs(a - b) % 360; return Math.min(diff, 360 - diff); };
 const planetRole: Record<string, string> = {
   Sun: "identity and confidence",
@@ -118,13 +131,13 @@ export const createSynastryReading = async ({ env, request, body, fetcher = fetc
     if (!csrf.ok) throw new Error("Synastry request could not be verified.");
   }
   const [first, second] = await Promise.all([
-    postAstrologyEngine({ env, endpoint: positionsEndpoint, payload: payloadFor(input.personA), locale: input.locale, fetcher, now, failureMessage: "Synastry chart provider request failed." }),
-    postAstrologyEngine({ env, endpoint: positionsEndpoint, payload: payloadFor(input.personB), locale: input.locale, fetcher, now, failureMessage: "Synastry chart provider request failed." }),
+    postAstrologyEngine({ env, endpoint: synastryPositionsEndpoint, payload: buildSynastryPersonPayload(input.personA), locale: input.locale, fetcher, now, failureMessage: "Synastry chart provider request failed." }),
+    postAstrologyEngine({ env, endpoint: synastryPositionsEndpoint, payload: buildSynastryPersonPayload(input.personB), locale: input.locale, fetcher, now, failureMessage: "Synastry chart provider request failed." }),
   ]);
   const result = normalizeSynastryResult({ input, firstResponse: first.payload, secondResponse: second.payload });
   const readingId = createId("syn");
   await env.DB.prepare(`INSERT INTO ${AP_TABLES.chartReadings} (id, account_id, profile_id, reading_type, provider, locale, status, title, summary, input_json, result_json, provider_payload_json, provider_response_json, generated_at, created_at, updated_at) VALUES (?, ?, NULL, ?, 'astrologyapi', ?, 'ready', ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-    .bind(readingId, session?.account.id || null, synastryReadingType, input.locale, `${input.personA.name} & ${input.personB.name}`, result.verdict, JSON.stringify(input), JSON.stringify(result), JSON.stringify([payloadFor(input.personA), payloadFor(input.personB)]), JSON.stringify([first.payload, second.payload]), now, now, now).run?.();
+    .bind(readingId, session?.account.id || null, synastryReadingType, input.locale, `${input.personA.name} & ${input.personB.name}`, result.verdict, JSON.stringify(input), JSON.stringify(result), JSON.stringify([buildSynastryPersonPayload(input.personA), buildSynastryPersonPayload(input.personB)]), JSON.stringify([first.payload, second.payload]), now, now, now).run?.();
   return { ok: true as const, readingId, savedToAccount: Boolean(session), result };
 };
 const parseResult = (value: unknown) => { try { const parsed = JSON.parse(safeString(value)); return parsed && typeof parsed === "object" ? parsed as PreparedSynastryResult : null; } catch { return null; } };

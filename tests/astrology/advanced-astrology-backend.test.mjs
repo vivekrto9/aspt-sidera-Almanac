@@ -11,7 +11,9 @@ import {
   normalizeRetrogradeStations,
 } from "../../src/server/aggregator/retrogrades-api.ts";
 import {
+  buildSynastryPersonPayload,
   normalizeSynastryResult,
+  synastryPositionsEndpoint,
   validateSynastryInput,
 } from "../../src/server/aggregator/synastry-api.ts";
 import { postAstrologyEngine } from "../../src/server/aggregator/astrology-engine-api.ts";
@@ -323,6 +325,19 @@ test("Synastry validates two complete profiles and builds the native Sidera cont
     personB: { ...person, name: "Sam", year: 1990 },
   });
   assert.equal("relationship" in input, false);
+  assert.equal(synastryPositionsEndpoint, "/v1/western_horoscope");
+  assert.deepEqual(buildSynastryPersonPayload(input.personA), {
+    day: 12,
+    month: 8,
+    year: 1992,
+    hour: 19,
+    min: 30,
+    lat: 38.7,
+    lon: -9.1,
+    tzone: 1,
+    house_type: "placidus",
+    is_asteroids: false,
+  });
   const result = normalizeSynastryResult({
     input,
     firstResponse: chart(0),
