@@ -80,9 +80,16 @@ test("Today’s Sky loads exact provider positions plus events with server-only 
     now: "2026-08-13T00:00:00Z",
     fetcher: async (url, init) => {
       calls.push({ url, init });
-      return url.endsWith("/transits/events")
+      return url.endsWith("/tropical_transits/daily")
         ? Response.json({
-            events: [{ event_type: "direction_change", planet: "Mercury" }],
+            transit_relation: [
+              {
+                transit_planet: "Mercury",
+                natal_planet: "Uranus",
+                type: "Trine",
+                date: "13-8-2026",
+              },
+            ],
           })
         : Response.json(chart(calls.length));
     },
@@ -93,41 +100,39 @@ test("Today’s Sky loads exact provider positions plus events with server-only 
   assert.deepEqual(
     calls.map((call) => call.url),
     [
-      "https://astrology.test/v1/western/birth-chart/data",
-      "https://astrology.test/v1/transits/events",
-      "https://astrology.test/v1/western/birth-chart/data",
+      "https://astrology.test/v1/western_horoscope",
+      "https://astrology.test/v1/tropical_transits/daily",
+      "https://astrology.test/v1/western_horoscope",
     ],
   );
   assert.ok(
     calls.every(
-      (call) =>
-        call.init.headers["x-astrologyapi-key"] === "test-key",
+      (call) => call.init.headers["x-astrologyapi-key"] === "test-key",
     ),
   );
-  assert.ok(
-    calls.every((call) => !("authorization" in call.init.headers)),
-  );
+  assert.ok(calls.every((call) => !("authorization" in call.init.headers)));
   const positionPayload = JSON.parse(calls[0].init.body);
-  assert.deepEqual(positionPayload.birth_details, {
-    date: 13,
+  assert.deepEqual(positionPayload, {
+    day: 13,
     month: 8,
     year: 2026,
     hour: 12,
-    minute: 0,
-    second: 0,
-    latitude: 0,
-    longitude: 0,
-    timezone_offset: 0,
+    min: 0,
+    lat: 0,
+    lon: 0,
+    tzone: 0,
+    house_type: "placidus",
+    is_asteroids: false,
   });
-  assert.equal(positionPayload.birth_details.day, undefined);
+  assert.equal(positionPayload.birth_details, undefined);
 });
 
 test("Today’s Sky uses the current instant only for the live view", async () => {
   const payloads = [];
   const fetcher = async (url, init) => {
     payloads.push(JSON.parse(init.body));
-    return url.endsWith("/transits/events")
-      ? Response.json({ events: [] })
+    return url.endsWith("/tropical_transits/daily")
+      ? Response.json({ transit_relation: [] })
       : Response.json(chart(payloads.length));
   };
   const result = await getSkyForDate({
@@ -137,28 +142,30 @@ test("Today’s Sky uses the current instant only for the live view", async () =
     live: true,
     fetcher,
   });
-  assert.deepEqual(payloads[0].birth_details, {
-    date: 13,
+  assert.deepEqual(payloads[0], {
+    day: 13,
     month: 8,
     year: 2026,
     hour: 7,
-    minute: 6,
-    second: 5,
-    latitude: 0,
-    longitude: 0,
-    timezone_offset: 0,
+    min: 6,
+    lat: 0,
+    lon: 0,
+    tzone: 0,
+    house_type: "placidus",
+    is_asteroids: false,
   });
   assert.equal(result.calculatedAt, "2026-08-13T07:06:05.000Z");
-  assert.deepEqual(payloads[2].birth_details, {
-    date: 14,
+  assert.deepEqual(payloads[2], {
+    day: 14,
     month: 8,
     year: 2026,
     hour: 7,
-    minute: 6,
-    second: 5,
-    latitude: 0,
-    longitude: 0,
-    timezone_offset: 0,
+    min: 6,
+    lat: 0,
+    lon: 0,
+    tzone: 0,
+    house_type: "placidus",
+    is_asteroids: false,
   });
 });
 
@@ -187,36 +194,57 @@ test("upcoming sky aspects normalize, deduplicate, and sort provider events", ()
       moment_utc: "2026-08-18T10:00:00Z",
     },
     {
+      transit_planet: "Jupiter",
+      natal_planet: "Moon",
+      type: "sextile",
+      date: "14-8-2026",
+    },
+    {
       event_type: "direction_change",
       planet: "Mercury",
       event_time_utc: "2026-08-17T00:00:00Z",
     },
   ]);
 
-  assert.equal(events.length, 2);
-  assert.equal(events[0].planetA, "Mars");
-  assert.equal(events[0].planetB, "Uranus");
-  assert.equal(events[0].aspectId, "trine");
-  assert.equal(events[1].aspectId, "square");
+  assert.equal(events.length, 3);
+  assert.equal(events[0].planetA, "Jupiter");
+  assert.equal(events[0].planetB, "Moon");
+  assert.equal(events[0].aspectId, "sextile");
+  assert.equal(events[1].planetA, "Mars");
+  assert.equal(events[1].planetB, "Uranus");
+  assert.equal(events[1].aspectId, "trine");
+  assert.equal(events[2].aspectId, "square");
 });
 
 test("home sky can request a bounded upcoming event window", async () => {
-  const payloads = [];
+  const calls = [];
   await getSkyForDate({
     env,
     date: "2026-08-13",
     now: "2026-08-13T00:00:00Z",
     eventRangeDays: 30,
     fetcher: async (url, init) => {
-      payloads.push(JSON.parse(init.body));
-      return url.endsWith("/transits/events")
-        ? Response.json({ events: [] })
+      calls.push({ url, payload: JSON.parse(init.body) });
+      return url.endsWith("/tropical_transits/monthly")
+        ? Response.json({ transit_relation: [] })
         : Response.json(chart());
     },
   });
-  const eventPayload = payloads.find((payload) => payload.start_date);
-  assert.equal(eventPayload.start_date, "2026-08-13");
-  assert.equal(eventPayload.end_date, "2026-09-12");
+  const eventCall = calls.find((call) =>
+    call.url.endsWith("/tropical_transits/monthly"),
+  );
+  assert.deepEqual(eventCall.payload, {
+    day: 13,
+    month: 8,
+    year: 2026,
+    hour: 12,
+    min: 0,
+    lat: 0,
+    lon: 0,
+    tzone: 0,
+    house_type: "placidus",
+    is_asteroids: false,
+  });
 });
 
 test("Retrogrades normalize station changes into current cards and a year timeline", () => {

@@ -13,8 +13,13 @@ import {
 import { safeString, type RuntimeEnv } from "./runtime.ts";
 
 export const skyFeature = "sidera.todays-sky";
-const positionsEndpoint = "/v1/western/birth-chart/data";
-const globalEventsEndpoint = "/v1/transits/events";
+const positionsEndpoint = "/v1/western_horoscope";
+const eventsEndpointFor = (rangeDays: number) =>
+  rangeDays > 7
+    ? "/v1/tropical_transits/monthly"
+    : rangeDays > 1
+      ? "/v1/tropical_transits/weekly"
+      : "/v1/tropical_transits/daily";
 const bodyIds: SkyBodyId[] = [
   "sun",
   "moon",
@@ -123,19 +128,16 @@ const cacheMoment = (date: Date) => {
 };
 
 export const buildSkyPayload = (date: Date) => ({
-  birth_details: {
-    date: date.getUTCDate(),
-    month: date.getUTCMonth() + 1,
-    year: date.getUTCFullYear(),
-    hour: date.getUTCHours(),
-    minute: date.getUTCMinutes(),
-    second: date.getUTCSeconds(),
-    latitude: 0,
-    longitude: 0,
-    timezone_offset: 0,
-  },
-  house_system: "placidus",
-  zodiac_mode: "tropical",
+  day: date.getUTCDate(),
+  month: date.getUTCMonth() + 1,
+  year: date.getUTCFullYear(),
+  hour: date.getUTCHours(),
+  min: date.getUTCMinutes(),
+  lat: 0,
+  lon: 0,
+  tzone: 0,
+  house_type: "placidus",
+  is_asteroids: false,
 });
 
 const rawPlanets = (response: AstrologyRecord) => {
@@ -197,9 +199,14 @@ export const normalizeSkyPositions = (
 const eventsArray = (response: AstrologyRecord) =>
   (Array.isArray(response.events)
     ? response.events
-    : astrologyRecord(response.data) && Array.isArray(response.data.events)
-      ? response.data.events
-      : []
+    : Array.isArray(response.transit_relation)
+      ? response.transit_relation
+      : astrologyRecord(response.data) && Array.isArray(response.data.events)
+        ? response.data.events
+        : astrologyRecord(response.data) &&
+            Array.isArray(response.data.transit_relation)
+          ? response.data.transit_relation
+          : []
   ).filter(astrologyRecord);
 
 const eventMetadata = (event: AstrologyRecord) =>
@@ -228,6 +235,15 @@ const normalizedAspectId = (value: string): SkyAspectEventId | undefined => {
   return undefined;
 };
 
+const providerMoment = (value: string) => {
+  const dayFirst = /^(\d{1,2})-(\d{1,2})-(\d{4})$/.exec(value);
+  if (dayFirst) {
+    const [, day, month, year] = dayFirst;
+    return Date.UTC(Number(year), Number(month) - 1, Number(day), 12);
+  }
+  return Date.parse(value.length === 10 ? `${value}T12:00:00Z` : value);
+};
+
 export const normalizeUpcomingSkyAspectEvents = (
   events: AstrologyRecord[],
 ): UpcomingSkyAspectEvent[] => {
@@ -239,11 +255,13 @@ export const normalizeUpcomingSkyAspectEvents = (
         eventString(event, metadata, [
           "aspect",
           "aspect_type",
+          "type",
           "event_subtype",
           "sub_type",
         ]),
       );
       const planetA = eventString(event, metadata, [
+        "transit_planet",
         "transiting_planet",
         "planet",
         "planet_1",
@@ -254,6 +272,7 @@ export const normalizeUpcomingSkyAspectEvents = (
         "from_planet",
       ]);
       const planetB = eventString(event, metadata, [
+        "natal_planet",
         "related_planet",
         "aspecting_planet",
         "planet_2",
@@ -274,9 +293,7 @@ export const normalizeUpcomingSkyAspectEvents = (
         "exact_moment_local",
         "date",
       ]);
-      const parsedMoment = Date.parse(
-        moment.length === 10 ? `${moment}T12:00:00Z` : moment,
-      );
+      const parsedMoment = providerMoment(moment);
       if (
         !aspectId ||
         !planetA ||
@@ -330,19 +347,16 @@ export const getSkyForDate = async ({
   const safeEventRangeDays = Number.isInteger(eventRangeDays)
     ? Math.min(30, Math.max(1, eventRangeDays))
     : 1;
+  const eventsEndpoint = eventsEndpointFor(safeEventRangeDays);
   const selectedMoment = live ? currentMoment : selected.parsed;
   const followingMoment = new Date(selectedMoment.getTime() + 86_400_000);
-  const end = new Date(
-    selected.parsed.getTime() + safeEventRangeDays * 86_400_000,
-  )
-    .toISOString()
-    .slice(0, 10);
+  const followingDate = followingMoment.toISOString().slice(0, 10);
   const positionKey = live
     ? `sky:positions:${cacheMoment(selectedMoment)}`
     : `sky:positions:${selected.date}`;
   const followingKey = live
     ? `sky:positions:${cacheMoment(followingMoment)}`
-    : `sky:positions:${end}`;
+    : `sky:positions:${followingDate}`;
   const positionTtl = live ? 300 : 3_600;
   const [positionResult, eventResult] = await Promise.all([
     postAstrologyEngine({
@@ -358,16 +372,10 @@ export const getSkyForDate = async ({
     }),
     postAstrologyEngine({
       env,
-      endpoint: globalEventsEndpoint,
-      payload: {
-        start_date: selected.date,
-        end_date: end,
-        timezone_offset: 0,
-        zodiac_mode: "tropical",
-        max_events: 200,
-      },
+      endpoint: eventsEndpoint,
+      payload: buildSkyPayload(selectedMoment),
       locale,
-      cacheKey: `sky:events:${selected.date}:${end}`,
+      cacheKey: `sky:events:${eventsEndpoint}:${selected.date}`,
       ttlSeconds: 3_600,
       fetcher,
       now,
