@@ -7,8 +7,10 @@ import {
   getSkyForDate,
 } from "../../src/server/aggregator/sky-api.ts";
 import {
+  getRetrogrades,
   normalizeRetrogradeResult,
   normalizeRetrogradeStations,
+  retrogradePositionsEndpoint,
 } from "../../src/server/aggregator/retrogrades-api.ts";
 import {
   buildSynastryPersonPayload,
@@ -301,6 +303,38 @@ test("Retrogrades normalize station changes into current cards and a year timeli
     result.current.find((item) => item.id === "pluto").shadowDate,
     undefined,
   );
+});
+
+test("Retrogrades use the supported Western Horoscope contract for live positions", async () => {
+  const calls = [];
+  const result = await getRetrogrades({
+    env,
+    year: 2026,
+    locale: "en",
+    now: "2026-08-13T12:00:00Z",
+    fetcher: async (url, init) => {
+      calls.push({ url, init });
+      return Response.json(chart());
+    },
+  });
+
+  assert.equal(retrogradePositionsEndpoint, "/v1/western_horoscope");
+  assert.deepEqual(calls.map((call) => call.url), [
+    "https://astrology.test/v1/western_horoscope",
+  ]);
+  assert.deepEqual(JSON.parse(calls[0].init.body), {
+    day: 13,
+    month: 8,
+    year: 2026,
+    hour: 12,
+    min: 0,
+    lat: 0,
+    lon: 0,
+    tzone: 0,
+    house_type: "placidus",
+    is_asteroids: false,
+  });
+  assert.ok(result.current.some((item) => item.id === "mercury"));
 });
 
 test("Synastry validates two complete profiles and builds the native Sidera contract", () => {

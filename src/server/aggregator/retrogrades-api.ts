@@ -16,8 +16,7 @@ import { buildSkyPayload, normalizeSkyPositions } from "./sky-api.ts";
 import { safeString, type RuntimeEnv } from "./runtime.ts";
 
 export const retrogradesFeature = "sidera.retrogrades";
-const stationsEndpoint = "/v1/transits/events";
-const positionsEndpoint = "/v1/western/birth-chart/data";
+export const retrogradePositionsEndpoint = "/v1/western_horoscope";
 const supported = [
   "mercury",
   "venus",
@@ -280,48 +279,25 @@ export const getRetrogrades = async ({
   const safeLocale: SupportedLocale = activeLocaleCodes.includes(locale)
     ? locale
     : "en";
-  const [changes, positions] = await Promise.all([
-    postAstrologyEngine({
-      env,
-      endpoint: stationsEndpoint,
-      payload: {
-        start_date: `${numericYear}-01-01`,
-        end_date: `${numericYear}-12-31`,
-        timezone_offset: 0,
-        zodiac_mode: "tropical",
-        event_types: ["direction_change"],
-        max_events: 200,
-      },
-      locale: safeLocale,
-      cacheKey: `retrogrades:stations:${numericYear}`,
-      ttlSeconds: 21_600,
-      fetcher,
-      now,
-      failureMessage: "Retrograde provider request failed.",
-    }),
-    postAstrologyEngine({
-      env,
-      endpoint: positionsEndpoint,
-      payload: buildSkyPayload(new Date(now)),
-      locale: safeLocale,
-      cacheKey: `retrogrades:positions:${today}`,
-      ttlSeconds: 3_600,
-      fetcher,
-      now,
-      failureMessage: "Retrograde position provider request failed.",
-    }),
-  ]);
+  const positions = await postAstrologyEngine({
+    env,
+    endpoint: retrogradePositionsEndpoint,
+    payload: buildSkyPayload(new Date(now)),
+    locale: safeLocale,
+    cacheKey: `retrogrades:positions:${today}`,
+    ttlSeconds: 3_600,
+    fetcher,
+    now,
+    failureMessage: "Retrograde position provider request failed.",
+  });
   return {
     ...normalizeRetrogradeResult({
-      response: changes.payload,
+      response: {},
       positionsResponse: positions.payload,
       year: numericYear,
       locale: safeLocale,
       today,
     }),
-    source:
-      changes.source === "cache" && positions.source === "cache"
-        ? ("cache" as const)
-        : ("provider" as const),
+    source: positions.source,
   };
 };

@@ -66,8 +66,9 @@ test("Current status uses provider-normalized ephemeris facts without a page fix
 
   assert.match(data, /normalizeRetrogradeResult/);
   assert.match(data, /Intl\.DateTimeFormat/);
-  assert.match(data, /stationsEndpoint/);
-  assert.match(data, /positionsEndpoint/);
+  assert.match(data, /retrogradePositionsEndpoint/);
+  assert.match(data, /\/v1\/western_horoscope/);
+  assert.doesNotMatch(data, /\/v1\/western\/birth-chart\/data/);
   assert.match(page, /getRetrogrades/);
   assert.match(page, /import EmptyState/);
   assert.doesNotMatch(page, /getPreparedRetrogradeStatuses/);

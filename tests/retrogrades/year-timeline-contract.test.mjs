@@ -43,15 +43,15 @@ test("Year timeline matches the reference structure without changing shared defa
   assert.doesNotMatch(styles, /\.sidera-card-grid\s*\{/);
 });
 
-test("Year, localized months, planet labels, glyphs and bar geometry come from provider-normalized runtime data", async () => {
+test("Year timeline remains runtime-derived without calling an unsupported station-events route", async () => {
   const data = await read("src/server/aggregator/retrogrades-api.ts");
   const page = await read("src/pages/retrogrades.astro");
 
   assert.match(data, /normalizeRetrogradeResult/);
   assert.match(data, /Intl\.DateTimeFormat/);
   assert.match(data, /percentAt/);
-  assert.match(data, /retrogrades:stations:/);
-  assert.match(data, /event_types: \["direction_change"\]/);
+  assert.doesNotMatch(data, /\/v1\/transits\/events/);
+  assert.doesNotMatch(data, /event_types: \["direction_change"\]/);
   assert.match(page, /getRetrogrades/);
   assert.match(page, /import EmptyState/);
   assert.doesNotMatch(page, /getPreparedRetrogradeTimeline/);
