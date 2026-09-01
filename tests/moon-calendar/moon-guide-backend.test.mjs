@@ -9,9 +9,8 @@ import {
 } from "../../src/server/aggregator/moon-guide-api.ts";
 
 const env = {
-  ASTROLOGYAPI_USER_ID: "test-user",
-  ASTROLOGYAPI_PASSWORD: "test-password",
-  TRANSIT_CALC_BASE_URL: "https://astrology.test",
+  ASTROLOGY_API_BASE_URL: "https://astrology.test",
+  X_ASTROLOGYAPI_KEY: "test-key",
 };
 const names = [
   "Sun",
@@ -118,7 +117,7 @@ test("Moon guide retains deterministic phase-age normalization", () => {
   assert.equal(phaseIndexFromAge(14.8), 4);
 });
 
-test("current Moon guide uses server-only Transit Engine positions, phases, and ingress", async () => {
+test("current Moon guide uses server-only AstrologyAPI positions, phases, and ingress", async () => {
   const calls = [];
   const current = await getCurrentMoonGuide({
     env,
@@ -145,8 +144,7 @@ test("current Moon guide uses server-only Transit Engine positions, phases, and 
   assert.ok(
     calls.every(
       (call) =>
-        call.init.headers.authorization ===
-        `Basic ${btoa("test-user:test-password")}`,
+        call.init.headers["x-astrologyapi-key"] === "test-key",
     ),
   );
 });

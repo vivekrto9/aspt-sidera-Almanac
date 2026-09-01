@@ -21,7 +21,7 @@ Files such as `.dev.vars` and `.env` are normally ignored and may be absent afte
 - Core AstroPages/EmDash: `EMDASH_ENCRYPTION_KEY`, `BUILDER_MCP_TOKEN`, `BUILDER_MCP_PROVISION_SECRET`, `ASTROPAGES_PROJECT_ID`, `ASTROPAGES_SITE_ENVIRONMENT`, SSO/callback values.
 - Cloudflare/deployment: account/token values and preview/production D1, KV, and URL values.
 - Stripe wallet/payment: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`.
-- Astrology provider: `ASTROLOGY_API_BASE_URL`, `ASTROLOGYAPI_USER_ID`, `ASTROLOGYAPI_PASSWORD`, optional legacy `X_ASTROLOGYAPI_KEY`, `ASTROLOGYAPI_CHAT_BASE_URL`, and `TRANSIT_CALC_BASE_URL`.
+- Astrology provider: `ASTROLOGY_API_BASE_URL`, server-only `X_ASTROLOGYAPI_KEY`, and `ASTROLOGYAPI_CHAT_BASE_URL`.
 - Calendly values only if scheduling remains enabled.
 
 Rules:
@@ -30,7 +30,7 @@ Rules:
 - Keep `.env.example` and `.dev.vars.example` synchronized with the variables the runtime actually reads.
 - Compare variable **names**, not secret values, when auditing source and cloned repositories.
 - Restart the dev Worker after changing `.dev.vars`.
-- A present key is not automatically the correct authentication method. The current birth-chart and horoscope provider should prefer Basic authentication from `ASTROLOGYAPI_USER_ID` and `ASTROLOGYAPI_PASSWORD`, with `X_ASTROLOGYAPI_KEY` only as the supported fallback.
+- A present key is not automatically the correct authentication method. Astrology JSON requests use the server-only `X_ASTROLOGYAPI_KEY` header; do not introduce a separate Basic-auth transit contract.
 
 ## 3. Cloudflare bindings and resources
 

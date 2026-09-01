@@ -50,8 +50,6 @@ export const runtimeContract = {
     { binding: "WATI_API_TOKEN", provider: "WATI" },
     { binding: "MAILCHIMP_API_KEY", provider: "MAILCHIMP" },
     { binding: "X_ASTROLOGYAPI_KEY", provider: "ASTROLOGYAPI" },
-    { binding: "ASTROLOGYAPI_USER_ID", provider: "ASTROLOGYAPI" },
-    { binding: "ASTROLOGYAPI_PASSWORD", provider: "ASTROLOGYAPI" },
     {
       binding: "ASTROPAGES_PLATFORM_GOOGLE_PLACES_GOOGLE_PLACES_API_KEY",
       provider: "GOOGLE_PLACES",
@@ -94,8 +92,6 @@ export const runtimeContract = {
     "MAILCHIMP_AUDIENCE_ID",
     "MAILCHIMP_SERVER_PREFIX",
     "X_ASTROLOGYAPI_KEY",
-    "ASTROLOGYAPI_USER_ID",
-    "ASTROLOGYAPI_PASSWORD",
     "ASTROPAGES_PLATFORM_GOOGLE_PLACES_GOOGLE_PLACES_API_KEY",
     "PUBLIC_GTM_CONTAINER_ID",
     "PUBLIC_META_PIXEL_ID",

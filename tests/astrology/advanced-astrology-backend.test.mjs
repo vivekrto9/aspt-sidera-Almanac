@@ -68,12 +68,11 @@ const chart = (offset = 0) => ({
   })),
 });
 const env = {
-  ASTROLOGYAPI_USER_ID: "test-user",
-  ASTROLOGYAPI_PASSWORD: "test-password",
-  TRANSIT_CALC_BASE_URL: "https://astrology.test",
+  ASTROLOGY_API_BASE_URL: "https://astrology.test",
+  X_ASTROLOGYAPI_KEY: "test-key",
 };
 
-test("Today’s Sky loads exact provider positions plus events with server-only Transit Engine auth", async () => {
+test("Today’s Sky loads exact provider positions plus events with server-only AstrologyAPI key", async () => {
   const calls = [];
   const result = await getSkyForDate({
     env,
@@ -102,12 +101,11 @@ test("Today’s Sky loads exact provider positions plus events with server-only 
   assert.ok(
     calls.every(
       (call) =>
-        call.init.headers.authorization ===
-        `Basic ${btoa("test-user:test-password")}`,
+        call.init.headers["x-astrologyapi-key"] === "test-key",
     ),
   );
   assert.ok(
-    calls.every((call) => !("x-astrologyapi-key" in call.init.headers)),
+    calls.every((call) => !("authorization" in call.init.headers)),
   );
   const positionPayload = JSON.parse(calls[0].init.body);
   assert.deepEqual(positionPayload.birth_details, {
@@ -568,7 +566,7 @@ test("Transit rejects unauthenticated access to a saved profile before calling t
   assert.equal(providerCalls, 0);
 });
 
-test("Provider cache failures remain non-fatal and never move Transit Engine credentials client-side", async () => {
+test("Provider cache failures remain non-fatal and never move AstrologyAPI credentials client-side", async () => {
   const result = await postAstrologyEngine({
     env: {
       ...env,
@@ -583,11 +581,8 @@ test("Provider cache failures remain non-fatal and never move Transit Engine cre
     cacheKey: "safe-cache-test",
     ttlSeconds: 60,
     fetcher: async (_url, init) => {
-      assert.equal(
-        init.headers.authorization,
-        `Basic ${btoa("test-user:test-password")}`,
-      );
-      assert.equal(init.headers["x-astrologyapi-key"], undefined);
+      assert.equal(init.headers["x-astrologyapi-key"], "test-key");
+      assert.equal(init.headers.authorization, undefined);
       return Response.json(chart());
     },
   });

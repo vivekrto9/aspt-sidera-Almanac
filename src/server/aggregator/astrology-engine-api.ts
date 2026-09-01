@@ -105,7 +105,7 @@ export const postAstrologyEngine = async ({
     headers: {
       "content-type": "application/json",
       "accept-language": safeLocale,
-      authorization: config.authorization,
+      "x-astrologyapi-key": config.apiKey,
     },
     body: JSON.stringify(payload),
     signal: AbortSignal.timeout(20_000),
