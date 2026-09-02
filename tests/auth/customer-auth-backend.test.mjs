@@ -62,7 +62,7 @@ test("password reset email keeps the token in the private delivery body", async 
   const email = await read(
     "src/server/aggregator/notifications/password-reset-email.ts",
   );
-  assert.match(email, /sendSesTransactionalEmail/);
+  assert.match(email, /sendTransactionalEmail/);
   assert.match(email, /escapeHtml\(url\)/);
   assert.match(email, /expires in one hour/i);
 });

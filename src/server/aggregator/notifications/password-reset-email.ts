@@ -1,5 +1,5 @@
 import { safeString, type RuntimeEnv } from "../runtime.ts";
-import { readSenderSettings, sendSesTransactionalEmail } from "./ses.ts";
+import { readSenderSettings, sendTransactionalEmail } from "./transactional.ts";
 
 const escapeHtml = (value: string) =>
   value
@@ -27,7 +27,7 @@ export const sendPasswordResetEmail = async ({
     };
   }
   const safeUrl = escapeHtml(url);
-  return sendSesTransactionalEmail({
+  return sendTransactionalEmail({
     env,
     message: {
       to: [{ email: recipient }],

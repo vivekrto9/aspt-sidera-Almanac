@@ -1,6 +1,6 @@
 import { AP_TABLES as tables } from "../db/tables.ts";
 import { safeString, type RuntimeEnv } from "../runtime.ts";
-import { readSenderSettings, sendSesTransactionalEmail } from "./ses.ts";
+import { readSenderSettings, sendTransactionalEmail } from "./transactional.ts";
 import {
   extractTemplateVariables,
   parseJsonArray,
@@ -256,7 +256,7 @@ export const sendManagedEmailTemplateTest = async ({
   if (!settings.senderEmail) {
     return { ok: false as const, message: "SES sender email is not configured." };
   }
-  return sendSesTransactionalEmail({
+  return sendTransactionalEmail({
     env,
     message: {
       to: [{ email: recipient }],
@@ -293,7 +293,7 @@ export const sendManagedEmailTemplate = async ({
   if (!settings.senderEmail) {
     return { ok: false as const, message: "SES sender email is not configured." };
   }
-  return sendSesTransactionalEmail({
+  return sendTransactionalEmail({
     env,
     message: {
       to: [{ email: recipient }],
