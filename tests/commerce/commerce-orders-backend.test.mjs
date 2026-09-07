@@ -113,7 +113,7 @@ test("paid order receipts are managed, escaped, and claimed once", async () => {
   const { sendCommerceOrderReceipt } = await import("../../src/server/aggregator/notifications/commerce-order-receipt.ts");
   let calls = 0;
   let body = "";
-  const env = { DB, AWS_REGION: "us-east-1", AWS_ACCESS_KEY_ID: "test-access", AWS_SECRET_ACCESS_KEY: "test-secret", SES_SENDER_EMAIL: "orders@sidera.test", SES_SENDER_NAME: "Sidera" };
+  const env = { DB, ASTROPAGES_SITE_ENVIRONMENT: "production", AWS_REGION: "us-east-1", AWS_ACCESS_KEY_ID: "test-access", AWS_SECRET_ACCESS_KEY: "test-secret", SES_SENDER_EMAIL: "orders@sidera.test", SES_SENDER_NAME: "Sidera" };
   DB.sqlite.prepare("INSERT INTO ap_commerce_orders (id, order_number, account_id, order_type, status, fulfillment_status, currency, subtotal_cents, shipping_cents, tax_cents, total_cents, customer_name, customer_email, request_key, created_at, updated_at) VALUES (?, ?, ?, 'report', 'paid', 'generation_pending', 'USD', 2900, 0, 0, 2900, ?, ?, ?, ?, ?)").run("receipt_order", "SD-RECEIPT", "commerce_account", "Asha <Sky>", "buyer@example.test", "receipt-request", new Date().toISOString(), new Date().toISOString());
   const order = { id: "receipt_order", orderNumber: "SD-RECEIPT", customerName: "Asha <Sky>", customerEmail: "buyer@example.test", totalCents: 2900, currency: "USD", lines: [{ productName: "Natal <Blueprint>", quantity: 1 }] };
   const send = () => sendCommerceOrderReceipt({ env, order, siteOrigin: "https://sidera.example", fetch: async (_url, init) => { calls += 1; body = String(init.body); return new Response(JSON.stringify({ MessageId: "ses_receipt_1" }), { status: 200 }); } });

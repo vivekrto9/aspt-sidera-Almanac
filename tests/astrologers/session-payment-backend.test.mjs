@@ -219,7 +219,7 @@ test("Stripe session checkout and reconciliation verify target, amount, currency
     "../../src/server/aggregator/notifications/session-purchase-receipt.ts"
   );
   let receiptCalls = 0;
-  const receiptEnv = { DB, AWS_REGION: "us-east-1", AWS_ACCESS_KEY_ID: "test-access", AWS_SECRET_ACCESS_KEY: "test-secret", SES_SENDER_EMAIL: "sessions@sidera.test", SES_SENDER_NAME: "Sidera" };
+  const receiptEnv = { DB, ASTROPAGES_SITE_ENVIRONMENT: "production", AWS_REGION: "us-east-1", AWS_ACCESS_KEY_ID: "test-access", AWS_SECRET_ACCESS_KEY: "test-secret", SES_SENDER_EMAIL: "sessions@sidera.test", SES_SENDER_NAME: "Sidera" };
   const sendReceipt = () => sendSessionPurchaseReceipt({ env: receiptEnv, entitlement: paid.entitlement, siteOrigin: "https://sidera.example", fetch: async () => { receiptCalls += 1; return new Response(JSON.stringify({ MessageId: "ses_session_1" }), { status: 200 }); } });
   assert.equal((await sendReceipt()).ok, true);
   assert.equal((await sendReceipt()).skipped, true);

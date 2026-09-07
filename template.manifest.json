@@ -145,7 +145,13 @@
       "CALENDLY_15_MIN_EVENT_TYPE_URI",
       "CALENDLY_30_MIN_EVENT_TYPE_URI",
       "CALENDLY_45_MIN_EVENT_TYPE_URI",
-      "CALENDLY_60_MIN_EVENT_TYPE_URI"
+      "CALENDLY_60_MIN_EVENT_TYPE_URI",
+      "TRANSACTIONAL_EMAIL_PROVIDER",
+      "ACTIVE_ANALYTICS_PROVIDER",
+      "ACTIVE_SCHEDULING_PROVIDER",
+      "GMAIL_SENDER_EMAIL",
+      "GMAIL_SENDER_NAME",
+      "GA4_MEASUREMENT_ID"
     ],
     "providerCredentials": [
       "AWS_ACCESS_KEY_ID",
@@ -154,15 +160,36 @@
       "STRIPE_WEBHOOK_SECRET",
       "X_ASTROLOGYAPI_KEY",
       "CALENDLY_API_TOKEN",
-      "CALENDLY_WEBHOOK_SIGNING_KEY"
+      "CALENDLY_WEBHOOK_SIGNING_KEY",
+      "GMAIL_OAUTH_CLIENT_ID",
+      "GMAIL_OAUTH_CLIENT_SECRET",
+      "GMAIL_OAUTH_REFRESH_TOKEN",
+      "GMAIL_STATUS_CALLBACK_TOKEN",
+      "GA4_API_SECRET"
     ]
   },
   "localization": {
     "strategy": "query-param",
     "requiredDefaultLocale": "en",
     "defaultLocale": "en",
-    "activeLocales": ["en", "es", "fr", "pt", "ru", "it", "de"],
-    "availableLocaleCatalog": ["en", "es", "fr", "pt", "ru", "it", "de"],
+    "activeLocales": [
+      "en",
+      "es",
+      "fr",
+      "pt",
+      "ru",
+      "it",
+      "de"
+    ],
+    "availableLocaleCatalog": [
+      "en",
+      "es",
+      "fr",
+      "pt",
+      "ru",
+      "it",
+      "de"
+    ],
     "maxActiveLocales": 8,
     "rtlSupported": false,
     "editableContentSource": "src/data/public-copy.ts",
@@ -780,7 +807,10 @@
       "ap_leads",
       "ap_email_templates",
       "ap_email_events",
-      "ap_email_variable_mappings"
+      "ap_email_variable_mappings",
+      "ap_analytics_deliveries",
+      "ap_email_deliveries",
+      "ap_booking_preview_policy"
     ]
   }
 }

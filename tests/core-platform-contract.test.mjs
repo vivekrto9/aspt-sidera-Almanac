@@ -84,7 +84,7 @@ test("template manifest declares core platform metadata without generated-site a
   assert.equal(manifest.secrets.valuesAllowedInSource, false);
   assert.equal(manifest.localization.requiredDefaultLocale, "en");
   assert.deepEqual(manifest.localization.availableLocaleCatalog, ["en", "es", "fr", "pt", "ru", "it", "de"]);
-  assert.deepEqual(manifest.runtimePersistence.tables, [...baseTables]);
+  assert.deepEqual(manifest.runtimePersistence.tables, [...baseTables, "ap_analytics_deliveries", "ap_email_deliveries", "ap_booking_preview_policy"]);
   assert.equal(Object.hasOwn(manifest.runtime, "generatedSiteAdminPath"), false);
   assert.doesNotMatch(serialized, /\/astropages\/admin/);
 
