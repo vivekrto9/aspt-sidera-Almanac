@@ -20,6 +20,7 @@ type Props = {
   astrologerSlug?: string;
   profileId?: string;
   loginHref?: string;
+  sessionPricing: { voiceAddonCents: number; videoAddonCents: number; writtenCents: number };
   editAttributes?: (field: string) => EditAttributes;
 };
 
@@ -34,20 +35,21 @@ const {
   astrologerSlug = astrologer.slug,
   profileId = "",
   loginHref = "",
+  sessionPricing,
   editAttributes = () => ({}),
 } = Astro.props as Props;
 const firstName = astrologer.name.split(" ")[0];
 const withName = (value: string) => value.replaceAll("{name}", firstName);
 const currency = new Intl.NumberFormat(locale, {
   style: "currency",
-  currency: "USD",
+  currency: astrologer.currency || "USD",
   minimumFractionDigits: 2,
 });
 const sessionTypes = [
   ["chat", copy.liveChat, copy.liveChatDescription, astrologer.rate],
-  ["voice", copy.voiceCall, copy.voiceCallDescription, astrologer.rate + 0.6],
-  ["video", copy.videoCall, copy.videoCallDescription, astrologer.rate + 1.2],
-  ["written", copy.writtenQuestion, copy.writtenQuestionDescription, 19],
+  ["voice", copy.voiceCall, copy.voiceCallDescription, astrologer.rate + sessionPricing.voiceAddonCents / 100],
+  ["video", copy.videoCall, copy.videoCallDescription, astrologer.rate + sessionPricing.videoAddonCents / 100],
+  ["written", copy.writtenQuestion, copy.writtenQuestionDescription, sessionPricing.writtenCents / 100],
 ] as const;
 const slots = [
   ["today-1830", copy.slotOne, "setup_slot_one"],
@@ -87,14 +89,15 @@ const topics = [
   class="astrologer-setup"
   aria-labelledby="astrologer-setup-title"
   data-session-setup
+  data-currency={astrologer.currency || "USD"}
   data-chat-rate={currency.format(astrologer.rate)}
   data-chat-rate-unit={`${currency.format(astrologer.rate)}/min`}
-  data-voice-rate={currency.format(astrologer.rate + 0.6)}
-  data-voice-rate-unit={`${currency.format(astrologer.rate + 0.6)}/min`}
-  data-video-rate={currency.format(astrologer.rate + 1.2)}
-  data-video-rate-unit={`${currency.format(astrologer.rate + 1.2)}/min`}
-  data-written-rate={currency.format(19)}
-  data-written-rate-unit={`${currency.format(19)} ${copy.flatRateLabel}`}
+  data-voice-rate={currency.format(astrologer.rate + sessionPricing.voiceAddonCents / 100)}
+  data-voice-rate-unit={`${currency.format(astrologer.rate + sessionPricing.voiceAddonCents / 100)}/min`}
+  data-video-rate={currency.format(astrologer.rate + sessionPricing.videoAddonCents / 100)}
+  data-video-rate-unit={`${currency.format(astrologer.rate + sessionPricing.videoAddonCents / 100)}/min`}
+  data-written-rate={currency.format(sessionPricing.writtenCents / 100)}
+  data-written-rate-unit={`${currency.format(sessionPricing.writtenCents / 100)} ${copy.flatRateLabel}`}
   data-now-label={copy.talkNow}
   data-written-when-label={copy.withinDayLabel}
   data-start-action={copy.startNow}
@@ -105,9 +108,9 @@ const topics = [
   data-total-label={copy.totalLabel}
   data-locale={locale}
   data-chat-rate-value={astrologer.rate}
-  data-voice-rate-value={astrologer.rate + 0.6}
-  data-video-rate-value={astrologer.rate + 1.2}
-  data-written-rate-value="19"
+  data-voice-rate-value={astrologer.rate + sessionPricing.voiceAddonCents / 100}
+  data-video-rate-value={astrologer.rate + sessionPricing.videoAddonCents / 100}
+  data-written-rate-value={sessionPricing.writtenCents / 100}
   data-csrf-token={csrfToken}
   data-astrologer-slug={astrologerSlug}
   data-profile-id={profileId}
@@ -395,7 +398,7 @@ const topics = [
       );
       const estimated = new Intl.NumberFormat(setup.dataset.locale ?? "en", {
         style: "currency",
-        currency: "USD",
+        currency: setup.dataset.currency || "USD",
         maximumFractionDigits: 0,
       }).format(numericRate * Number(duration));
       whenPanel.hidden = isWritten;
@@ -556,19 +559,27 @@ const topics = [
       if (params.get("payment") !== "success") return;
       const entitlementId = params.get("entitlementId") || "";
       const attemptId = params.get("attemptId") || "";
+      const provider = params.get("provider") || "stripe";
       const stripeSessionId = params.get("session_id") || "";
       const stored = sessionStorage.getItem(`sidera.session.checkout.${entitlementId}`);
       const checkout = stored ? JSON.parse(stored) : null;
-      if (!entitlementId || !attemptId || !stripeSessionId || !checkout) {
+      if (!entitlementId || !attemptId || (provider === "stripe" && !stripeSessionId) || !checkout) {
         showError("Payment was received, but the session details could not be restored. Open your account sessions to continue.");
         return;
       }
       setBusy(true);
       try {
-        await request(
-          "/api/astropages/generated-site/payments/stripe/session-confirm",
-          { entitlementId, attemptId, sessionId: stripeSessionId },
-        );
+        if (provider === "razorpay") {
+          let confirmed = false;
+          for (let attempt = 0; attempt < 8 && !confirmed; attempt += 1) {
+            const status = await request("/api/astropages/generated-site/payments/status", { payableType: "session_entitlement", payableId: entitlementId, attemptId });
+            confirmed = status?.data?.paid === true;
+            if (!confirmed) await new Promise((resolve) => window.setTimeout(resolve, 1000));
+          }
+          if (!confirmed) throw new Error("Payment is still awaiting Razorpay webhook confirmation. Please try again shortly.");
+        } else {
+          await request("/api/astropages/generated-site/payments/stripe/session-confirm", { entitlementId, attemptId, sessionId: stripeSessionId });
+        }
         const created = await request(checkout.deliveryMode === "later"
           ? "/api/astro-chat/create-scheduled-session"
           : "/api/astro-chat/create-session", {

@@ -20,6 +20,7 @@ type CheckoutProduct = {
   imageAlt: string;
   imageSrc: string;
   price: number;
+  currency: string;
   defaultVariant?: string;
 };
 type Props = {
@@ -43,13 +44,15 @@ const {
   accountEmail,
   editAttributes = () => ({}),
 } = Astro.props as Props;
+const activeCurrency = products[0]?.currency || "USD";
 const money = new Intl.NumberFormat(locale, {
   style: "currency",
-  currency: "USD",
+  currency: activeCurrency,
   minimumFractionDigits: 0,
   maximumFractionDigits: 2,
 });
-const initialTotals = getShopCommerceTotals(shopReviewCart);
+const prices = Object.fromEntries(products.map((p)=>[p.id,p.price]));
+const initialTotals = getShopCommerceTotals(shopReviewCart, prices, activeCurrency);
 const initialQuantity = (id: ShopProductId) =>
   shopReviewCart.find((item) => item.id === id)?.quantity ?? 1;
 const initialVariant = (product: CheckoutProduct) =>
@@ -69,6 +72,7 @@ const initialVariant = (product: CheckoutProduct) =>
   data-default-first-name={copy.defaultFirstName}
   data-shipping-free-label={copy.shippingFreeLabel}
   data-locale={locale}
+  data-currency={activeCurrency}
 >
   <div class="shop-checkout__inner">
     <a class="shop-flow-back" href={cartHref}>
@@ -127,7 +131,7 @@ const initialVariant = (product: CheckoutProduct) =>
             <small class="shop-checkout__encrypted"><span>⚿</span> <span {...editAttributes("shop_checkout_encrypted_label")}>{copy.encryptedLabel}</span></small>
           </div>
           <div class="shop-checkout__stripe-note">
-            <span aria-hidden="true">S</span>
+            <span aria-hidden="true">✓</span>
             <p>{copy.secureCheckoutNote}</p>
           </div>
         </fieldset>
@@ -192,7 +196,7 @@ const initialVariant = (product: CheckoutProduct) =>
     shopCartStorageKey,
   } from "../../../data/shop/commerce.ts";
 
-  type ClientProduct = { id: string; title: string; unit: string; price: number; defaultVariant?: string };
+  type ClientProduct = { id: string; title: string; unit: string; price: number; currency:string; defaultVariant?: string };
 
   const initializeShopCheckout = (root: HTMLElement) => {
     if (root.dataset.shopCheckoutBound === "true") return;
@@ -201,7 +205,7 @@ const initialVariant = (product: CheckoutProduct) =>
     const defaultCart = normalizeShopCart(JSON.parse(root.dataset.defaultCart ?? "[]"));
     const productById = new Map(products.map((product) => [product.id, product]));
     const locale = root.dataset.locale || document.documentElement.lang || "en";
-    const money = new Intl.NumberFormat(locale, { style: "currency", currency: "USD", minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    const money = new Intl.NumberFormat(locale, { style: "currency", currency: root.dataset.currency || "USD", minimumFractionDigits: 0, maximumFractionDigits: 2 });
     let cart = defaultCart;
     try {
       const stored = sessionStorage.getItem(shopCartStorageKey);
@@ -209,7 +213,7 @@ const initialVariant = (product: CheckoutProduct) =>
     } catch {}
     if (cart.length === 0) cart = defaultCart;
 
-    const totals = getShopCommerceTotals(cart);
+    const totals = getShopCommerceTotals(cart, Object.fromEntries(products.map((p)=>[p.id,p.price])), root.dataset.currency || "USD");
     root.querySelectorAll<HTMLElement>("[data-shop-checkout-item]").forEach((row) => {
       const item = cart.find((entry) => entry.id === row.dataset.productId);
       row.hidden = !item;
@@ -252,12 +256,21 @@ const initialVariant = (product: CheckoutProduct) =>
       setActionLoading(submit, true, submit?.textContent?.trim());
       try {
         const formData = new FormData(form);
-        const requestStorageKey = "sidera-shop-checkout-request-v1";
+        const contact = Object.fromEntries(["firstName", "lastName", "street", "city", "state", "postalCode", "country"].map((key) => [key, formData.get(key)?.toString().trim() || ""]));
+        const requestFingerprint = JSON.stringify({
+          currency: root.dataset.currency || "USD",
+          items: cart.map(({ id, quantity, variant }) => ({ id, quantity, variant: variant || "" })),
+          contact,
+        });
+        const requestStorageKey = "sidera-shop-checkout-request-v2";
         let requestKey = "";
-        try { requestKey = sessionStorage.getItem(requestStorageKey) || ""; } catch {}
+        try {
+          const storedRequest = JSON.parse(sessionStorage.getItem(requestStorageKey) || "null") as { fingerprint?: string; requestKey?: string } | null;
+          if (storedRequest?.fingerprint === requestFingerprint) requestKey = storedRequest.requestKey || "";
+        } catch {}
         if (!requestKey) {
           requestKey = crypto.randomUUID();
-          try { sessionStorage.setItem(requestStorageKey, requestKey); } catch {}
+          try { sessionStorage.setItem(requestStorageKey, JSON.stringify({ fingerprint: requestFingerprint, requestKey })); } catch {}
         }
         const orderResponse = await fetch("/api/astropages/generated-site/product-orders", {
           method: "POST",
@@ -269,7 +282,7 @@ const initialVariant = (product: CheckoutProduct) =>
           },
           body: JSON.stringify({
             items: cart,
-            contact: Object.fromEntries(["firstName", "lastName", "street", "city", "state", "postalCode", "country"].map((key) => [key, formData.get(key)?.toString().trim() || ""])),
+            contact,
           }),
         });
         const orderBody = await orderResponse.json() as { message?: string; data?: { order?: { id?: string }; attempt?: { id?: string } } };

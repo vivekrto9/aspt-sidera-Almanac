@@ -1,5 +1,7 @@
 import { AP_TABLES as tables } from "./db/tables.ts";
 import { createId, nowIso, safeString, type RuntimeEnv } from "./runtime.ts";
+import { formatMoney, getWalletCurrency, getWalletPricing } from "./payment-pricing.ts";
+import { providerForPaymentCurrency } from "./payment-preference.ts";
 
 type Row = Record<string, unknown>;
 type RunResult =
@@ -52,19 +54,14 @@ export const walletOffers = [
   { id: "wl_1000", amountCents: 100000, creditCents: 115000, bonusCents: 15000 },
 ] as const;
 
-const amount = (cents: number, locale = "en") =>
-  new Intl.NumberFormat(locale === "en" ? "en-US" : locale, {
-    style: "currency",
-    currency: WALLET_CURRENCY,
-    maximumFractionDigits: 0,
-  }).format(cents / 100);
+const amount = (cents: number, locale = "en", currency = WALLET_CURRENCY) => formatMoney(cents, currency, locale === "en" ? "en-US" : locale);
 
 const walletFromRow = (row: Row, locale = "en") => ({
   id: safeString(row.id),
   accountId: safeString(row.account_id),
   balanceCents: Number(row.balance_cents ?? 0),
-  balance: amount(Number(row.balance_cents ?? 0), locale),
-  currency: WALLET_CURRENCY,
+  balance: amount(Number(row.balance_cents ?? 0), locale, safeString(row.currency) || WALLET_CURRENCY),
+  currency: safeString(row.currency) || WALLET_CURRENCY,
   updatedAt: safeString(row.updated_at),
 });
 
@@ -75,11 +72,11 @@ const transactionFromRow = (row: Row, locale = "en") => {
     rechargeId: safeString(row.recharge_id),
     type: safeString(row.transaction_type),
     amountCents,
-    amount: amount(Math.abs(amountCents), locale),
-    signedAmount: `${amountCents >= 0 ? "+" : "-"}${amount(Math.abs(amountCents), locale)}`,
+    amount: amount(Math.abs(amountCents), locale, safeString(row.currency) || WALLET_CURRENCY),
+    signedAmount: `${amountCents >= 0 ? "+" : "-"}${amount(Math.abs(amountCents), locale, safeString(row.currency) || WALLET_CURRENCY)}`,
     balanceAfterCents: Number(row.balance_after_cents ?? 0),
-    balanceAfter: amount(Number(row.balance_after_cents ?? 0), locale),
-    currency: WALLET_CURRENCY,
+    balanceAfter: amount(Number(row.balance_after_cents ?? 0), locale, safeString(row.currency) || WALLET_CURRENCY),
+    currency: safeString(row.currency) || WALLET_CURRENCY,
     description: safeString(row.description),
     createdAt: safeString(row.created_at),
   };
@@ -92,7 +89,7 @@ const rechargeFromRow = (row: Row) => ({
   amountCents: Number(row.amount_cents ?? 0),
   creditCents: Number(row.credit_cents ?? 0),
   bonusCents: Number(row.bonus_cents ?? 0),
-  currency: WALLET_CURRENCY,
+  currency: safeString(row.currency) || WALLET_CURRENCY,
   offerId: safeString(row.offer_id),
   requestKey: safeString(row.request_key),
   paymentState: safeString(row.payment_state),
@@ -116,13 +113,14 @@ export const ensureCustomerWallet = async (
   );
   if (existing) return existing;
   const now = nowIso();
+  const currency = await getWalletCurrency(env, accountId);
   await run(
     env,
     `INSERT INTO ${tables.wallets}
       (id, account_id, balance_cents, currency, created_at, updated_at)
      VALUES (?, ?, 0, ?, ?, ?)
      ON CONFLICT(account_id) DO NOTHING`,
-    [createId("wlt"), accountId, WALLET_CURRENCY, now, now],
+    [createId("wlt"), accountId, currency, now, now],
   );
   return first(
     env,
@@ -137,14 +135,15 @@ export const getCustomerWalletSummary = async (
   locale = "en",
 ) => {
   const wallet = await ensureCustomerWallet(env, accountId);
+  const effectiveCurrency = await getWalletCurrency(env, accountId);
   return wallet
-    ? walletFromRow(wallet, locale)
+    ? walletFromRow({ ...wallet, currency: effectiveCurrency }, locale)
     : {
         id: "",
         accountId,
         balanceCents: 0,
-        balance: amount(0, locale),
-        currency: WALLET_CURRENCY,
+        balance: amount(0, locale, effectiveCurrency),
+        currency: effectiveCurrency,
         updatedAt: "",
       };
 };
@@ -247,6 +246,7 @@ export const getWalletPaymentAttempt = async (
         id: safeString(row.id),
         accountId: safeString(row.account_id),
         payableId: safeString(row.payable_id),
+        provider: safeString(row.provider),
         providerOrderId: safeString(row.provider_order_id),
         checkoutUrl: safeString(row.provider_checkout_url),
         amountCents: Number(row.amount_cents ?? 0),
@@ -283,15 +283,16 @@ const ensureWalletAttempt = async (
     `INSERT INTO ${tables.paymentAttempts} (
       id, account_id, payable_type, payable_id, provider, amount_cents,
       currency, status, idempotency_key, created_at, updated_at
-    ) VALUES (?, ?, 'wallet_recharge', ?, 'stripe', ?, ?, 'created', ?, ?, ?)
+    ) VALUES (?, ?, 'wallet_recharge', ?, ?, ?, ?, 'created', ?, ?, ?)
     ON CONFLICT(idempotency_key) DO NOTHING`,
     [
       id,
       recharge.accountId,
       recharge.id,
+      providerForPaymentCurrency(recharge.currency === "INR" ? "INR" : "USD"),
       recharge.amountCents,
       recharge.currency,
-      `wallet_recharge:${recharge.id}:stripe:1`,
+      `wallet_recharge:${recharge.id}:${providerForPaymentCurrency(recharge.currency === "INR" ? "INR" : "USD")}:1`,
       now,
       now,
     ],
@@ -316,10 +317,11 @@ export const createWalletRecharge = async ({
     return { ok: false as const, status: 500, message: "Wallet storage is unavailable." };
   if (!/^[A-Za-z0-9._:-]{8,128}$/.test(requestKey))
     return { ok: false as const, status: 400, message: "A valid idempotency key is required." };
+  const pricing = await getWalletPricing(env, accountId);
   if (
     !Number.isInteger(amountCents) ||
-    amountCents < minimumWalletRechargeCents ||
-    amountCents > maximumWalletRechargeCents
+    amountCents < pricing.minimumCents ||
+    amountCents > pricing.maximumCents
   )
     return { ok: false as const, status: 400, message: "Wallet recharge amount is outside the allowed range." };
 
@@ -337,7 +339,7 @@ export const createWalletRecharge = async ({
   }
 
   const offer = offerId
-    ? walletOffers.find((candidate) => candidate.id === offerId)
+    ? pricing.offers.find((candidate) => candidate.id === offerId)
     : undefined;
   if (offerId && !offer)
     return { ok: false as const, status: 400, message: "Selected wallet offer is unavailable." };
@@ -347,6 +349,7 @@ export const createWalletRecharge = async ({
   const wallet = await ensureCustomerWallet(env, accountId);
   if (!wallet)
     return { ok: false as const, status: 500, message: "Wallet could not be created." };
+  await run(env, `UPDATE ${tables.wallets} SET currency = ?, updated_at = ? WHERE id = ? AND currency_locked_at IS NULL AND balance_cents = 0`, [pricing.currency, nowIso(), safeString(wallet.id)]);
   const id = createId("wlr");
   const now = nowIso();
   const creditCents = offer?.creditCents ?? amountCents;
@@ -363,7 +366,7 @@ export const createWalletRecharge = async ({
       amountCents,
       creditCents,
       creditCents - amountCents,
-      WALLET_CURRENCY,
+      pricing.currency,
       offer?.id ?? null,
       requestKey,
       now,
@@ -506,6 +509,10 @@ export const markWalletRechargePaid = async ({
   )
     return { ok: false as const, message: "Payment attempt does not match." };
 
+  const walletCurrency = await getWalletCurrency(env, recharge.accountId);
+  if (walletCurrency !== recharge.currency)
+    return { ok: false as const, message: "Wallet currency is permanently locked to its funded denomination." };
+
   const now = nowIso();
   const claimed = await run(
     env,
@@ -526,9 +533,9 @@ export const markWalletRechargePaid = async ({
     await run(
       env,
       `UPDATE ${tables.wallets}
-       SET balance_cents = balance_cents + ?, updated_at = ?
-       WHERE id = ? AND account_id = ?`,
-      [recharge.creditCents, now, recharge.walletId, recharge.accountId],
+       SET balance_cents = balance_cents + ?, currency = ?, currency_locked_at = COALESCE(currency_locked_at, ?), updated_at = ?
+       WHERE id = ? AND account_id = ? AND (currency_locked_at IS NULL OR currency = ?)`,
+      [recharge.creditCents, recharge.currency, now, now, recharge.walletId, recharge.accountId, recharge.currency],
     );
     const wallet = await getCustomerWalletSummary(env, recharge.accountId);
     await run(
@@ -545,7 +552,7 @@ export const markWalletRechargePaid = async ({
         recharge.id,
         recharge.creditCents,
         wallet.balanceCents,
-        WALLET_CURRENCY,
+        recharge.currency,
         JSON.stringify({ bonusCents: recharge.bonusCents, offerId: recharge.offerId }),
         now,
       ],
@@ -556,11 +563,12 @@ export const markWalletRechargePaid = async ({
     `INSERT INTO ${tables.paymentEvents} (
       id, payable_type, payable_id, provider, provider_event_id,
       status, payload_json, created_at
-    ) VALUES (?, 'wallet_recharge', ?, 'stripe', ?, ?, ?, ?)
+    ) VALUES (?, 'wallet_recharge', ?, ?, ?, ?, ?, ?)
     ON CONFLICT(provider, provider_event_id) DO NOTHING`,
     [
       createId("pevt"),
       rechargeId,
+      attempt.provider,
       eventId,
       eventStatus,
       JSON.stringify({ sessionId }),
@@ -582,6 +590,7 @@ export const markWalletRechargeFailed = async ({
   status,
   eventId,
   sessionId,
+  provider = "stripe",
 }: {
   env: RuntimeEnv;
   rechargeId: string;
@@ -589,6 +598,7 @@ export const markWalletRechargeFailed = async ({
   status: "failed" | "expired" | "cancelled";
   eventId: string;
   sessionId: string;
+  provider?: "stripe" | "razorpay";
 }) => {
   const now = nowIso();
   await run(
@@ -610,11 +620,12 @@ export const markWalletRechargeFailed = async ({
     `INSERT INTO ${tables.paymentEvents} (
       id, payable_type, payable_id, provider, provider_event_id,
       status, payload_json, created_at
-    ) VALUES (?, 'wallet_recharge', ?, 'stripe', ?, ?, ?, ?)
+    ) VALUES (?, 'wallet_recharge', ?, ?, ?, ?, ?, ?)
     ON CONFLICT(provider, provider_event_id) DO NOTHING`,
     [
       createId("pevt"),
       rechargeId,
+      provider,
       eventId,
       status === "cancelled" ? "failed" : status,
       JSON.stringify({ sessionId }),

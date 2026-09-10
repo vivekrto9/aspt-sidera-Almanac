@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { requireCustomerCsrf } from "../../../../server/aggregator/customer-auth.ts";
 import { createStripeSessionCheckout } from "../../../../server/aggregator/payments/stripe.ts";
+import { createRazorpayCheckout } from "../../../../server/aggregator/payments/razorpay.ts";
 import { resolveSecretBinding } from "../../../../server/aggregator/runtime-bindings.ts";
 import { safeString } from "../../../../server/aggregator/runtime.ts";
 import {
@@ -29,23 +30,6 @@ export const POST: APIRoute = async (context) => {
   const parsed = await readJsonBody(context.request);
   if (!parsed.ok) return parsed.response;
 
-  const [stripeSecret, webhookSecret] = await Promise.all([
-    resolveSecretBinding(env, "STRIPE_SECRET_KEY"),
-    resolveSecretBinding(env, "STRIPE_WEBHOOK_SECRET"),
-  ]);
-  const missingSecretNames = [
-    !stripeSecret ? "STRIPE_SECRET_KEY" : "",
-    !webhookSecret ? "STRIPE_WEBHOOK_SECRET" : "",
-  ].filter(Boolean);
-  if (missingSecretNames.length > 0) {
-    return blockedProviderResponse({
-      feature,
-      capabilityKey: "checkout-and-payments",
-      missingSecretNames,
-      message: "Stripe Checkout and its signed webhook are not configured.",
-    });
-  }
-
   const result = await createSessionPaymentTarget({
     env,
     accountId: auth.session.account.id,
@@ -73,9 +57,9 @@ export const POST: APIRoute = async (context) => {
       state: "ready",
       feature,
       capabilityKey: "checkout-and-payments",
-      message: "Existing Stripe checkout restored.",
+      message: `Existing ${result.attempt.provider} checkout restored.`,
       data: {
-        provider: "stripe",
+        provider: result.attempt.provider,
         entitlementId: result.entitlement.id,
         attemptId: result.attempt.id,
         checkoutUrl: result.attempt.checkoutUrl,
@@ -89,20 +73,24 @@ export const POST: APIRoute = async (context) => {
       409,
     );
   }
+  const provider = result.attempt.provider === "razorpay" ? "razorpay" : "stripe";
+  const required=provider==="razorpay"?["RAZORPAY_KEY_ID","RAZORPAY_KEY_SECRET","RAZORPAY_WEBHOOK_SECRET"]:["STRIPE_SECRET_KEY","STRIPE_WEBHOOK_SECRET"];
+  const missingSecretNames=(await Promise.all(required.map(async(name)=>[name,await resolveSecretBinding(env,name)] as const))).filter(([,v])=>!v).map(([n])=>n);
+  if(missingSecretNames.length) return blockedProviderResponse({feature,capabilityKey:"checkout-and-payments",missingSecretNames,message:`${provider} checkout and its signed webhook are not configured.`});
 
   try {
-    const checkout = await createStripeSessionCheckout({
+    const checkout = provider === "stripe" ? await createStripeSessionCheckout({
       env,
       payable: result.entitlement,
       attemptId: result.attempt.id,
       origin: new URL(context.request.url).origin,
       locale: safeString(parsed.body.locale) || "en",
-    });
+    }) : await createRazorpayCheckout({env,payable:result.entitlement,attemptId:result.attempt.id,origin:new URL(context.request.url).origin,payableType:"session_entitlement"});
     await recordSessionCheckout({
       env,
       entitlementId: result.entitlement.id,
       attemptId: result.attempt.id,
-      sessionId: checkout.sessionId,
+      sessionId: "sessionId" in checkout ? checkout.sessionId : checkout.orderId,
       checkoutUrl: checkout.checkoutUrl,
     });
     return jsonResponse({
@@ -110,9 +98,9 @@ export const POST: APIRoute = async (context) => {
       state: "ready",
       feature,
       capabilityKey: "checkout-and-payments",
-      message: "Stripe checkout is ready.",
+      message: `${provider} checkout is ready.`,
       data: {
-        provider: "stripe",
+        provider,
         entitlementId: result.entitlement.id,
         attemptId: result.attempt.id,
         checkoutUrl: checkout.checkoutUrl,

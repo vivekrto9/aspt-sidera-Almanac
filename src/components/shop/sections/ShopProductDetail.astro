@@ -25,6 +25,7 @@ type Props = {
     title: string;
     category: string;
     price: number;
+    currency: string;
     priceLabel: string;
     rating: number;
     reviews: number;
@@ -88,6 +89,7 @@ const detailField = (suffix: string) => `shop_detail_${productKey}_${suffix}`;
   data-product-detail
   data-product-id={product.id}
   data-unit-price={product.price}
+  data-currency={product.currency}
 >
   <div class="shop-product-detail__inner">
     <Breadcrumb
@@ -245,7 +247,7 @@ const detailField = (suffix: string) => `shop_detail_${productKey}_${suffix}`;
     const total = root.querySelector<HTMLElement>("[data-line-total]");
     const formatter = new Intl.NumberFormat(document.documentElement.lang || "en", {
       style: "currency",
-      currency: "USD",
+      currency: root.dataset.currency || "USD",
       maximumFractionDigits: 0,
     });
 

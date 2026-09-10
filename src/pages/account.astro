@@ -189,6 +189,7 @@ const accountWalletRuntime = customerSession
 const accountWalletSummary = accountWalletRuntime?.[0] ?? {
   balance: new Intl.NumberFormat(locale, { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(0),
   balanceCents: 0,
+  currency: "USD",
 };
 const accountWalletTransactions = accountWalletRuntime?.[1] ?? {
   items: [], totalItems: 0, totalPages: 1, page: 1, pageSize: accountWalletRecentTransactionLimit, filter: "all" as const,

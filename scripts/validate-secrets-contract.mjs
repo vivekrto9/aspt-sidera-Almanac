@@ -9,6 +9,7 @@ assert.equal(manifest.version, 1);
 assert.ok(Array.isArray(manifest.integrations));
 
 const builtInSecretKeys = new Set([
+  "RAZORPAY_KEY_ID",
   "RAZORPAY_KEY_SECRET",
   "RAZORPAY_WEBHOOK_SECRET",
   "STRIPE_SECRET_KEY",

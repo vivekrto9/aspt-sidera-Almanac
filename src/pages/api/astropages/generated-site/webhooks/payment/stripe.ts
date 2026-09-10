@@ -104,7 +104,7 @@ export const POST: APIRoute = async (context) => {
       getWalletRecharge(env, rechargeId),
       getWalletPaymentAttempt(env, attemptId),
     ]);
-    if (!recharge || !attempt || attempt.payableId !== recharge.id || attempt.accountId !== recharge.accountId || (attempt.providerOrderId && attempt.providerOrderId !== sessionId))
+    if (!recharge || !attempt || attempt.provider !== "stripe" || attempt.payableId !== recharge.id || attempt.accountId !== recharge.accountId || (attempt.providerOrderId && attempt.providerOrderId !== sessionId))
       return acknowledgement("ignored", "Stripe wallet target did not match.");
     const isPaid = eventType === "checkout.session.completed" || eventType === "checkout.session.async_payment_succeeded";
     if (isPaid) {
@@ -134,6 +134,7 @@ export const POST: APIRoute = async (context) => {
     if (
       !order ||
       !attempt ||
+      attempt.provider !== "stripe" ||
       attempt.payableId !== order.id ||
       attempt.accountId !== order.accountId ||
       (attempt.providerOrderId && attempt.providerOrderId !== sessionId)
@@ -199,6 +200,7 @@ export const POST: APIRoute = async (context) => {
   if (
     !entitlement ||
     !attempt ||
+    attempt.provider !== "stripe" ||
     attempt.payableId !== entitlement.id ||
     attempt.accountId !== entitlement.accountId ||
     (attempt.providerOrderId && attempt.providerOrderId !== sessionId)

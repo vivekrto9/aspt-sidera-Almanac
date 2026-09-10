@@ -66,6 +66,7 @@ export default defineConfig({
 		}),
 	],
 	vite: {
+		server: { allowedHosts: [".trycloudflare.com"] },
 		build: {
 			// The generated-site Worker includes Astro, EmDash admin/MCP, and the
 			// Cloudflare adapter in one server bundle. Keep this threshold explicit

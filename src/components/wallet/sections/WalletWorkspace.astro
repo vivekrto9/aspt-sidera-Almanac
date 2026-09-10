@@ -1,12 +1,19 @@
 ---
 import Button from "../../shared/Button.astro";
 
-type Props = { copy: Record<string, string>; wallet: { balance: string; balanceCents: number }; transactions: Array<Record<string, unknown>>; offers: ReadonlyArray<{ id: string; amountCents: number; creditCents: number; bonusCents: number }>; recentLimit: number; csrfToken: string; locale: string; browseHref: string; transactionsHref: string; paymentState: string; rechargeId: string; attemptId: string; sessionId: string };
-const { copy, wallet, transactions, offers, recentLimit, csrfToken, locale, browseHref, transactionsHref, paymentState, rechargeId, attemptId, sessionId } = Astro.props as Props;
-const state = paymentState === "success" ? "verifying" : paymentState === "cancelled" ? "cancelled" : paymentState === "failed" ? "failed" : "idle";
+type Props = { copy: Record<string, string>; wallet: { balance: string; balanceCents: number; currency: string }; transactions: Array<Record<string, unknown>>; offers: ReadonlyArray<{ id: string; amountCents: number; creditCents: number; bonusCents: number }>; minimumCents: number; maximumCents: number; recentLimit: number; csrfToken: string; locale: string; browseHref: string; transactionsHref: string; paymentState: string; paymentProvider: string; rechargeId: string; attemptId: string; sessionId: string; paymentRecharge?: { amountCents: number; creditCents: number; bonusCents: number; currency: string; paymentState: string } | null };
+const { copy: sourceCopy, wallet, transactions, offers, minimumCents, maximumCents, recentLimit, csrfToken, locale, browseHref, transactionsHref, paymentState, paymentProvider, rechargeId, attemptId, sessionId, paymentRecharge } = Astro.props as Props;
+const copy = Object.fromEntries(Object.entries(sourceCopy).map(([key, value]) => [key, value.replaceAll("Stripe Checkout", "secure checkout").replaceAll("Stripe", "the payment provider")])) as Record<string, string>;
+const state = paymentState === "success" ? "verifying" : paymentState === "pending" ? "pending" : paymentState === "cancelled" ? "cancelled" : paymentState === "failed" ? "failed" : "idle";
 const formatDate = (value: unknown) => value ? new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(String(value))) : "";
+const money = new Intl.NumberFormat(locale, { style: "currency", currency: wallet.currency, minimumFractionDigits: 0, maximumFractionDigits: 2 });
+const firstOffer = offers[0];
+const symbol = money.formatToParts(0).find((part) => part.type === "currency")?.value || wallet.currency;
+const receiptMoney = paymentRecharge
+  ? new Intl.NumberFormat(locale, { style: "currency", currency: paymentRecharge.currency, minimumFractionDigits: 0, maximumFractionDigits: 2 })
+  : money;
 ---
-<main class="wallet-page" data-wallet-app data-csrf={csrfToken} data-locale={locale} data-recent-limit={recentLimit} data-state={state} data-recharge-id={rechargeId} data-attempt-id={attemptId} data-session-id={sessionId}>
+<main class="wallet-page" data-wallet-app data-csrf={csrfToken} data-locale={locale} data-currency={wallet.currency} data-wallet-balance-cents={wallet.balanceCents} data-minimum-cents={minimumCents} data-maximum-cents={maximumCents} data-recent-limit={recentLimit} data-state={state} data-payment-provider={paymentProvider} data-recharge-id={rechargeId} data-attempt-id={attemptId} data-session-id={sessionId}>
   <section class="wallet-hero" aria-labelledby="wallet-title">
     <div class="wallet-hero__copy">
       <p>{copy.eyebrow}</p>
@@ -24,6 +31,13 @@ const formatDate = (value: unknown) => value ? new Intl.DateTimeFormat(locale, {
     <span class="wallet-notice__icon" aria-hidden="true">{state === "cancelled" || state === "failed" ? "!" : "✓"}</span>
     <div><strong data-wallet-notice-title>{state === "cancelled" ? copy.cancelled_title : state === "failed" ? copy.failed_title : copy.success_title}</strong><p data-wallet-notice-body>{state === "cancelled" ? copy.cancelled_body : state === "failed" ? copy.failed_body : copy.verifying}</p></div>
     {state === "failed" || state === "cancelled" ? <a href="#wallet-recharge" data-wallet-notice-action>{copy.retry}</a> : <a href="#wallet-recharge" data-wallet-notice-action hidden>{copy.retry}</a>}
+    {paymentRecharge ? (
+      <dl data-wallet-payment-receipt data-payment-state={paymentRecharge.paymentState}>
+        <div><dt>{copy.recharge_amount}</dt><dd>{receiptMoney.format(paymentRecharge.amountCents / 100)} {paymentRecharge.currency}</dd></div>
+        <div><dt>{copy.after_recharge}</dt><dd>{receiptMoney.format(paymentRecharge.creditCents / 100)} {paymentRecharge.currency}</dd></div>
+        {paymentRecharge.bonusCents ? <div><dt>{copy.bonus}</dt><dd>{receiptMoney.format(paymentRecharge.bonusCents / 100)} {paymentRecharge.currency}</dd></div> : null}
+      </dl>
+    ) : null}
   </section>
 
   <section class="wallet-grid">
@@ -31,18 +45,18 @@ const formatDate = (value: unknown) => value ? new Intl.DateTimeFormat(locale, {
       <h2>{copy.recharge_title}</h2>
       <label class="wallet-custom">
         <span>{copy.amount}</span>
-        <div><b>$</b><input name="amount" type="number" min="20" max="5000" step="1" value="100" inputmode="decimal" required /></div>
+        <div><b>{symbol}</b><input name="amount" type="number" min={minimumCents / 100} max={maximumCents / 100} step="1" value={(firstOffer?.amountCents ?? minimumCents) / 100} inputmode="decimal" required /></div>
       </label>
       <div class="wallet-offers" role="radiogroup" aria-label={copy.choose_amount}>
-        {offers.map((offer, index) => <button type="button" class:list={["wallet-offer", index === 0 && "is-selected"]} role="radio" aria-checked={index === 0 ? "true" : "false"} data-offer-id={offer.id} data-amount={offer.amountCents / 100} data-credit={offer.creditCents / 100}><strong>${offer.amountCents / 100}</strong>{offer.bonusCents ? <span>+ ${offer.bonusCents / 100}</span> : null}</button>)}
+        {offers.map((offer, index) => <button type="button" class:list={["wallet-offer", index === 0 && "is-selected"]} role="radio" aria-checked={index === 0 ? "true" : "false"} data-offer-id={offer.id} data-amount={offer.amountCents / 100} data-credit={offer.creditCents / 100}><strong>{money.format(offer.amountCents / 100)}</strong>{offer.bonusCents ? <span>+ {money.format(offer.bonusCents / 100)}</span> : null}</button>)}
       </div>
       <div class="wallet-summary" aria-live="polite">
         <div><span>{copy.current_balance}</span><strong data-wallet-balance>{wallet.balance}</strong></div>
-        <div><span>{copy.recharge_amount}</span><strong data-wallet-recharge-amount>$100</strong></div>
-        <div><span>{copy.after_recharge}</span><strong data-wallet-after-recharge>${wallet.balanceCents / 100 + 100}</strong></div>
+        <div><span>{copy.recharge_amount}</span><strong data-wallet-recharge-amount>{money.format((firstOffer?.amountCents ?? minimumCents) / 100)}</strong></div>
+        <div><span>{copy.after_recharge}</span><strong data-wallet-after-recharge>{money.format((wallet.balanceCents + (firstOffer?.creditCents ?? minimumCents)) / 100)}</strong></div>
       </div>
       <p class="wallet-form-error" data-wallet-error aria-live="polite"></p>
-      <Button class="wallet-pay" type="submit" variant="primary" size="large" shape="rounded" fullWidth data-wallet-submit>{copy.add_amount} $100</Button>
+      <Button class="wallet-pay" type="submit" variant="primary" size="large" shape="rounded" fullWidth data-wallet-submit>{copy.add_amount} {money.format((firstOffer?.amountCents ?? minimumCents) / 100)}</Button>
       <p class="wallet-secure">✦ {copy.secure}</p>
     </form>
 
@@ -61,11 +75,11 @@ const formatDate = (value: unknown) => value ? new Intl.DateTimeFormat(locale, {
   const form = root.querySelector("[data-wallet-form]"); const input = form?.querySelector("input[name=amount]");
   const error = root.querySelector("[data-wallet-error]"); const submit = root.querySelector("[data-wallet-submit]");
   const rechargeAmount = root.querySelector("[data-wallet-recharge-amount]"); const afterRecharge = root.querySelector("[data-wallet-after-recharge]");
-  const noticeAction = root.querySelector<HTMLElement>("[data-wallet-notice-action]");
+  const noticeAction = root.querySelector("[data-wallet-notice-action]");
   const isRetryVisibleState = root.dataset.state === "failed" || root.dataset.state === "cancelled";
-  const noticeIcon = root.querySelector<HTMLElement>(".wallet-notice__icon");
-  const notice = root.querySelector<HTMLElement>("[data-wallet-notice]");
-  let offerId = "wl_100"; let credit = 100; let requestKey = crypto.randomUUID();
+  const formatter = new Intl.NumberFormat(root.dataset.locale || "en", { style: "currency", currency: root.dataset.currency || "USD", minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  const firstOffer = root.querySelector("[data-offer-id]");
+  let offerId = firstOffer?.dataset.offerId || ""; let credit = Number(firstOffer?.dataset.credit) || Number(input?.value) || 0; let requestKey = crypto.randomUUID();
   const readPayload = async (response) => {
     const text = await response.text();
     if (!text) return {};
@@ -92,7 +106,7 @@ const formatDate = (value: unknown) => value ? new Intl.DateTimeFormat(locale, {
     if (!recent.length) { const empty = document.createElement("p"); empty.className = "wallet-empty"; empty.dataset.walletEmpty = ""; empty.textContent = copy.empty; container.append(empty); return; }
     recent.forEach((item) => container.append(buildTransaction(item)));
   };
-  const updateSummary = () => { const amount = Number(input.value) || 0; rechargeAmount.textContent = `$${amount}`; afterRecharge.textContent = `$${(Number(root.querySelector("[data-wallet-balance-main]").textContent.replace(/[^0-9.-]/g, "")) || 0) + credit}`; submit.querySelector("span").textContent = `${copy.add_amount} $${amount}`; };
+  const updateSummary = () => { const amount = Number(input.value) || 0; const balanceCents = Number(root.dataset.walletBalanceCents || "0"); rechargeAmount.textContent = formatter.format(amount); afterRecharge.textContent = formatter.format(balanceCents / 100 + credit); submit.querySelector("span").textContent = `${copy.add_amount} ${formatter.format(amount)}`; };
   const resetSubmitButton = () => {
     if (!(submit instanceof HTMLButtonElement)) return;
     submit.disabled = false;
@@ -122,7 +136,7 @@ const formatDate = (value: unknown) => value ? new Intl.DateTimeFormat(locale, {
   input?.addEventListener("input", () => { offerId = ""; credit = Number(input.value) || 0; root.querySelectorAll("[data-offer-id]").forEach((item) => { item.classList.remove("is-selected"); item.setAttribute("aria-checked", "false"); }); updateSummary(); });
   form?.addEventListener("submit", async (event) => {
     event.preventDefault(); error.textContent = ""; const amount = Number(input.value);
-    if (!Number.isFinite(amount) || amount < 20 || amount > 5000) { error.textContent = copy.minimum; return; }
+    if (!Number.isFinite(amount) || amount * 100 < Number(root.dataset.minimumCents) || amount * 100 > Number(root.dataset.maximumCents)) { error.textContent = copy.minimum; return; }
     submit.disabled = true; submit.querySelector("span").textContent = copy.preparing;
     try {
       const response = await fetch("/api/wallet/recharges", { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json", "x-astropages-customer-csrf": root.dataset.csrf || "" }, body: JSON.stringify({ amount, offerId: offerId || undefined, requestKey, locale: root.dataset.locale }) });
@@ -130,73 +144,128 @@ const formatDate = (value: unknown) => value ? new Intl.DateTimeFormat(locale, {
       requestKey = crypto.randomUUID(); window.location.assign(payload.data.checkoutUrl);
     } catch (reason) { error.textContent = reason instanceof Error ? reason.message : copy.failed_body; submit.disabled = false; updateSummary(); }
   });
-  if (root.dataset.state === "verifying") {
-    if (noticeAction) noticeAction.hidden = true;
-    if (noticeIcon) noticeIcon.textContent = "⌛";
+  if (root.dataset.state === "verifying" && root.dataset.paymentProvider === "stripe") {
+    const notice = root.querySelector("[data-wallet-notice]");
+    const noticeTitle = root.querySelector("[data-wallet-notice-title]");
+    const noticeBody = root.querySelector("[data-wallet-notice-body]");
+    const noticeIcon = root.querySelector(".wallet-notice__icon");
+    const noticeAction = root.querySelector("[data-wallet-notice-action]");
+    if (noticeTitle) noticeTitle.textContent = copy.verifying;
+    if (noticeBody) noticeBody.textContent = copy.verifying;
     if (notice) notice.classList.remove("is-error");
-    root.querySelector("[data-wallet-notice-title]").textContent = copy.verifying_title || "Verifying payment...";
-    root.querySelector("[data-wallet-notice-body]").textContent = copy.verifying_body || "Waiting for payment confirmation...";
-
+    if (noticeIcon) noticeIcon.textContent = "✓";
     const pollPaymentStatus = async (rechargeId, attemptsLeft = 20) => {
       if (attemptsLeft <= 0) {
-        root.querySelector("[data-wallet-notice-body]").textContent = "Payment is processing. Your wallet balance will update shortly once confirmed.";
+        if (noticeBody) noticeBody.textContent = "Payment is processing. Your wallet balance will update shortly once confirmed.";
         if (noticeIcon) noticeIcon.textContent = "⌛";
         return;
       }
       try {
-        const res = await fetch(`/api/astropages/generated-site/payments/status?payableType=wallet_recharge&payableId=${encodeURIComponent(rechargeId)}`, { credentials: "same-origin" });
-        const data = await readPayload(res);
-        const state = data?.data?.paymentState;
-        if (state === "paid") {
-          const summaryRes = await fetch(`/api/wallet/summary?locale=${encodeURIComponent(root.dataset.locale || "en")}`, { credentials: "same-origin" });
-          const summaryData = await readPayload(summaryRes);
+        const response = await fetch(`/api/astropages/generated-site/payments/status?payableType=wallet_recharge&payableId=${encodeURIComponent(rechargeId)}`, { credentials: "same-origin" });
+        const payload = await readPayload(response);
+        const paymentStatus = payload?.data?.paymentState;
+        if (paymentStatus === "paid") {
+          const summaryResponse = await fetch(`/api/wallet/summary?locale=${encodeURIComponent(root.dataset.locale || "en")}`, { credentials: "same-origin" });
+          const summaryData = await readPayload(summaryResponse);
           if (summaryData?.data?.wallet) {
-            document.querySelectorAll("[data-wallet-balance]").forEach((node) => node.textContent = summaryData.data.wallet.balance);
-            root.querySelector("[data-wallet-balance-main]").textContent = summaryData.data.wallet.balance;
+            root.dataset.walletBalanceCents = String(summaryData.data.wallet.balanceCents || 0);
+            document.querySelectorAll("[data-wallet-balance]").forEach((node) => { node.textContent = summaryData.data.wallet.balance; });
+            const main = root.querySelector("[data-wallet-balance-main]"); if (main) main.textContent = summaryData.data.wallet.balance;
             renderTransactions(summaryData.data.transactions);
             updateSummary();
           }
-          root.querySelector("[data-wallet-notice-title]").textContent = copy.success_title || "Payment successful";
-          root.querySelector("[data-wallet-notice-body]").textContent = copy.success_body;
+          if (noticeTitle) noticeTitle.textContent = copy.success_title;
+          if (noticeBody) noticeBody.textContent = copy.success_body;
           if (noticeAction) noticeAction.hidden = true;
           if (noticeIcon) noticeIcon.textContent = "✓";
-          if (notice) notice.classList.remove("is-error");
           history.replaceState({}, "", new URL(window.location.href).pathname + (root.dataset.locale !== "en" ? `?locale=${root.dataset.locale}` : ""));
           return;
         }
-        if (state === "failed" || state === "expired") {
-          throw new Error(copy.failed_body);
-        }
-        setTimeout(() => pollPaymentStatus(rechargeId, attemptsLeft - 1), 1500);
-      } catch (err) {
-        root.querySelector("[data-wallet-notice-title]").textContent = copy.failed_title;
-        root.querySelector("[data-wallet-notice-body]").textContent = err instanceof Error ? err.message : copy.failed_body;
+        if (paymentStatus === "failed" || paymentStatus === "expired") throw new Error(copy.failed_body);
+        window.setTimeout(() => { void pollPaymentStatus(rechargeId, attemptsLeft - 1); }, 1500);
+      } catch (reason) {
+        if (noticeTitle) noticeTitle.textContent = copy.failed_title;
+        if (noticeBody) noticeBody.textContent = reason instanceof Error ? reason.message : copy.failed_body;
         if (notice) notice.classList.add("is-error");
         if (noticeIcon) noticeIcon.textContent = "!";
         if (noticeAction) noticeAction.hidden = false;
       }
     };
-
     fetch("/api/astropages/generated-site/payments/stripe/wallet-confirm", {
       method: "POST",
       credentials: "same-origin",
-      headers: { "content-type": "application/json", "x-astropages-customer-csrf": root.dataset.csrf || "" },
-      body: JSON.stringify({ rechargeId: root.dataset.rechargeId, attemptId: root.dataset.attemptId, sessionId: root.dataset.sessionId, locale: root.dataset.locale }),
+      headers: {
+        "content-type": "application/json",
+        "x-astropages-customer-csrf": root.dataset.csrf || "",
+      },
+      body: JSON.stringify({
+        rechargeId: root.dataset.rechargeId,
+        attemptId: root.dataset.attemptId,
+        sessionId: root.dataset.sessionId,
+        locale: root.dataset.locale,
+      }),
     })
       .then(async (response) => {
         const payload = await readPayload(response);
-        if (!response.ok && response.status !== 202) {
+        if (response.status === 202) {
+          if (noticeTitle) noticeTitle.textContent = copy.verifying;
+          if (noticeBody) noticeBody.textContent = payload?.message || copy.verifying;
+          if (notice) notice.classList.remove("is-error");
+          if (noticeIcon) noticeIcon.textContent = "✓";
+          if (noticeAction) noticeAction.hidden = true;
+          void pollPaymentStatus(root.dataset.rechargeId);
+          return;
+        }
+        if (!response.ok || !payload?.data?.wallet) {
           throw new Error(payload?.message || copy.failed_body);
         }
-        pollPaymentStatus(root.dataset.rechargeId);
+        document.querySelectorAll("[data-wallet-balance]").forEach((node) => {
+          node.textContent = payload.data.wallet.balance;
+        });
+        root.querySelector("[data-wallet-balance-main]").textContent = payload.data.wallet.balance;
+        renderTransactions(payload.data.transactions);
+        updateSummary();
+        if (noticeTitle) noticeTitle.textContent = copy.success_title;
+        if (noticeBody) noticeBody.textContent = copy.success_body;
+        if (notice) notice.classList.remove("is-error");
+        if (noticeIcon) noticeIcon.textContent = "✓";
+        if (noticeAction) noticeAction.hidden = true;
+        history.replaceState({}, "", new URL(window.location.href).pathname + (root.dataset.locale !== "en" ? `?locale=${root.dataset.locale}` : ""));
       })
       .catch((reason) => {
-        root.querySelector("[data-wallet-notice-title]").textContent = copy.failed_title;
-        root.querySelector("[data-wallet-notice-body]").textContent = reason instanceof Error ? reason.message : copy.failed_body;
+        if (noticeTitle) noticeTitle.textContent = copy.failed_title;
+        if (noticeBody) noticeBody.textContent = reason instanceof Error ? reason.message : copy.failed_body;
         if (notice) notice.classList.add("is-error");
         if (noticeIcon) noticeIcon.textContent = "!";
         if (noticeAction) noticeAction.hidden = false;
       });
+  }
+  if (root.dataset.state === "verifying" && root.dataset.paymentProvider === "razorpay") {
+    const notice = root.querySelector("[data-wallet-notice]");
+    const noticeTitle = root.querySelector("[data-wallet-notice-title]");
+    const noticeBody = root.querySelector("[data-wallet-notice-body]");
+    const reconcile = async () => {
+      for (let attempt = 0; attempt < 8; attempt += 1) {
+        const response = await fetch("/api/astropages/generated-site/payments/status", { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json", "x-astropages-customer-csrf": root.dataset.csrf || "" }, body: JSON.stringify({ payableType: "wallet_recharge", payableId: root.dataset.rechargeId, attemptId: root.dataset.attemptId }) });
+        const payload = await readPayload(response);
+        if (payload?.data?.paid) {
+          const summaryResponse = await fetch(`/api/wallet/summary?locale=${encodeURIComponent(root.dataset.locale || "en")}`, { credentials: "same-origin" });
+          const summary = await readPayload(summaryResponse);
+          if (!summaryResponse.ok || !summary?.data?.wallet) throw new Error(summary?.message || copy.failed_body);
+          root.dataset.walletBalanceCents = String(summary.data.wallet.balanceCents || 0);
+          document.querySelectorAll("[data-wallet-balance]").forEach((node) => { node.textContent = summary.data.wallet.balance; });
+          const main = root.querySelector("[data-wallet-balance-main]"); if (main) main.textContent = summary.data.wallet.balance;
+          renderTransactions(summary.data.transactions); updateSummary();
+          if (noticeTitle) noticeTitle.textContent = copy.success_title; if (noticeBody) noticeBody.textContent = copy.success_body;
+          history.replaceState({}, "", new URL(window.location.href).pathname);
+          return;
+        }
+        await new Promise((resolve) => window.setTimeout(resolve, 1000));
+      }
+      if (noticeTitle) noticeTitle.textContent = copy.verifying; if (noticeBody) noticeBody.textContent = "Payment is still awaiting Razorpay webhook confirmation.";
+      if (notice) notice.classList.remove("is-error");
+    };
+    void reconcile().catch((reason) => { if (noticeTitle) noticeTitle.textContent = copy.failed_title; if (noticeBody) noticeBody.textContent = reason instanceof Error ? reason.message : copy.failed_body; if (notice) notice.classList.add("is-error"); });
   }
 })();
 </script>
