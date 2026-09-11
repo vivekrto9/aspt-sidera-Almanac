@@ -3,6 +3,8 @@ import {
   type BrowseAstrologer,
 } from "../../data/astrologers/browse.ts";
 import type { RuntimeEnv } from "./runtime.ts";
+import { selectIndependentPrice, selectPriceForCurrency } from "./payment-pricing.ts";
+import type { PaymentCurrency } from "./payment-preference.ts";
 
 type AstrologerRow = {
   slug?: unknown;
@@ -11,6 +13,9 @@ type AstrologerRow = {
   rating?: unknown;
   reviews_count?: unknown;
   rate_cents?: unknown;
+  price_inr_cents?: unknown;
+  price_usd_cents?: unknown;
+  currency?: unknown;
   availability?: unknown;
   categories_json?: unknown;
   specialties_json?: unknown;
@@ -51,7 +56,8 @@ const resolveImageUrl = (slug: string, storedUrl: string) =>
     ? `/@fs${new URL(`../../../astropages/assets/astrologers/${slug}.png`, import.meta.url).pathname}`
     : storedUrl;
 
-const normalizeRow = (row: AstrologerRow): BrowseAstrologer | undefined => {
+export type PricedAstrologer = BrowseAstrologer & { rateCents: number; currency: string };
+const normalizeRow = (row: AstrologerRow): PricedAstrologer | undefined => {
   const slug = text(row.slug);
   const availability = text(row.availability);
   const categories = stringArray(row.categories_json).filter((item) =>
@@ -73,6 +79,8 @@ const normalizeRow = (row: AstrologerRow): BrowseAstrologer | undefined => {
     rating: number(row.rating),
     reviews: number(row.reviews_count),
     rate: number(row.rate_cents) / 100,
+    rateCents: number(row.rate_cents),
+    currency: text(row.currency).toUpperCase() === "INR" ? "INR" : "USD",
     availability: availability as BrowseAstrologer["availability"],
     categories: categories as BrowseAstrologer["categories"],
     specialties: stringArray(row.specialties_json),
@@ -85,9 +93,11 @@ const normalizeRow = (row: AstrologerRow): BrowseAstrologer | undefined => {
   };
 };
 
-const localFallback = (): BrowseAstrologer[] =>
+const localFallback = (): PricedAstrologer[] =>
   browseAstrologers.map((profile) => ({
     ...profile,
+    rateCents: Math.round(profile.rate * 100),
+    currency: "USD",
     imageUrl: resolveImageUrl(
       profile.slug,
       `/_assets/aliases/astrologers-${profile.slug}/${profile.slug}.png`,
@@ -95,7 +105,8 @@ const localFallback = (): BrowseAstrologer[] =>
   }));
 
 const selectColumns = `
-  SELECT slug, name, tradition, rating, reviews_count, rate_cents, availability,
+  SELECT slug, name, tradition, rating, reviews_count, rate_cents,
+         rate_inr_cents AS price_inr_cents, rate_usd_cents AS price_usd_cents, currency, availability,
          categories_json, specialties_json, description, years_reading,
          sessions_count, languages_count, biography, image_url
   FROM ap_astrologers
@@ -103,15 +114,19 @@ const selectColumns = `
 
 export const listAstrologers = async (
   env: RuntimeEnv,
-): Promise<BrowseAstrologer[]> => {
+): Promise<PricedAstrologer[]> => {
   if (!env.DB) return localFallback();
   try {
     const result = await env.DB.prepare(
       `${selectColumns} WHERE active = 1 ORDER BY sort_order ASC, slug ASC`,
     ).all?.<AstrologerRow>();
-    return (result?.results ?? [])
+    const priced = await Promise.all((result?.results ?? []).map(async (row) => {
+      const selected = await selectIndependentPrice(env, row as Record<string, unknown>);
+      return { ...selected, rate_cents: selected.price_cents };
+    }));
+    return priced
       .map(normalizeRow)
-      .filter(Boolean) as BrowseAstrologer[];
+      .filter(Boolean) as PricedAstrologer[];
   } catch {
     return [];
   }
@@ -120,7 +135,8 @@ export const listAstrologers = async (
 export const getAstrologerBySlug = async (
   env: RuntimeEnv,
   slug: string,
-): Promise<BrowseAstrologer | undefined> => {
+  currency?: PaymentCurrency,
+): Promise<PricedAstrologer | undefined> => {
   if (!env.DB) return localFallback().find((profile) => profile.slug === slug);
   try {
     const row = (await env.DB.prepare(
@@ -128,7 +144,11 @@ export const getAstrologerBySlug = async (
     )
       .bind(slug)
       .first?.()) as AstrologerRow | null | undefined;
-    return row ? normalizeRow(row) : undefined;
+    if (!row) return undefined;
+    const selected = currency
+      ? selectPriceForCurrency(row as Record<string, unknown>, currency)
+      : await selectIndependentPrice(env, row as Record<string, unknown>);
+    return normalizeRow({ ...selected, rate_cents: selected.price_cents });
   } catch {
     return undefined;
   }

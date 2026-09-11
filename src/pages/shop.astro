@@ -192,10 +192,14 @@ const products = activeProducts.map((product) => {
     imageHeight: 1402,
   };
 });
+const shopCurrency = catalogProducts[0]?.currency || "USD";
+const shopMoney = new Intl.NumberFormat(locale, { style: "currency", currency: shopCurrency, minimumFractionDigits: 0, maximumFractionDigits: 2 });
+const freeShippingLabel = shopMoney.format(shopCurrency === "INR" ? 4999 : 75);
+const flatShippingLabel = shopMoney.format(shopCurrency === "INR" ? 499 : 6.5);
 const productPerks = ["✵", "☾", "⚘"].map((icon, index) => ({
   icon,
-  title: content[`shop_perk_${index + 1}_title`],
-  description: content[`shop_perk_${index + 1}_description`],
+  title: content[`shop_perk_${index + 1}_title`].replace(/\$75|₹4,999/g, freeShippingLabel),
+  description: content[`shop_perk_${index + 1}_description`].replace(/\$6\.50|₹499/g, flatShippingLabel),
 }));
 const requestedView = Astro.url.searchParams.get("view");
 const activeView = requestedView === "cart" || requestedView === "checkout" || requestedView === "confirmed" || requestedView === "failed"
@@ -226,6 +230,7 @@ const commerceProducts = catalogProducts.map((product) => {
     unit: content[`shop_product_${key}_unit`],
     imageAlt: content[`shop_product_${key}_fallback_label`],
     price: product.price,
+    currency: product.currency,
     imageSrc: product.imageUrl,
     defaultVariant: product.variant
       ? content[`shop_detail_${key}_variant_option_1`]
@@ -303,6 +308,7 @@ const seoContent = {
       attemptId={requestedAttemptId}
       stripeSessionId={requestedStripeSessionId}
       csrfToken={customerSession?.csrfToken || ""}
+      paymentProvider={Astro.url.searchParams.get("provider") || "stripe"}
       editAttributes={(field: string) => editAttributes(builderEdit(field))}
     />
   ) : activeView === "failed" ? (
@@ -310,6 +316,8 @@ const seoContent = {
       copy={checkoutFlowCopy}
       checkoutHref={checkoutHref}
       cartHref={cartHref}
+      locale={locale}
+      order={confirmedOrder}
       editAttributes={(field) => editAttributes(builderEdit(field))}
     />
   ) : (

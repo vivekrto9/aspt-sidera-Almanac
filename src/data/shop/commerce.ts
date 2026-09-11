@@ -44,15 +44,14 @@ export const normalizeShopCart = (value: unknown): ShopCartItem[] => {
   });
 };
 
-export const getShopCommerceTotals = (items: ShopCartItem[]) => {
+export const getShopCommerceTotals = (items: ShopCartItem[], prices?: Record<string,number>, currency = "USD") => {
   const subtotal = normalizeShopCart(items).reduce((sum, item) => {
     const product = shopCatalogProducts.find((entry) => entry.id === item.id);
-    return sum + (product?.price ?? 0) * item.quantity;
+    return sum + (prices?.[item.id] ?? product?.price ?? 0) * item.quantity;
   }, 0);
-  const shipping =
-    subtotal >= shopFreeShippingThreshold || subtotal === 0
-      ? 0
-      : shopFlatShipping;
+  const freeShippingThreshold = currency === "INR" ? 4999 : shopFreeShippingThreshold;
+  const flatShipping = currency === "INR" ? 499 : shopFlatShipping;
+  const shipping = subtotal >= freeShippingThreshold || subtotal === 0 ? 0 : flatShipping;
   const tax = subtotal * shopEstimatedTaxRate;
   return {
     subtotal,

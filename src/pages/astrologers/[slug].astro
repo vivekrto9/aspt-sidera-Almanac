@@ -33,6 +33,7 @@ import { getCustomerSession } from "../../server/aggregator/customer-auth.ts";
 import { listCustomerUserProfiles } from "../../server/aggregator/customer-profiles.ts";
 import { getCustomerWalletSummary, listWalletTransactions } from "../../server/aggregator/wallet-store.ts";
 import { getRuntimeEnv } from "../../server/generated-site/request.ts";
+import { getSessionPricing } from "../../server/aggregator/payment-pricing.ts";
 import "../../styles/astrologers/astrologers.css";
 
 export const prerender = false;
@@ -52,6 +53,7 @@ const astrologer = await getAstrologerBySlug(runtimeEnv, Astro.params.slug ?? ""
 if (!astrologer) {
   return Astro.redirect(localizePath("/astrologers", locale));
 }
+const sessionPricing = await getSessionPricing(runtimeEnv, astrologer.currency);
 const customerSession = await getCustomerSession(runtimeEnv, Astro.request).catch(
   () => null,
 );
@@ -458,9 +460,9 @@ const sessionTypeLabels = {
 } as const;
 const sessionRates = {
   chat: astrologer.rate,
-  voice: astrologer.rate + 0.6,
-  video: astrologer.rate + 1.2,
-  written: 19,
+  voice: astrologer.rate + sessionPricing.voiceAddonCents / 100,
+  video: astrologer.rate + sessionPricing.videoAddonCents / 100,
+  written: sessionPricing.writtenCents / 100,
 } as const;
 const resolvedSessionType = sessionTypeKey in sessionTypeLabels
   ? (sessionTypeKey as keyof typeof sessionTypeLabels)
@@ -560,13 +562,14 @@ const footerProps = createSharedFooterProps({
           walletBalanceCents={customerWallet?.balanceCents || 0}
           questionPrice={new Intl.NumberFormat(locale, {
             style: "currency",
-            currency: "USD",
+            currency: chatDetail?.session.currency || astrologer.currency || "USD",
             minimumFractionDigits: 2,
           }).format((chatDetail?.session.priceCents || 0) / 100)}
           questionPriceCents={chatDetail?.session.priceCents || 0}
           walletHref={localizePath("/wallet", locale)}
           newChatHref={localizePath("/astrologers", locale)}
           locale={locale}
+          currency={chatDetail?.session.currency || astrologer.currency}
           chatSessions={chatSessions}
           walletTransactions={walletTransactions}
           activeProfileLabel={[
@@ -604,6 +607,7 @@ const footerProps = createSharedFooterProps({
           astrologerSlug={astrologer.slug}
           profileId={defaultProfileId}
           loginHref={localizePath("/login", locale)}
+          sessionPricing={sessionPricing}
           editAttributes={(field: string) => componentEditAttributes(builderEdit(field))}
         />
       ) : (

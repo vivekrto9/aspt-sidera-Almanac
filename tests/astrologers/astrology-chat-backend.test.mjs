@@ -2,15 +2,18 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
+import { applyPaymentTestSchema } from "../helpers/payment-schema.mjs";
 
 const read = (path) =>
   readFileSync(new URL(`../../${path}`, import.meta.url), "utf8");
 
-const createD1 = () => {
+const createD1 = ({ applyChatCurrencyMigration = true } = {}) => {
   const sqlite = new DatabaseSync(":memory:");
   for (const migration of [
     "0001_base_runtime.sql",
     "0002_customer_auth.sql",
+    "0106_report_catalog.sql",
+    "0107_shop_catalog.sql",
     "0108_astrologer_directory.sql",
     "0109_customer_auth_mutations.sql",
     "0110_customer_profiles_and_preferences.sql",
@@ -23,6 +26,12 @@ const createD1 = () => {
     )[0],
   );
   sqlite.exec(read("migrations/0153_matching_chat_profiles.sql"));
+  sqlite.exec(read("migrations/0158_payment_currency_preference.sql"));
+  if (applyChatCurrencyMigration) {
+    sqlite.exec(read("migrations/0159_wallet_chat_dual_currency.sql"));
+  }
+  sqlite.exec(read("migrations/0160_lower_active_astrologer_inr_rates.sql"));
+  applyPaymentTestSchema(sqlite);
   return {
     sqlite,
     prepare(sql) {
@@ -78,6 +87,7 @@ const seedCustomer = (
   sqlite,
   accountId = "account_chat",
   balanceCents = 1000,
+  currency = "USD",
 ) => {
   const now = new Date().toISOString();
   sqlite
@@ -97,14 +107,75 @@ const seedCustomer = (
   sqlite
     .prepare(`INSERT INTO ap_wallets (
       id, account_id, balance_cents, currency, created_at, updated_at
-    ) VALUES (?, ?, ?, 'USD', ?, ?)`)
-    .run(`wallet_${accountId}`, accountId, balanceCents, now, now);
+    ) VALUES (?, ?, ?, ?, ?, ?)`)
+    .run(`wallet_${accountId}`, accountId, balanceCents, currency, now, now);
 };
 
 const providerFetch = (answer, onCall = () => {}) => async (_url, init) => {
   onCall(JSON.parse(init.body));
   return new Response(JSON.stringify({ success: true, answer }));
 };
+
+test("wallet chat migration preserves transcripts and permits INR sessions", async () => {
+  const DB = createD1({ applyChatCurrencyMigration: false });
+  seedCustomer(DB.sqlite, "account_legacy", 1000);
+  const now = new Date().toISOString();
+  DB.sqlite.prepare(`INSERT INTO ap_wallet_chat_sessions (
+    id, account_id, profile_id, astrologer_slug, session_name, status,
+    price_cents, currency, client_request_key, created_at, updated_at
+  ) VALUES (?, ?, ?, 'mara-ellison', 'Legacy chat', 'active', 320, 'USD', ?, ?, ?)`)
+    .run(
+      "legacy_chat_session",
+      "account_legacy",
+      "profile_account_legacy",
+      "legacy-chat-request",
+      now,
+      now,
+    );
+  DB.sqlite.prepare(`INSERT INTO ap_wallet_chat_messages (
+    id, session_id, role, message, cost_cents, created_at
+  ) VALUES ('legacy_chat_message', 'legacy_chat_session', 'assistant', 'Saved answer', 0, ?)`)
+    .run(now);
+
+  DB.sqlite.exec(read("migrations/0159_wallet_chat_dual_currency.sql"));
+
+  assert.equal(
+    DB.sqlite.prepare("SELECT currency FROM ap_wallet_chat_sessions WHERE id = 'legacy_chat_session'").get().currency,
+    "USD",
+  );
+  assert.equal(
+    DB.sqlite.prepare("SELECT message FROM ap_wallet_chat_messages WHERE id = 'legacy_chat_message'").get().message,
+    "Saved answer",
+  );
+  assert.equal(
+    DB.sqlite.prepare("PRAGMA foreign_key_check").all().length,
+    0,
+  );
+  const messageForeignKeys = DB.sqlite
+    .prepare("PRAGMA foreign_key_list(ap_wallet_chat_messages)")
+    .all()
+    .map((row) => row.table);
+  assert.equal(messageForeignKeys.includes("ap_wallet_chat_sessions"), true);
+
+  seedCustomer(DB.sqlite, "account_inr", 100000, "INR");
+  DB.sqlite.prepare("UPDATE ap_astrologers SET rate_inr_cents = 79900 WHERE slug = 'mara-ellison'").run();
+  const chat = await import("../../src/server/aggregator/astrology-chat.ts");
+  const created = await chat.createAstrologyChatSession({
+    env: { DB },
+    accountId: "account_inr",
+    profileId: "profile_account_inr",
+    astrologerSlug: "mara-ellison",
+    requestKey: "chat-session-request-inr",
+  });
+  assert.equal(created.ok, true);
+  assert.equal(created.session.currency, "INR");
+  assert.equal(created.session.priceCents, 79900);
+  assert.equal(
+    DB.sqlite.prepare("SELECT currency FROM ap_wallet_chat_sessions WHERE id = ?").get(created.session.id).currency,
+    "INR",
+  );
+  DB.sqlite.close();
+});
 
 test("wallet chat is owned, idempotent, and debits only after a provider answer", async () => {
   const DB = createD1();

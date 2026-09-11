@@ -22,7 +22,7 @@ export const POST: APIRoute = async (context) => {
     getWalletRecharge(env, rechargeId, auth.session.account.id),
     getWalletPaymentAttempt(env, attemptId),
   ]);
-  if (!recharge || !attempt || attempt.payableId !== recharge.id || attempt.accountId !== auth.session.account.id)
+  if (!recharge || !attempt || attempt.provider !== "stripe" || attempt.payableId !== recharge.id || attempt.accountId !== auth.session.account.id)
     return errorResponse(feature, "Wallet recharge was not found.", 404);
   try {
     const stripeSession = await readStripeCheckoutSession({ env, sessionId });

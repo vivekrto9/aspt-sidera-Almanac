@@ -208,11 +208,7 @@ const homeMoonRuntime = getMoonCalendarCalendarCopy(locale).runtime;
 const localizedReportsCopy = getHomeReportsCopy(locale);
 const runtimeEnv = await getRuntimeEnv(Astro);
 const homeAstrologers = (await listAstrologers(runtimeEnv)).slice(0, 2);
-const homeAstrologerCurrency = new Intl.NumberFormat(locale, {
-  style: "currency",
-  currency: "USD",
-  minimumFractionDigits: 2,
-});
+const homeAstrologerCurrency = (currency = "USD") => new Intl.NumberFormat(locale, { style: "currency", currency, minimumFractionDigits: 2 });
 const homeReportProducts = (await listReportProducts(runtimeEnv, locale)).slice(0, 3);
 const shopProducts = await listShopProducts(runtimeEnv, locale);
 const shopProductById = new Map(shopProducts.map((product) => [product.id, product]));
@@ -527,7 +523,7 @@ const astrologersCopy: HomeAstrologersCopy = {
       ratingValue: astrologer.rating,
       ratingText: astrologer.rating.toFixed(1),
       ratingAriaLabel: `${astrologer.name}: ${astrologer.rating.toFixed(1)} / 5`,
-      rateText: homeAstrologerCurrency.format(astrologer.rate),
+      rateText: homeAstrologerCurrency(astrologer.currency).format(astrologer.rate),
       rateUnit: localizedBrowseAstrologersCopy.rateUnit,
       actionLabel: field("action"),
     };

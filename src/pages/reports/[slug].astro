@@ -43,7 +43,7 @@ const paymentOrderId = Astro.url.searchParams.get("orderId") ?? "";
 const paymentState = Astro.url.searchParams.get("payment") ?? "";
 const paymentAttemptId = Astro.url.searchParams.get("attemptId") ?? "";
 const stripeSessionId = Astro.url.searchParams.get("session_id") ?? "";
-const paymentOrder = customerSession && paymentOrderId && paymentState === "success"
+const paymentOrder = customerSession && paymentOrderId && paymentState
   ? await getCommerceOrder(runtimeEnv, paymentOrderId, customerSession.account.id)
   : null;
 if (reportIndex < 0 || !report) {
@@ -237,7 +237,9 @@ const purchaseRuntimeCopy = {
       title={reportTitle}
       glyph={report.glyph}
       pagesLabel={report.pages}
-      price={report.price}
+      price={paymentOrder
+        ? new Intl.NumberFormat(locale, { style: "currency", currency: paymentOrder.currency, minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(paymentOrder.totalCents / 100)
+        : report.price}
       coverTone={report.coverTone}
       coverSrc={report.imageUrl}
       coverAlt={reportTitle}
@@ -255,6 +257,7 @@ const purchaseRuntimeCopy = {
       paymentAttemptId={paymentAttemptId}
       stripeSessionId={stripeSessionId}
       paymentState={paymentState}
+      paymentProvider={Astro.url.searchParams.get("provider") || "stripe"}
       locale={locale}
       runtimeCopy={purchaseRuntimeCopy}
       purchaseNote={content.detail_purchase_note}

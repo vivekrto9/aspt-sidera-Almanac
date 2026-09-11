@@ -3,6 +3,8 @@ import { AP_TABLES as tables } from "./db/tables.ts";
 import { linkBusinessLead, markLeadConvertedBySourceReference } from "./lead-records.ts";
 import { sendCommerceOrderReceipt } from "./notifications/commerce-order-receipt.ts";
 import { createId, nowIso, safeString, type RuntimeEnv } from "./runtime.ts";
+import { providerForPaymentCurrency } from "./payment-preference.ts";
+import { selectIndependentPrice } from "./payment-pricing.ts";
 
 type Row = Record<string, unknown>;
 type OrderType = "shop" | "report";
@@ -26,6 +28,7 @@ const run = async (env: RuntimeEnv, sql: string, values: unknown[] = []) =>
   env.DB?.prepare(sql)
     .bind(...values)
     .run?.();
+const changed = (result: unknown) => Number((result as { meta?: { changes?: number }; changes?: number } | undefined)?.meta?.changes ?? (result as { changes?: number } | undefined)?.changes ?? 0) > 0;
 
 const orderFromRow = (row: Row) => ({
   id: String(row.id),
@@ -69,6 +72,7 @@ const attemptFromRow = (row: Row) => ({
   id: String(row.id),
   accountId: String(row.account_id),
   payableId: String(row.payable_id),
+  provider: safeString(row.provider),
   providerOrderId: safeString(row.provider_order_id),
   providerPaymentId: safeString(row.provider_payment_id),
   checkoutUrl: safeString(row.provider_checkout_url),
@@ -152,19 +156,21 @@ const replay = async (
 const createAttempt = async (env: RuntimeEnv, order: CommerceOrder) => {
   const id = createId("pay");
   const now = nowIso();
+  const provider = providerForPaymentCurrency(order.currency === "INR" ? "INR" : "USD");
   await run(
     env,
     `INSERT INTO ${tables.paymentAttempts} (
       id, account_id, payable_type, payable_id, provider, amount_cents,
       currency, status, idempotency_key, created_at, updated_at
-    ) VALUES (?, ?, 'commerce_order', ?, 'stripe', ?, ?, 'created', ?, ?, ?)`,
+    ) VALUES (?, ?, 'commerce_order', ?, ?, ?, ?, 'created', ?, ?, ?)`,
     [
       id,
       order.accountId,
       order.id,
+      provider,
       order.totalCents,
       order.currency,
-      `commerce_order:${order.id}:stripe:1`,
+      `commerce_order:${order.id}:${provider}:1`,
       now,
       now,
     ],
@@ -346,10 +352,11 @@ export const createShopOrder = async ({
   }
   const rows = await all(
     env,
-    `SELECT slug, display_name, price_cents, currency, variant_option_count, image_url
+    `SELECT slug, display_name, price_cents, price_inr_cents, price_usd_cents, currency, variant_option_count, image_url
      FROM ap_shop_products WHERE active = 1`,
   );
-  const products = new Map(rows.map((row) => [String(row.slug), row]));
+  const pricedRows = await Promise.all(rows.map((row) => selectIndependentPrice(env, row)));
+  const products = new Map(pricedRows.map((row) => [String(row.slug), row]));
   const normalized = [] as Array<{
     productSlug: string;
     productName: string;
@@ -412,7 +419,7 @@ export const createShopOrder = async ({
     (sum, line) => sum + line.unitCents * line.quantity,
     0,
   );
-  const shippingCents = subtotalCents >= 7500 ? 0 : 650;
+  const shippingCents = subtotalCents >= (currency === "INR" ? 499900 : 7500) ? 0 : (currency === "INR" ? 49900 : 650);
   const taxCents = Math.round(subtotalCents * 0.08);
   const created = await insertOrder({
     env,
@@ -466,7 +473,7 @@ export const createReportOrder = async ({
   const [product, profile] = await Promise.all([
     first(
       env,
-      `SELECT slug, report_type, price_cents, currency, image_url FROM ap_report_products WHERE active = 1 AND slug = ? LIMIT 1`,
+      `SELECT slug, report_type, price_cents, price_inr_cents, price_usd_cents, currency, image_url FROM ap_report_products WHERE active = 1 AND slug = ? LIMIT 1`,
       [slug],
     ),
     getCustomerUserProfile(env, accountId, ownedProfileId),
@@ -483,6 +490,7 @@ export const createReportOrder = async ({
       status: 404,
       message: "Select an owned birth profile for this report.",
     };
+  const pricedProduct = await selectIndependentPrice(env, product);
   const created = await insertOrder({
     env,
     accountId,
@@ -492,16 +500,16 @@ export const createReportOrder = async ({
     customerName: profile.profileName,
     profileId: profile.id,
     reportSlug: slug,
-    subtotalCents: Number(product.price_cents),
+    subtotalCents: Number(pricedProduct.price_cents),
     shippingCents: 0,
     taxCents: 0,
-    currency: String(product.currency || "USD").toUpperCase(),
+    currency: String(pricedProduct.currency).toUpperCase(),
     lines: [
       {
         productSlug: slug,
         productName: String(product.report_type).replaceAll("_", " "),
         quantity: 1,
-        unitCents: Number(product.price_cents),
+        unitCents: Number(pricedProduct.price_cents),
         imageUrl: safeString(product.image_url),
       },
     ],
@@ -582,12 +590,13 @@ export const markCommercePaymentPaid = async ({
     `UPDATE ${tables.commerceOrders} SET stripe_checkout_session_id = ?, stripe_payment_intent_id = ?, status = CASE WHEN status = 'pending_payment' THEN 'paid' ELSE status END, fulfillment_status = CASE WHEN order_type = 'shop' AND fulfillment_status = 'unfulfilled' THEN 'processing' ELSE fulfillment_status END, paid_at = COALESCE(paid_at, ?), updated_at = ? WHERE id = ?`,
     [sessionId, paymentIntentId || sessionId, now, now, orderId],
   );
-  await run(
+  const eventResult = await run(
     env,
-    `INSERT INTO ${tables.paymentEvents} (id, payable_type, payable_id, provider, provider_event_id, status, payload_json, created_at) VALUES (?, 'commerce_order', ?, 'stripe', ?, ?, ?, ?) ON CONFLICT(provider, provider_event_id) DO NOTHING`,
+    `INSERT INTO ${tables.paymentEvents} (id, payable_type, payable_id, provider, provider_event_id, status, payload_json, created_at) VALUES (?, 'commerce_order', ?, ?, ?, ?, ?, ?) ON CONFLICT(provider, provider_event_id) DO NOTHING`,
     [
       createId("pevt"),
       orderId,
+      attempt.provider,
       eventId,
       eventStatus,
       JSON.stringify({ sessionId }),
@@ -595,9 +604,11 @@ export const markCommercePaymentPaid = async ({
     ],
   );
   const paidOrder = await getCommerceOrder(env, orderId);
-  await markLeadConvertedBySourceReference({ env, sourceReferenceType: "commerce_order", sourceReferenceId: orderId, conversionReference: order.orderNumber });
-  if (paidOrder) await sendReceipt({ env, order: paidOrder, siteOrigin });
-  return { ok: true as const, order: paidOrder };
+  if (changed(eventResult)) {
+    await markLeadConvertedBySourceReference({ env, sourceReferenceType: "commerce_order", sourceReferenceId: orderId, conversionReference: order.orderNumber });
+    if (paidOrder) await sendReceipt({ env, order: paidOrder, siteOrigin });
+  }
+  return { ok: true as const, duplicate: !changed(eventResult), order: paidOrder };
 };
 
 export const markCommercePaymentFailed = async ({
@@ -607,6 +618,7 @@ export const markCommercePaymentFailed = async ({
   status,
   eventId,
   sessionId,
+  provider = "stripe",
 }: {
   env: RuntimeEnv;
   orderId: string;
@@ -614,6 +626,7 @@ export const markCommercePaymentFailed = async ({
   status: "failed" | "expired";
   eventId: string;
   sessionId: string;
+  provider?: "stripe" | "razorpay";
 }) => {
   const now = nowIso();
   await run(
@@ -628,10 +641,11 @@ export const markCommercePaymentFailed = async ({
   );
   await run(
     env,
-    `INSERT INTO ${tables.paymentEvents} (id, payable_type, payable_id, provider, provider_event_id, status, payload_json, created_at) VALUES (?, 'commerce_order', ?, 'stripe', ?, ?, ?, ?) ON CONFLICT(provider, provider_event_id) DO NOTHING`,
+    `INSERT INTO ${tables.paymentEvents} (id, payable_type, payable_id, provider, provider_event_id, status, payload_json, created_at) VALUES (?, 'commerce_order', ?, ?, ?, ?, ?, ?) ON CONFLICT(provider, provider_event_id) DO NOTHING`,
     [
       createId("pevt"),
       orderId,
+      provider,
       eventId,
       status,
       JSON.stringify({ sessionId }),

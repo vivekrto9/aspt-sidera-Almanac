@@ -1,5 +1,16 @@
 import { resolveSecretBinding } from "../runtime-bindings.ts";
+import { AP_TABLES as tables } from "../db/tables.ts";
 import { safeString, type RuntimeEnv } from "../runtime.ts";
+
+type Row = Record<string, unknown>;
+
+const first = async (env: RuntimeEnv, sql: string, values: unknown[] = []) => {
+  if (!env.DB) return null;
+  const statement = env.DB.prepare(sql).bind(...values) as {
+    first?: () => Promise<Row | null>;
+  };
+  return (await statement.first?.()) ?? null;
+};
 
 const encodeBasic = (value: string) => btoa(value);
 const bytesToHex = (value: ArrayBuffer) =>
@@ -127,6 +138,43 @@ export const verifyStripeWalletPayment = ({
   ) return { ok: false as const, message: "Stripe wallet amount does not match." };
   return { ok: true as const };
 };
+
+type StripeWebhookPaymentStatus =
+  | "paid"
+  | "failed"
+  | "expired"
+  | "browser_verified"
+  | null;
+
+export const getLatestStripeCheckoutWebhookStatus = async ({
+  env,
+  payableType,
+  payableId,
+  sessionId,
+}: {
+  env: RuntimeEnv;
+  payableType: string;
+  payableId: string;
+  sessionId: string;
+}): Promise<StripeWebhookPaymentStatus> => {
+  const row = await first(
+    env,
+    `SELECT status FROM ${tables.paymentEvents}
+     WHERE payable_type = ?
+       AND payable_id = ?
+       AND provider = 'stripe'
+       AND json_valid(payload_json) = 1
+       AND json_extract(payload_json, '$.sessionId') = ?
+     ORDER BY created_at DESC LIMIT 1`,
+    [payableType, payableId, sessionId],
+  );
+  if (!row) return null;
+  const status = safeString(row.status);
+  if (status === "paid" || status === "failed" || status === "expired" || status === "browser_verified")
+    return status;
+  return null;
+};
+
 
 export const createStripeCommerceCheckout = async ({
   env,

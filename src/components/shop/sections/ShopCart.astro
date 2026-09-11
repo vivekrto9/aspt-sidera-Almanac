@@ -21,6 +21,7 @@ type CartProduct = {
   imageAlt: string;
   imageSrc: string;
   price: number;
+  currency: string;
   defaultVariant?: string;
 };
 type Props = {
@@ -41,14 +42,17 @@ const {
   editAttributes = () => ({}),
 } = Astro.props as Props;
 
+const activeCurrency = products[0]?.currency || "USD";
+const activeFreeShippingThreshold = activeCurrency === "INR" ? 4999 : shopFreeShippingThreshold;
 const money = new Intl.NumberFormat(locale, {
   style: "currency",
-  currency: "USD",
+  currency: activeCurrency,
   minimumFractionDigits: 0,
   maximumFractionDigits: 2,
 });
 const initialItems = shopReviewCart;
-const initialTotals = getShopCommerceTotals(initialItems);
+const prices = Object.fromEntries(products.map((p)=>[p.id,p.price]));
+const initialTotals = getShopCommerceTotals(initialItems, prices, activeCurrency);
 const productById = new Map(products.map((product) => [product.id, product]));
 const initialQuantity = (id: ShopProductId) =>
   initialItems.find((item) => item.id === id)?.quantity ?? 1;
@@ -64,9 +68,10 @@ const initialMeta = (product: CartProduct) =>
   data-shop-cart
   data-products={JSON.stringify(products)}
   data-default-cart={JSON.stringify(initialItems)}
-  data-free-shipping-threshold={shopFreeShippingThreshold}
+  data-free-shipping-threshold={activeFreeShippingThreshold}
   data-shipping-free-label={copy.shippingFreeLabel}
   data-locale={locale}
+  data-currency={activeCurrency}
 >
   <div class="shop-cart__inner">
     <a class="shop-flow-back" href={shopHref}>
@@ -136,7 +141,7 @@ const initialMeta = (product: CartProduct) =>
       >
         <p slot="before-total" class="shop-cart__shipping-hint" data-shop-shipping-hint>
           <span {...editAttributes("shop_order_free_shipping_prefix")}>{copy.freeShippingPrefix}</span>{" "}
-          <strong data-shop-free-shipping-gap>{money.format(Math.max(0, shopFreeShippingThreshold - initialTotals.subtotal))}</strong>{" "}
+          <strong data-shop-free-shipping-gap>{money.format(Math.max(0, activeFreeShippingThreshold - initialTotals.subtotal))}</strong>{" "}
           <span {...editAttributes("shop_order_free_shipping_suffix")}>{copy.freeShippingSuffix}</span>
         </p>
       </OrderSummary>
@@ -156,6 +161,7 @@ const initialMeta = (product: CartProduct) =>
     title: string;
     unit: string;
     price: number;
+    currency: string;
     defaultVariant?: string;
   };
 
@@ -169,7 +175,7 @@ const initialMeta = (product: CartProduct) =>
     const locale = root.dataset.locale || document.documentElement.lang || "en";
     const money = new Intl.NumberFormat(locale, {
       style: "currency",
-      currency: "USD",
+      currency: root.dataset.currency || "USD",
       minimumFractionDigits: 0,
       maximumFractionDigits: 2,
     });
@@ -222,7 +228,7 @@ const initialMeta = (product: CartProduct) =>
         updateStepper(line, item.quantity);
       });
 
-      const totals = getShopCommerceTotals(cart);
+      const totals = getShopCommerceTotals(cart, Object.fromEntries(products.map((p)=>[p.id,p.price])), root.dataset.currency || "USD");
       const summaryValues = root.querySelectorAll<HTMLElement>(".sidera-order-summary__rows .summary-row__value");
       if (summaryValues[0]) summaryValues[0].textContent = money.format(totals.subtotal);
       if (summaryValues[1]) summaryValues[1].textContent = totals.shipping === 0

@@ -66,10 +66,18 @@ test("Shop routes and Home use the D1 repository while preserving CMS copy", asy
   assert.match(repository, /getShopProductBySlug/);
   assert.match(catalogPage, /listShopProducts\(runtimeEnv, locale\)/);
   assert.match(catalogPage, /content\[`shop_product_\$\{key\}_title`\]/);
+  assert.match(catalogPage, /shopCurrency === "INR" \? 4999 : 75/);
+  assert.match(catalogPage, /replace\(\/\\\$75\|₹4,999\/g, freeShippingLabel\)/);
+  assert.match(catalogPage, /replace\(\/\\\$6\\\.50\|₹499\/g, flatShippingLabel\)/);
   assert.match(detailPage, /getShopProductBySlug\(runtimeEnv, slug, locale\)/);
   assert.match(detailPage, /imageSrc: product\.imageUrl/);
   assert.match(homePage, /shopProductById/);
   assert.match(cart, /mediaSrc=\{product\.imageSrc\}/);
+  assert.match(cart, /activeCurrency === "INR" \? 4999 : shopFreeShippingThreshold/);
   assert.match(checkout, /mediaSrc=\{product\.imageSrc\}/);
+  assert.match(checkout, /sidera-shop-checkout-request-v2/);
+  assert.match(checkout, /const requestFingerprint = JSON\.stringify/);
+  assert.match(checkout, /storedRequest\?\.fingerprint === requestFingerprint/);
   assert.match(confirmation, /src=\{product\.imageSrc\}/);
+  assert.match(confirmation, /sidera-shop-checkout-request-v2/);
 });

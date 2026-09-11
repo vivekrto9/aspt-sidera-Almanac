@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
+import { applyPaymentTestSchema } from "../helpers/payment-schema.mjs";
 
 const read = (path) =>
   readFileSync(new URL(`../../${path}`, import.meta.url), "utf8");
@@ -22,6 +23,7 @@ const createD1 = () => {
     "0115_commerce_sales_views.sql",
     "0116_commerce_order_receipts.sql",
   ]) sqlite.exec(read(`migrations/${migration}`));
+  applyPaymentTestSchema(sqlite);
   return {
     sqlite,
     prepare(sql) {
@@ -114,15 +116,18 @@ test("paid order receipts are managed, escaped, and claimed once", async () => {
   let calls = 0;
   let body = "";
   const env = { DB, ASTROPAGES_SITE_ENVIRONMENT: "production", AWS_REGION: "us-east-1", AWS_ACCESS_KEY_ID: "test-access", AWS_SECRET_ACCESS_KEY: "test-secret", SES_SENDER_EMAIL: "orders@sidera.test", SES_SENDER_NAME: "Sidera" };
-  DB.sqlite.prepare("INSERT INTO ap_commerce_orders (id, order_number, account_id, order_type, status, fulfillment_status, currency, subtotal_cents, shipping_cents, tax_cents, total_cents, customer_name, customer_email, request_key, created_at, updated_at) VALUES (?, ?, ?, 'report', 'paid', 'generation_pending', 'USD', 2900, 0, 0, 2900, ?, ?, ?, ?, ?)").run("receipt_order", "SD-RECEIPT", "commerce_account", "Asha <Sky>", "buyer@example.test", "receipt-request", new Date().toISOString(), new Date().toISOString());
-  const order = { id: "receipt_order", orderNumber: "SD-RECEIPT", customerName: "Asha <Sky>", customerEmail: "buyer@example.test", totalCents: 2900, currency: "USD", lines: [{ productName: "Natal <Blueprint>", quantity: 1 }] };
+  DB.sqlite.prepare("INSERT INTO ap_commerce_orders (id, order_number, account_id, order_type, status, fulfillment_status, currency, subtotal_cents, shipping_cents, tax_cents, total_cents, customer_name, customer_email, request_key, created_at, updated_at) VALUES (?, ?, ?, 'report', 'paid', 'generation_pending', 'INR', 249900, 0, 0, 249900, ?, ?, ?, ?, ?)").run("receipt_order", "SD-RECEIPT", "commerce_account", "Asha <Sky>", "buyer@example.test", "receipt-request", new Date().toISOString(), new Date().toISOString());
+  const order = { id: "receipt_order", orderNumber: "SD-RECEIPT", customerName: "Asha <Sky>", customerEmail: "buyer@example.test", totalCents: 249900, currency: "INR", lines: [{ productName: "Natal <Blueprint>", quantity: 1 }] };
   const send = () => sendCommerceOrderReceipt({ env, order, siteOrigin: "https://sidera.example", fetch: async (_url, init) => { calls += 1; body = String(init.body); return new Response(JSON.stringify({ MessageId: "ses_receipt_1" }), { status: 200 }); } });
   assert.equal((await send()).ok, true);
   assert.equal((await send()).skipped, true);
   assert.equal(calls, 1);
-  const html = JSON.parse(body).Content.Simple.Body.Html.Data;
+  const rendered = JSON.parse(body).Content.Simple;
+  const html = rendered.Body.Html.Data;
   assert.match(html, /Asha &lt;Sky&gt;/);
   assert.doesNotMatch(html, /Asha <Sky>/);
+  assert.match(html, /₹2,499\.00/);
+  assert.match(rendered.Body.Text.Data, /₹2,499\.00/);
   assert.equal(DB.sqlite.prepare("SELECT status FROM ap_commerce_order_notifications WHERE order_id = ?").get(order.id).status, "sent");
   DB.sqlite.close();
 });
@@ -150,4 +155,8 @@ test("commerce routes enforce customer ownership and signed Stripe reconciliatio
   const webhook = read("src/pages/api/astropages/generated-site/webhooks/payment/stripe.ts");
   assert.match(webhook, /verifyStripeWebhookSignature/);
   assert.match(webhook, /payableType === "commerce_order"/);
+  const confirmation = read("src/components/shop/sections/ShopOrderConfirmation.astro");
+  assert.match(confirmation, /savedLine\?\.unitCents/);
+  assert.match(confirmation, /item\.unitCents \* item\.quantity/);
+  assert.match(read("src/components/shop/sections/ShopPaymentFailure.astro"), /data-shop-payment-snapshot/);
 });

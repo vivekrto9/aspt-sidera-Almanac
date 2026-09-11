@@ -3,6 +3,8 @@ import { AP_TABLES as tables } from "./db/tables.ts";
 import { linkBusinessLead, markLeadConvertedBySourceReference } from "./lead-records.ts";
 import { sendSessionPurchaseReceipt } from "./notifications/session-purchase-receipt.ts";
 import { createId, nowIso, safeString, type RuntimeEnv } from "./runtime.ts";
+import { getCurrencyContext, getSessionPricing } from "./payment-pricing.ts";
+import { providerForPaymentCurrency } from "./payment-preference.ts";
 import type { StripeSessionPayable } from "./payments/stripe.ts";
 
 type Row = Record<string, unknown>;
@@ -63,6 +65,7 @@ const attemptFromRow = (row: Row) => ({
   id: String(row.id),
   accountId: String(row.account_id),
   payableId: String(row.payable_id),
+  provider: safeString(row.provider),
   providerOrderId: safeString(row.provider_order_id),
   providerPaymentId: safeString(row.provider_payment_id),
   checkoutUrl: safeString(row.provider_checkout_url),
@@ -212,10 +215,13 @@ export const createSessionPaymentTarget = async ({
     };
   }
 
-  const rateCents = Math.round(astrologer.rate * 100);
+  const { currency } = await getCurrencyContext(env);
+  const rateCents = astrologer.rateCents;
+  const sessionPricing = await getSessionPricing(env, currency);
+  const perMinuteCents = rateCents + (parsed.sessionType === "voice" ? sessionPricing.voiceAddonCents : parsed.sessionType === "video" ? sessionPricing.videoAddonCents : 0);
   const amountCents = parsed.sessionType === "written"
-    ? 1900
-    : rateCents * (parsed.durationMinutes ?? 0);
+    ? sessionPricing.writtenCents
+    : perMinuteCents * (parsed.durationMinutes ?? 0);
   if (amountCents <= 0) {
     return {
       ok: false as const,
@@ -233,7 +239,7 @@ export const createSessionPaymentTarget = async ({
       id, account_id, astrologer_slug, session_type, delivery_mode,
       duration_minutes, amount_cents, currency, status, request_key,
       created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, 'USD', 'pending_payment', ?, ?, ?)`,
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending_payment', ?, ?, ?)`,
     [
       entitlementId,
       accountId,
@@ -242,24 +248,28 @@ export const createSessionPaymentTarget = async ({
       parsed.deliveryMode,
       parsed.durationMinutes,
       amountCents,
+      currency,
       key,
       now,
       now,
     ],
   );
+  const provider = providerForPaymentCurrency(currency);
   await run(
     env,
     `INSERT INTO ${tables.paymentAttempts} (
       id, account_id, payable_type, payable_id, provider, amount_cents,
       currency, status, idempotency_key, created_at, updated_at
-    ) VALUES (?, ?, 'session_entitlement', ?, 'stripe', ?, 'USD',
+    ) VALUES (?, ?, 'session_entitlement', ?, ?, ?, ?,
       'created', ?, ?, ?)`,
     [
       attemptId,
       accountId,
       entitlementId,
+      provider,
       amountCents,
-      `session_entitlement:${entitlementId}:stripe:1`,
+      currency,
+      `session_entitlement:${entitlementId}:${provider}:1`,
       now,
       now,
     ],
@@ -284,7 +294,7 @@ export const createSessionPaymentTarget = async ({
           serviceName: parsed.sessionType === "written" ? "Written astrology question" : `${parsed.durationMinutes}-minute astrology chat`,
           consultationMode: parsed.deliveryMode,
           amountCents,
-          currency: "USD",
+          currency,
         },
       },
     });
@@ -335,6 +345,7 @@ export const markSessionPaymentFailed = async ({
   status = "failed",
   eventId,
   sessionId = "",
+  provider = "stripe",
 }: {
   env: RuntimeEnv;
   entitlementId: string;
@@ -342,6 +353,7 @@ export const markSessionPaymentFailed = async ({
   status?: "failed" | "expired" | "cancelled";
   eventId?: string;
   sessionId?: string;
+  provider?: "stripe" | "razorpay";
 }) => {
   const now = nowIso();
   await run(
@@ -364,11 +376,12 @@ export const markSessionPaymentFailed = async ({
       `INSERT INTO ${tables.paymentEvents} (
         id, payable_type, payable_id, provider, provider_event_id,
         status, payload_json, created_at
-      ) VALUES (?, 'session_entitlement', ?, 'stripe', ?, ?, ?, ?)
+      ) VALUES (?, 'session_entitlement', ?, ?, ?, ?, ?, ?)
       ON CONFLICT(provider, provider_event_id) DO NOTHING`,
       [
         createId("pevt"),
         entitlementId,
+        provider,
         eventId,
         status === "expired" ? "expired" : "failed",
         JSON.stringify({ sessionId }),
@@ -434,11 +447,12 @@ export const markSessionPaymentPaid = async ({
     `INSERT INTO ${tables.paymentEvents} (
       id, payable_type, payable_id, provider, provider_event_id,
       status, payload_json, created_at
-    ) VALUES (?, 'session_entitlement', ?, 'stripe', ?, ?, ?, ?)
+    ) VALUES (?, 'session_entitlement', ?, ?, ?, ?, ?, ?)
     ON CONFLICT(provider, provider_event_id) DO NOTHING`,
     [
       createId("pevt"),
       entitlementId,
+      attempt.provider,
       eventId,
       eventStatus,
       JSON.stringify({ sessionId }),
