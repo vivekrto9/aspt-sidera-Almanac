@@ -328,15 +328,19 @@ export function installedRuntimeTuple() {
 }
 
 export function verifyNativeStaticAssetFiles(files) {
+  const signedSeedDigests = new Set(readSeedAssets().map(asset => asset.digest));
   for (const asset of nativeStaticAssets) {
     if (!/^\/(?:[a-zA-Z0-9_-]+\/)*[a-zA-Z0-9_.-]+$/.test(asset.path) || asset.path.includes("..") || !/^[a-f0-9]{64}$/.test(asset.digest)) throw new Error("native_public_asset_path_invalid");
     const matches = files.filter(file => file.path === `client${asset.path}`);
-    if (matches.length !== 1 || digest(matches[0].bytes) !== asset.digest) throw new Error("native_public_asset_bundle_mismatch");
+    if (matches.length > 1 || (matches.length === 1 && digest(matches[0].bytes) !== asset.digest) || (matches.length === 0 && !signedSeedDigests.has(asset.digest))) throw new Error("native_public_asset_bundle_mismatch");
   }
 }
 
 export function collectWorkerFiles(directory, { sourceRoot = root } = {}) {
   const files = [];
+  const signedSeedDigests = new Set(readSeedAssets().map(asset => asset.digest));
+  const nativeByPath = new Map(nativeStaticAssets.map(asset => [`client${asset.path}`, asset]));
+  const seenNative = new Set();
   let size = 0;
   const visit = (relative) => {
     const absolute = resolve(directory, relative);
@@ -356,17 +360,24 @@ export function collectWorkerFiles(directory, { sourceRoot = root } = {}) {
       /(?:^|\/)(?:wrangler\.[^/]+|astropages\.site\.json)$/.test(relative)
     )
       throw new Error("artifact_secret_configuration");
-    size += stat.size;
-    if (size > 48 * 1024 * 1024) throw new Error("worker_bundle_size_limit");
     const bytes = readFileSync(absolute);
     if (bytes.includes(Buffer.from(sourceRoot + "/")))
       throw new Error("artifact_host_metadata");
     if (/-----BEGIN (?:[A-Z]+ )?PRIVATE KEY-----/.test(bytes.toString("utf8")))
       throw new Error("artifact_secret_material");
+    const native = nativeByPath.get(relative);
+    if (native) {
+      if (digest(bytes) !== native.digest) throw new Error("native_public_asset_bundle_mismatch");
+      seenNative.add(relative);
+      if (signedSeedDigests.has(native.digest)) return;
+    }
+    size += stat.size;
+    if (size > 48 * 1024 * 1024) throw new Error("worker_bundle_size_limit");
     files.push({ path: relative, bytes });
   };
   visit("client");
   visit("server");
+  if (seenNative.size !== nativeStaticAssets.length) throw new Error("native_public_asset_bundle_mismatch");
   if (!files.some((file) => file.path === "server/entry.mjs"))
     throw new Error("artifact_worker_entry_missing");
   verifyNativeStaticAssetFiles(files);

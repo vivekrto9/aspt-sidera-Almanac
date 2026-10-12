@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
-import { buildBaseWorkspace } from "../scripts/preview-artifacts.mjs";
+import { buildBaseWorkspace, collectWorkerFiles } from "../scripts/preview-artifacts.mjs";
 import { nativeStaticAssets } from "../src/server/generated-site/workspace-state/template-contract.ts";
 
 const sha256 = (value) => createHash("sha256").update(value).digest("hex");
@@ -44,5 +44,34 @@ test("native Sidera base is deterministic and keeps public catalog, content, and
       assert.deepEqual(db.prepare("PRAGMA foreign_key_check").all(), []);
       assert.equal(db.prepare("PRAGMA integrity_check").get().integrity_check, "ok");
     } finally { db.close(); }
+  } finally { rmSync(directory, { recursive: true, force: true }); }
+});
+
+test("VM bundle omits only native static bytes already signed as seed assets", () => {
+  const assets = JSON.parse(readFileSync(new URL("../astropages/assets.manifest.json", import.meta.url), "utf8")).assets;
+  const seedDigests = new Set(assets.map(asset => asset.contentHash.slice("sha256:".length)));
+  const directory = mkdtempSync(join(tmpdir(), "sidera-worker-files-"));
+  try {
+    mkdirSync(join(directory, "server"));
+    writeFileSync(join(directory, "server/entry.mjs"), "export default {};");
+    for (const asset of nativeStaticAssets) {
+      const path = `client${asset.path}`;
+      const target = join(directory, path);
+      mkdirSync(join(target, ".."), { recursive: true });
+      copyFileSync(new URL(`../dist/${path}`, import.meta.url), target);
+    }
+    const files = collectWorkerFiles(directory);
+    const paths = new Set(files.map(file => file.path));
+    for (const asset of nativeStaticAssets) {
+      const path = `client${asset.path}`;
+      assert.equal(sha256(readFileSync(join(directory, path))), asset.digest, path);
+      assert.equal(paths.has(path), !seedDigests.has(asset.digest), path);
+    }
+    assert.equal(nativeStaticAssets.filter(asset => seedDigests.has(asset.digest)).length, 15);
+    const first = join(directory, `client${nativeStaticAssets[0].path}`);
+    writeFileSync(first, "tampered");
+    assert.throws(() => collectWorkerFiles(directory), /native_public_asset_bundle_mismatch/);
+    rmSync(first);
+    assert.throws(() => collectWorkerFiles(directory), /native_public_asset_bundle_mismatch|ENOENT/);
   } finally { rmSync(directory, { recursive: true, force: true }); }
 });
