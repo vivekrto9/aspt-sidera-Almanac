@@ -58,7 +58,7 @@ test("VM bundle omits only native static bytes already signed as seed assets", (
       const path = `client${asset.path}`;
       const target = join(directory, path);
       mkdirSync(join(target, ".."), { recursive: true });
-      copyFileSync(new URL(`../dist/${path}`, import.meta.url), target);
+      copyFileSync(new URL(`../public${asset.path}`, import.meta.url), target);
     }
     const files = collectWorkerFiles(directory);
     const paths = new Set(files.map(file => file.path));
