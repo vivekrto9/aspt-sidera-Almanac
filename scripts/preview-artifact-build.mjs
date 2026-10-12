@@ -1,3 +1,4 @@
+import { existsSync, realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 /** Executed in the tenant isolate; the serialized artifact never supplies a key. */
@@ -193,6 +194,17 @@ export function previewArtifactBuildIntegration(
     name: "aspect-preview-artifact-metadata",
     enforce: "post",
     transform(code, id) {
+      const realRoot = existsSync(root) ? realpathSync(root) : root;
+      const imageId = existsSync(id) ? realpathSync(id) : id;
+      if (this.environment?.name === "ssr" && imageId.startsWith(realRoot + "/src/assets/") && /\.(?:avif|gif|jpeg|jpg|png|tiff|webp)$/.test(imageId)) {
+        // Astro's image loader owns this entire module. Normalize its fsPath
+        // before Rollup hashes SSR chunks; prerender still needs the local file.
+        if (!/^\s*export default\s+new Proxy\(/.test(code) || !/name\s*===\s*['"]fsPath['"]/.test(code))
+          throw new Error("preview_artifact_image_metadata_shape_changed");
+        const generatedPath = JSON.stringify(imageId);
+        if (!code.includes(generatedPath)) throw new Error("preview_artifact_image_metadata_shape_changed");
+        return { code: code.split(generatedPath).join(JSON.stringify("/workspace/template" + imageId.slice(realRoot.length))), map: null };
+      }
       const metadata = this.getModuleInfo?.(id)?.meta?.astro;
       if (metadata && id.endsWith(".astro"))
         return {
@@ -229,6 +241,11 @@ export function previewArtifactBuildIntegration(
         if (typeof manifest.key !== "string")
           throw new Error("preview_artifact_astro_manifest_shape_changed");
         manifest.key = "";
+        if ("assets" in manifest) {
+          if (!Array.isArray(manifest.assets) || manifest.assets.some(asset => typeof asset !== "string"))
+            throw new Error("preview_artifact_astro_manifest_shape_changed");
+          manifest.assets.sort();
+        }
         for (const key of [
           "rootDir",
           "srcDir",
