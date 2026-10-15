@@ -2,6 +2,7 @@ import type { RuntimeEnv } from "../aggregator/runtime.ts";
 import { assertWorkspaceAuthoredStateIdentity, canonicalTemplateKey, workspaceAuthoredStateSchemaVersion } from "./template-runtime-identity.ts";
 import { canonicalRows, collections, domains, equalityGuard, jsonChunks, quote, select, tables, type Row } from "./workspace-state/domains.ts";
 import { exactKeys, fail, record, validateCells, validatePayloads, type BlobReference, type Payload } from "./workspace-state/validation.ts";
+import { authoredImportOrder } from "./workspace-state/import-order.ts";
 import { publicationProof } from "./workspace-state/publication-proof.ts";
 export { workspaceCheckpointMaxAggregateBlobBytes, workspaceCheckpointMaxBlobBytes, workspaceCheckpointMaxBlobCount } from "./workspace-state/validation.ts";
 
@@ -26,7 +27,7 @@ export type WorkspaceOptions = {
 type Statement = { bind(...values: unknown[]): Statement };
 type Database = { prepare(sql: string): Statement; batch(statements: Statement[]): Promise<Array<{ results?: Row[] }>> };
 type State = { authored_revision: number; content_digest: string; imported_envelope_digest: string | null };
-type Snapshot = { payloads: Record<string, Payload>; state: State; registered: Row[]; schemas: Row[][] };
+type Snapshot = { payloads: Record<string, Payload>; state: State; registered: Row[]; schemas: Row[][]; foreignKeys: Row[][] };
 type Sql = [string, unknown[]];
 export const workspaceCheckpointMaxBytes = 8*1024*1024;
 const assertCapacity = (value: unknown) => {
@@ -60,15 +61,16 @@ const assertIdentity = (identity: WorkspaceIdentity) => {
 };
 const read = async (db: Database): Promise<Snapshot> => {
   // A single transaction observes every domain and its metadata at one instant.
-  const results = await batch(db,[...tables.map((spec): Sql => [select(spec),[]]),["SELECT authored_revision,content_digest,imported_envelope_digest FROM ap_workspace_authored_state WHERE id=1",[]],["SELECT slug FROM _emdash_collections ORDER BY slug",[]],...tables.map((spec): Sql => [`PRAGMA table_info(${quote(spec.name)})`,[]])]);
+  const results = await batch(db,[...tables.map((spec): Sql => [select(spec),[]]),["SELECT authored_revision,content_digest,imported_envelope_digest FROM ap_workspace_authored_state WHERE id=1",[]],["SELECT slug FROM _emdash_collections ORDER BY slug",[]],...tables.map((spec): Sql => [`PRAGMA table_info(${quote(spec.name)})`,[]]),...tables.map((spec): Sql => [`PRAGMA foreign_key_list(${quote(spec.name)})`,[]])]);
   const registered = results[tables.length+1].results ?? [];
   if (registered.some((row) => !collections.includes(String(row.slug)))) fail("Unknown authored collection; define an explicit workspace adapter before checkpointing.");
   const state = results[tables.length].results?.[0] as State | undefined;
   if (!state) fail("checkpoint metadata migration is missing.");
   const payloads = Object.fromEntries(domains.map((domain) => [domain.kind,{tables:Object.fromEntries(domain.tables.map((spec) => [spec.name,canonicalRows(spec,results[tables.indexOf(spec)].results ?? [])]))}])) as Record<string,Payload>;
-  const schemas=results.slice(tables.length+2).map((result) => result.results ?? []);
+  const schemas=results.slice(tables.length+2,2*tables.length+2).map((result) => result.results ?? []);
+  const foreignKeys=results.slice(2*tables.length+2).map((result) => result.results ?? []);
   validateCells(payloads,schemas);
-  return {payloads,state:state!,registered,schemas};
+  return {payloads,state:state!,registered,schemas,foreignKeys};
 };
 const stateGuard = (state: State): Sql => ["SELECT CASE WHEN EXISTS (SELECT 1 FROM ap_workspace_authored_state WHERE id=1 AND authored_revision=? AND content_digest=? AND imported_envelope_digest IS ?) THEN 1 ELSE abs(-9223372036854775808) END",[state.authored_revision,state.content_digest,state.imported_envelope_digest]];
 const guards = (snapshot: Snapshot): Sql[] => [stateGuard(snapshot.state),...tables.flatMap((spec) => equalityGuard(spec,snapshot.payloads[domains.find((domain) => domain.tables.includes(spec))!.kind].tables[spec.name])),...equalityGuard({name:"_emdash_collections",columns:["slug"],keys:["slug"]},snapshot.registered)];
@@ -166,17 +168,16 @@ export const importWorkspaceAuthoredState = async (options: WorkspaceOptions & {
   if (before.state.imported_envelope_digest === validated.envelope.envelopeDigest && current.contentDigest === validated.contentDigest && before.state.authored_revision === validated.envelope.authoredRevision) return {fingerprint:expectedFingerprint,authoredRevision:validated.envelope.authoredRevision,idempotent:true};
   if (before.state.imported_envelope_digest !== null) fail("Workspace already imported or changed after restoration; use a freshly reconstructed generation, never overwrite newer edits.");
   const statements: Sql[] = [...guards(before),["PRAGMA defer_foreign_keys=ON",[]]];
-  // Dependency order matters even with deferred checks (RESTRICT and CASCADE are immediate).
-  const deletionOrder = ["_emdash_content_bylines","_emdash_seo","revisions","content_taxonomies","_emdash_menu_items","_emdash_menus","taxonomies","_emdash_taxonomy_defs",...collections.map((name) => `ec_${name}`),"_emdash_bylines","ap_asset_aliases","ap_asset_revisions","ap_asset_records","media","ap_email_templates","ap_email_event_definitions","ap_email_variable_mappings","ap_business_settings"];
-  for (const name of deletionOrder) {
-    const spec = tables.find((candidate) => candidate.name === name)!;
+  const insertionOrder = authoredImportOrder(tables,before.foreignKeys);
+  // Immediate RESTRICT/CASCADE edges delete children first; NO ACTION cycles defer.
+  for (const spec of [...insertionOrder].reverse()) {
+    const name = spec.name;
     // The media subquery must retain the pre-delete canonical IDs.
     const where = name === "media" ? `id IN (SELECT json_extract(value,'$.id') FROM json_each(?))` : spec.where;
     statements.push([`DELETE FROM ${quote(name)}${where ? ` WHERE ${where}` : ""}`,name === "media" ? [JSON.stringify(before.payloads.assets.tables.media)] : []]);
   }
-  const insertionOrder = ["media","ap_asset_records","ap_asset_revisions","ap_asset_aliases","_emdash_bylines",...collections.map((name) => `ec_${name}`),"revisions","_emdash_seo","_emdash_content_bylines","_emdash_taxonomy_defs","taxonomies","content_taxonomies","_emdash_menus","_emdash_menu_items","ap_email_event_definitions","ap_email_variable_mappings","ap_email_templates","ap_business_settings"];
-  for (const name of insertionOrder) {
-    const spec = tables.find((candidate) => candidate.name === name)!;
+  for (const spec of insertionOrder) {
+    const name = spec.name;
     const domain = domains.find((candidate) => candidate.tables.includes(spec))!;
     for (const chunk of jsonChunks(spec,validated.payloads[domain.kind].tables[name])) statements.push([`INSERT INTO ${quote(name)} (${spec.columns.map(quote).join(",")}) SELECT ${spec.columns.map((_,index) => `json_extract(value,'$[${index}]')`).join(",")} FROM json_each(?)`,[chunk]]);
   }
