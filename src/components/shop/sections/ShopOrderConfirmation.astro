@@ -32,6 +32,7 @@ type Props = {
   attemptId?: string;
   stripeSessionId?: string;
   csrfToken?: string;
+  paymentProvider?: string;
   editAttributes?: (field: string) => EditAttributes;
 };
 
@@ -45,11 +46,12 @@ const {
   attemptId = "",
   stripeSessionId = "",
   csrfToken = "",
+  paymentProvider = "stripe",
   editAttributes = () => ({}),
 } = Astro.props as Props;
 const money = new Intl.NumberFormat(locale, {
   style: "currency",
-  currency: "USD",
+  currency: order?.currency || "USD",
   minimumFractionDigits: 0,
   maximumFractionDigits: 2,
 });
@@ -73,8 +75,10 @@ const initialMeta = (product: ConfirmationProduct) =>
   data-attempt-id={attemptId}
   data-stripe-session-id={stripeSessionId}
   data-csrf-token={csrfToken}
+  data-payment-provider={paymentProvider}
   data-default-first-name={copy.defaultFirstName}
   data-locale={locale}
+  data-currency={order?.currency || "USD"}
 >
   <div class="shop-confirmation__stars" aria-hidden="true"></div>
   <div class="shop-confirmation__inner">
@@ -112,6 +116,7 @@ const initialMeta = (product: ConfirmationProduct) =>
       <div slot="items" class="shop-confirmation__items">
         {products.map((product) => {
           const initialItem = runtimeCart.find((item) => item.id === product.id);
+          const savedLine = order?.lines.find((line) => line.productSlug === product.id);
           const key = product.id.replaceAll("-", "_");
           return (
             <article data-shop-confirmation-item data-product-id={product.id} hidden={!initialItem}>
@@ -132,7 +137,7 @@ const initialMeta = (product: ConfirmationProduct) =>
                   <span data-shop-confirmation-quantity>{initialQuantity(product.id)}</span>
                 </p>
               </div>
-              <strong data-shop-confirmation-price>{money.format(product.price * initialQuantity(product.id))}</strong>
+              <strong data-shop-confirmation-price>{money.format(((savedLine?.unitCents ?? product.price * 100) * initialQuantity(product.id)) / 100)}</strong>
             </article>
           );
         })}
@@ -163,11 +168,11 @@ const initialMeta = (product: ConfirmationProduct) =>
     const productById = new Map(products.map((product) => [product.id, product]));
     const order = JSON.parse(root.dataset.order ?? "null") as RuntimeOrder | null;
     if (!order) return;
-    const items = order.lines.map((line) => ({ id: line.productSlug, quantity: line.quantity, variant: line.variantLabel }));
+    const items = order.lines.map((line) => ({ id: line.productSlug, quantity: line.quantity, variant: line.variantLabel, unitCents: line.unitCents }));
     const firstName = order.customerName.split(" ")[0] || root.dataset.defaultFirstName || "Sidera";
     const orderNumber = order.orderNumber;
     const locale = root.dataset.locale || document.documentElement.lang || "en";
-    const money = new Intl.NumberFormat(locale, { style: "currency", currency: "USD", minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    const money = new Intl.NumberFormat(locale, { style: "currency", currency: order.currency || root.dataset.currency || "USD", minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
     const name = root.querySelector<HTMLElement>("[data-shop-confirmation-name]");
     const number = root.querySelector<HTMLElement>("[data-shop-confirmation-order]");
@@ -185,7 +190,7 @@ const initialMeta = (product: ConfirmationProduct) =>
       const price = row.querySelector<HTMLElement>("[data-shop-confirmation-price]");
       if (meta) meta.textContent = item.variant || product.defaultVariant || product.unit;
       if (quantity) quantity.textContent = String(item.quantity);
-      if (price) price.textContent = money.format(product.price * item.quantity);
+      if (price) price.textContent = money.format((item.unitCents * item.quantity) / 100);
     });
     const total = root.querySelector<HTMLElement>(".sidera-order-summary__total .sidera-price-display__current");
     if (total) total.textContent = money.format(order.totalCents / 100);
@@ -194,7 +199,18 @@ const initialMeta = (product: ConfirmationProduct) =>
         try {
           sessionStorage.removeItem(shopCartStorageKey);
           sessionStorage.removeItem("sidera-shop-checkout-request-v1");
+          sessionStorage.removeItem("sidera-shop-checkout-request-v2");
         } catch {}
+        return;
+      }
+      if (root.dataset.paymentProvider === "razorpay") {
+        if (!root.dataset.attemptId) return;
+        for (let attempt = 0; attempt < 8; attempt += 1) {
+          const response = await fetch("/api/astropages/generated-site/payments/status", { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json", "x-astropages-customer-csrf": root.dataset.csrfToken || "" }, body: JSON.stringify({ payableType: "commerce_order", payableId: order.id, attemptId: root.dataset.attemptId }) });
+          const payload = await response.json().catch(() => ({}));
+          if (payload?.data?.paid) { window.location.reload(); return; }
+          await new Promise((resolve) => window.setTimeout(resolve, 1000));
+        }
         return;
       }
       if (!root.dataset.attemptId || !root.dataset.stripeSessionId) return;
@@ -211,6 +227,7 @@ const initialMeta = (product: ConfirmationProduct) =>
       try {
         sessionStorage.removeItem(shopCartStorageKey);
         sessionStorage.removeItem("sidera-shop-checkout-request-v1");
+        sessionStorage.removeItem("sidera-shop-checkout-request-v2");
       } catch {}
     };
     void confirmPayment();
@@ -218,6 +235,7 @@ const initialMeta = (product: ConfirmationProduct) =>
       try {
         sessionStorage.removeItem(shopCartStorageKey);
         sessionStorage.removeItem("sidera-shop-checkout-request-v1");
+        sessionStorage.removeItem("sidera-shop-checkout-request-v2");
       } catch {}
     });
   };

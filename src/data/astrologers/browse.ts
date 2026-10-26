@@ -15,6 +15,8 @@ export type BrowseAstrologer = {
   rating: number;
   reviews: number;
   rate: number;
+  rateCents?: number;
+  currency?: "USD" | "INR";
   availability: AstrologerAvailability;
   categories: AstrologerSpecialty[];
   specialties: string[];

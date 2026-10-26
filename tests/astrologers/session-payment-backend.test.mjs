@@ -3,6 +3,7 @@ import { createHmac } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
+import { applyPaymentTestSchema } from "../helpers/payment-schema.mjs";
 
 const read = (path) =>
   readFileSync(new URL(`../../${path}`, import.meta.url), "utf8");
@@ -22,6 +23,7 @@ const createD1 = () => {
   ]) {
     sqlite.exec(read(`migrations/${migration}`));
   }
+  applyPaymentTestSchema(sqlite);
   return {
     sqlite,
     prepare(sql) {
@@ -219,11 +221,15 @@ test("Stripe session checkout and reconciliation verify target, amount, currency
     "../../src/server/aggregator/notifications/session-purchase-receipt.ts"
   );
   let receiptCalls = 0;
+  let receiptBody = "";
   const receiptEnv = { DB, ASTROPAGES_SITE_ENVIRONMENT: "production", AWS_REGION: "us-east-1", AWS_ACCESS_KEY_ID: "test-access", AWS_SECRET_ACCESS_KEY: "test-secret", SES_SENDER_EMAIL: "sessions@sidera.test", SES_SENDER_NAME: "Sidera" };
-  const sendReceipt = () => sendSessionPurchaseReceipt({ env: receiptEnv, entitlement: paid.entitlement, siteOrigin: "https://sidera.example", fetch: async () => { receiptCalls += 1; return new Response(JSON.stringify({ MessageId: "ses_session_1" }), { status: 200 }); } });
+  const sendReceipt = () => sendSessionPurchaseReceipt({ env: receiptEnv, entitlement: paid.entitlement, siteOrigin: "https://sidera.example", fetch: async (_url, init) => { receiptCalls += 1; receiptBody = String(init.body); return new Response(JSON.stringify({ MessageId: "ses_session_1" }), { status: 200 }); } });
   assert.equal((await sendReceipt()).ok, true);
   assert.equal((await sendReceipt()).skipped, true);
   assert.equal(receiptCalls, 1);
+  const renderedReceipt = JSON.parse(receiptBody).Content.Simple;
+  assert.match(renderedReceipt.Body.Html.Data, /\$19\.00/);
+  assert.match(renderedReceipt.Body.Text.Data, /\$19\.00/);
   assert.equal(DB.sqlite.prepare("SELECT status FROM ap_session_entitlement_notifications WHERE entitlement_id = ?").get(target.entitlement.id).status, "sent");
 
   const secret = "whsec_test_session";

@@ -1,0 +1,5 @@
+{
+  "root": "/private/var/folders/pt/p2t6s7x11_10kc6_lmkflnw00000gn/T/aspect-artifact-source-l9hXlg/source",
+  "id": "/private/var/folders/pt/p2t6s7x11_10kc6_lmkflnw00000gn/T/aspect-artifact-source-l9hXlg/source/src/assets/home/synastry-person-a.png",
+  "code": "export default new Proxy({ \"src\": \"/_astro/synastry-person-a.fbHPc5BO.png\", \"width\": 640, \"height\": 640, \"format\": \"png\" }, {\n  get(target, name, receiver) {\n    if (name === \"clone\") {\n      return structuredClone(target);\n    }\n    if (name === \"fsPath\") {\n      return \"/private/var/folders/pt/p2t6s7x11_10kc6_lmkflnw00000gn/T/aspect-artifact-source-l9hXlg/source/src/assets/home/synastry-person-a.png\";\n    }\n    return target[name];\n  }\n});"
+}

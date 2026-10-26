@@ -32,6 +32,19 @@ export interface GeneratedSiteRuntimeConfigSyncPayload {
   iat: number;
   exp: number;
 }
+export interface PaymentSettingsPayload {
+  iss: "astropages-control-plane";
+  aud: "astropages-generated-site-payment-settings";
+  sub: string;
+  projectId: string;
+  environment: "preview" | "production";
+  role: GeneratedSiteSsoRole;
+  method: "GET" | "PATCH";
+  path: string;
+  bodyHash: string;
+  iat: number;
+  exp: number;
+}
 
 const encoder = new TextEncoder();
 const sessionCookieName = "ap_admin_session";
@@ -259,6 +272,13 @@ export const verifyRuntimeConfigSyncJwt = async (
     throw new Error("generated-site runtime config sync token payload is invalid");
   }
 
+  return payload;
+};
+
+export const verifyPaymentSettingsJwt = async (token: string, publicJwkBinding: unknown) => {
+  const payload = await verifyControlPlaneJwt<PaymentSettingsPayload>(token, publicJwkBinding, "astropages-generated-site-payment-settings");
+  if (!payload.sub || !roles.has(payload.role) || !["preview", "production"].includes(payload.environment) || !["GET", "PATCH"].includes(payload.method) || !payload.path || !/^[a-f0-9]{64}$/.test(payload.bodyHash))
+    throw new Error("generated-site payment settings token payload is invalid");
   return payload;
 };
 

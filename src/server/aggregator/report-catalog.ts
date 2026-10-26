@@ -1,6 +1,7 @@
 import type { SupportedLocale } from "../../data/localization-contract.ts";
 import { reportCatalog } from "../../data/reports/catalog.ts";
 import type { RuntimeEnv } from "./runtime.ts";
+import { selectIndependentPrice } from "./payment-pricing.ts";
 
 export type ReportCoverTone =
   | "terracotta"
@@ -33,6 +34,8 @@ type ReportProductRow = {
   cover_tone?: unknown;
   image_url?: unknown;
   provider_endpoint_key?: unknown;
+  price_inr_cents?: unknown;
+  price_usd_cents?: unknown;
 };
 
 const coverTones = new Set<ReportCoverTone>([
@@ -143,7 +146,7 @@ const localFallback = (locale: SupportedLocale): ReportProduct[] =>
     .map(({ sortOrder: _sortOrder, ...report }) => report);
 
 const selectColumns = `
-  SELECT slug, report_type, pages_count, price_cents, currency, glyph,
+  SELECT slug, report_type, pages_count, price_cents, price_inr_cents, price_usd_cents, currency, glyph,
          cover_tone, image_url, provider_endpoint_key
   FROM ap_report_products
 `;
@@ -157,12 +160,12 @@ export const listReportProducts = async (
     const result = await env.DB.prepare(
       `${selectColumns} WHERE active = 1 ORDER BY sort_order ASC, slug ASC`,
     ).all?.<ReportProductRow>();
-    const rows = (result?.results ?? [])
+    const priced = await Promise.all((result?.results ?? []).map((row) => selectIndependentPrice(env, row as Record<string, unknown>)));
+    return priced
       .map((row) => normalizeRow(row, locale))
       .filter(Boolean) as ReportProduct[];
-    return rows.length > 0 ? rows : localFallback(locale);
   } catch {
-    return localFallback(locale);
+    return [];
   }
 };
 
@@ -179,8 +182,7 @@ export const getReportProductBySlug = async (
     )
       .bind(slug)
       .first?.()) as ReportProductRow | null | undefined;
-    const normalized = row ? normalizeRow(row, locale) : undefined;
-    return normalized ?? localFallback(locale).find((report) => report.slug === slug);
+    return row ? normalizeRow(await selectIndependentPrice(env, row as Record<string, unknown>), locale) : undefined;
   } catch {
     return localFallback(locale).find((report) => report.slug === slug);
   }

@@ -31,6 +31,14 @@ Important reusable areas:
 
 Before adding or changing any visitor form, booking, order, newsletter, support, or payment flow, read `LEADS.md` and keep its lead-linking checks in the derived template.
 
+Payment currency rules:
+
+- Read `docs/PAYMENT_CURRENCY.md` before changing any price, checkout, wallet, payment webhook, receipt, or payment-settings route.
+- Keep USD and INR as independent fixed minor-unit values. Never introduce exchange-rate multiplication, FX lookup, a converted seed, or fallback from one denomination to the other.
+- Resolve `AUTO` per request: trusted India traffic uses INR/Razorpay; non-India or unknown traffic uses USD/Stripe. Production trusts only `request.cf.country`; the DEV Tunnel exception requires a `*.trycloudflare.com` host plus `CF-Ray`.
+- Preserve stored order/attempt/entitlement currency and the wallet's first-funding currency lock. Browser returns are not payment authority; only verified provider webhooks may transition paid state or trigger money/fulfillment side effects.
+- The AstroPages control plane and AI must use the signed, revision-checked `payment-settings.v1` route. They must not store a second preference copy or edit prices through that endpoint.
+
 Verification before handoff:
 
 ```sh

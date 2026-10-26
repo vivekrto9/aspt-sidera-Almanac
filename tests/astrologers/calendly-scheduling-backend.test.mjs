@@ -3,11 +3,13 @@ import { createHmac } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
+import { applyPaymentTestSchema } from "../helpers/payment-schema.mjs";
 
 const read = (path) => readFileSync(new URL(`../../${path}`, import.meta.url), "utf8");
 const createD1 = () => {
   const sqlite = new DatabaseSync(":memory:");
   for (const migration of ["0001_base_runtime.sql", "0002_customer_auth.sql", "0108_astrologer_directory.sql", "0109_customer_auth_mutations.sql", "0110_customer_profiles_and_preferences.sql", "0111_session_payment_entitlements.sql", "0113_calendly_scheduled_sessions.sql"]) sqlite.exec(read(`migrations/${migration}`));
+  applyPaymentTestSchema(sqlite);
   return { sqlite, prepare(sql) { const statement = sqlite.prepare(sql); let values = []; return { bind(...next) { values = next; return this; }, async first() { return statement.get(...values) ?? null; }, async all() { return { results: statement.all(...values) }; }, async run() { const result = statement.run(...values); return { meta: { changes: Number(result.changes) } }; } }; } };
 };
 const seed = (sqlite) => {

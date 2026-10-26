@@ -17,10 +17,9 @@ test("template source delegates releases to the signed Woodpecker extension", ()
       preview: "template_preview",
       production: "template_production",
     },
-    githubSafetyCi: ".github/workflows/ci.yml",
     catalogScreenshots: "admin-managed",
   });
-  assert.equal(exists(".github/workflows/ci.yml"), true);
+  assert.equal(exists(".github/workflows/ci.yml"), false);
   assert.equal(exists(".github/workflows/deploy-template-preview.yml"), false);
   assert.equal(exists(".github/workflows/deploy-production.yml"), false);
   assert.equal(exists(".woodpecker.yml"), false);

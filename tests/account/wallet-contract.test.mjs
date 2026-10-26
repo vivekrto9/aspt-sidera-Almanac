@@ -18,6 +18,7 @@ test("Account exposes My wallet as a real hash section backed by wallet runtime 
   assert.match(page, /const accountWalletRecentTransactionLimit = 4/);
   assert.match(page, /pageSize: accountWalletRecentTransactionLimit/);
   assert.match(page, /<AccountWallet/);
+  assert.match(component, /props\.usage\.replace\(\/\\b\(\?:USD\|INR\)\\b\/g, props\.wallet\.currency\)/);
   assert.match(shell, /"overview", "wallet", "charts"/);
   assert.match(component, /<section id="wallet"/);
   assert.match(component, /data-wallet-balance/);

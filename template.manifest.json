@@ -151,7 +151,10 @@
       "ACTIVE_SCHEDULING_PROVIDER",
       "GMAIL_SENDER_EMAIL",
       "GMAIL_SENDER_NAME",
-      "GA4_MEASUREMENT_ID"
+      "GA4_MEASUREMENT_ID",
+      "ASTROLOGY_PDF_API_BASE_URL",
+      "ASTROLOGY_DEFAULT_TIMEZONE",
+      "ASTROLOGY_DEFAULT_LANGUAGE"
     ],
     "providerCredentials": [
       "AWS_ACCESS_KEY_ID",
@@ -235,7 +238,6 @@
         "preview": "template_preview",
         "production": "template_production"
       },
-      "githubSafetyCi": ".github/workflows/ci.yml",
       "catalogScreenshots": "admin-managed"
     },
     "generatedSite": {
@@ -810,7 +812,17 @@
       "ap_email_variable_mappings",
       "ap_analytics_deliveries",
       "ap_email_deliveries",
-      "ap_booking_preview_policy"
+      "ap_booking_preview_policy",
+      "ap_workspace_authored_state"
     ]
+  },
+  "previewArtifact": {
+    "contractVersion": "preview-artifact.v1",
+    "workspaceContract": "workspace-authored-state.v1",
+    "runtimeTuple": {
+      "wrangler": "4.94.0",
+      "miniflare": "4.20260521.0",
+      "workerd": "1.20260521.1"
+    }
   }
 }

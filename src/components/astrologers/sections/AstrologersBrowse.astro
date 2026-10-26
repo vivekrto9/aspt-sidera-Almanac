@@ -59,9 +59,9 @@ const compactNumber = new Intl.NumberFormat(locale, {
   notation: "compact",
   maximumFractionDigits: 1,
 });
-const currency = new Intl.NumberFormat(locale, {
+const money = (astrologer: BrowseAstrologer) => new Intl.NumberFormat(locale, {
   style: "currency",
-  currency: "USD",
+  currency: astrologer.currency || "USD",
   minimumFractionDigits: 2,
 });
 const availabilityLabel = (availability: BrowseAstrologer["availability"]) =>
@@ -174,7 +174,7 @@ const loginHrefFor = (next: string) =>
               reviewText={`${compactNumber.format(astrologer.reviews)} ${copy.reviewsSuffix}`}
               availability={astrologer.availability}
               availabilityLabel={availabilityLabel(astrologer.availability)}
-              rateText={currency.format(astrologer.rate)}
+              rateText={money(astrologer).format(astrologer.rate)}
               rateUnit={copy.rateUnit}
               specialties={astrologer.specialties}
               description={astrologer.description}

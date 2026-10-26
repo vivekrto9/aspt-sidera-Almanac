@@ -39,6 +39,7 @@ export const POST: APIRoute = async (context) => {
   if (
     !order ||
     !attempt ||
+    attempt.provider !== "stripe" ||
     attempt.payableId !== order.id ||
     attempt.accountId !== auth.session.account.id
   )

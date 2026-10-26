@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { requireCustomerCsrf } from "../../../../../../server/aggregator/customer-auth.ts";
 import {
+  getLatestStripeCheckoutWebhookStatus,
   readStripeCheckoutSession,
   verifyStripeSessionPayment,
 } from "../../../../../../server/aggregator/payments/stripe.ts";
@@ -46,6 +47,7 @@ export const POST: APIRoute = async (context) => {
   if (
     !entitlement ||
     !attempt ||
+    attempt.provider !== "stripe" ||
     attempt.accountId !== auth.session.account.id ||
     attempt.payableId !== entitlement.id
   ) {
@@ -62,6 +64,11 @@ export const POST: APIRoute = async (context) => {
     if (!verification.ok) {
       return errorResponse(feature, verification.message, 409);
     }
+    const webhookStatus = await getLatestStripeCheckoutWebhookStatus({ env, payableType: "session_entitlement", payableId: entitlement.id, sessionId });
+    if (webhookStatus === "failed" || webhookStatus === "expired")
+      return errorResponse(feature, "Stripe webhook reported this payment as not completed.", 409);
+    if (webhookStatus !== "paid")
+      return jsonResponse({ status: "ready", state: "ready", feature, capabilityKey: "checkout-and-payments", message: "Payment is waiting for Stripe webhook confirmation." }, { status: 202 });
     const paid = await markSessionPaymentPaid({
       env,
       entitlementId,

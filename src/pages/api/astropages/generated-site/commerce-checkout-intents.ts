@@ -6,6 +6,7 @@ import {
 } from "../../../../server/aggregator/commerce-orders.ts";
 import { requireCustomerCsrf } from "../../../../server/aggregator/customer-auth.ts";
 import { createStripeCommerceCheckout } from "../../../../server/aggregator/payments/stripe.ts";
+import { createRazorpayCheckout } from "../../../../server/aggregator/payments/razorpay.ts";
 import { resolveSecretBinding } from "../../../../server/aggregator/runtime-bindings.ts";
 import { safeString } from "../../../../server/aggregator/runtime.ts";
 import {
@@ -29,21 +30,6 @@ export const POST: APIRoute = async (context) => {
   if (!auth.ok) return auth.response;
   const parsed = await readJsonBody(context.request);
   if (!parsed.ok) return parsed.response;
-  const [stripeSecret, webhookSecret] = await Promise.all([
-    resolveSecretBinding(env, "STRIPE_SECRET_KEY"),
-    resolveSecretBinding(env, "STRIPE_WEBHOOK_SECRET"),
-  ]);
-  const missingSecretNames = [
-    !stripeSecret ? "STRIPE_SECRET_KEY" : "",
-    !webhookSecret ? "STRIPE_WEBHOOK_SECRET" : "",
-  ].filter(Boolean);
-  if (missingSecretNames.length)
-    return blockedProviderResponse({
-      feature,
-      capabilityKey: "checkout-and-payments",
-      missingSecretNames,
-      message: "Stripe Checkout and its signed webhook are not configured.",
-    });
   const orderId = safeString(parsed.body.orderId);
   const attemptId = safeString(parsed.body.attemptId);
   const [order, attempt] = await Promise.all([
@@ -63,15 +49,19 @@ export const POST: APIRoute = async (context) => {
       "This order is no longer awaiting payment.",
       409,
     );
+  const provider = attempt.provider === "razorpay" ? "razorpay" : "stripe";
+  const required = provider === "razorpay" ? ["RAZORPAY_KEY_ID","RAZORPAY_KEY_SECRET","RAZORPAY_WEBHOOK_SECRET"] : ["STRIPE_SECRET_KEY","STRIPE_WEBHOOK_SECRET"];
+  const missingSecretNames = (await Promise.all(required.map(async (name)=>[name,await resolveSecretBinding(env,name)] as const))).filter(([,value])=>!value).map(([name])=>name);
+  if(missingSecretNames.length) return blockedProviderResponse({feature,capabilityKey:"checkout-and-payments",missingSecretNames,message:`${provider} checkout and its signed webhook are not configured.`});
   if (attempt.status === "requires_action" && attempt.checkoutUrl) {
     return jsonResponse({
       status: "ready",
       state: "ready",
       feature,
       capabilityKey: "checkout-and-payments",
-      message: "Existing Stripe checkout restored.",
+      message: `Existing ${provider} checkout restored.`,
       data: {
-        provider: "stripe",
+        provider,
         orderId,
         attemptId,
         checkoutUrl: attempt.checkoutUrl,
@@ -81,18 +71,18 @@ export const POST: APIRoute = async (context) => {
   if (attempt.status !== "created")
     return errorResponse(feature, "Start a new order checkout.", 409);
   try {
-    const checkout = await createStripeCommerceCheckout({
+    const checkout = provider === "stripe" ? await createStripeCommerceCheckout({
       env,
       payable: order,
       attemptId,
       origin: new URL(context.request.url).origin,
       locale: safeString(parsed.body.locale) || "en",
-    });
+    }) : await createRazorpayCheckout({env,payable:order,attemptId,origin:new URL(context.request.url).origin,payableType:"commerce_order"});
     await recordCommerceCheckout({
       env,
       orderId,
       attemptId,
-      sessionId: checkout.sessionId,
+      sessionId: "sessionId" in checkout ? checkout.sessionId : checkout.orderId,
       checkoutUrl: checkout.checkoutUrl,
     });
     return jsonResponse({
@@ -100,9 +90,9 @@ export const POST: APIRoute = async (context) => {
       state: "ready",
       feature,
       capabilityKey: "checkout-and-payments",
-      message: "Stripe checkout is ready.",
+      message: `${provider} checkout is ready.`,
       data: {
-        provider: "stripe",
+        provider,
         orderId,
         attemptId,
         checkoutUrl: checkout.checkoutUrl,

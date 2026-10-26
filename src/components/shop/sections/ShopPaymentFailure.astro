@@ -1,5 +1,6 @@
 ---
 import type { ShopCheckoutFlowCopy } from "../../../data/locale/shop/sections/checkout-flow.ts";
+import type { CommerceOrder } from "../../../server/aggregator/commerce-orders.ts";
 import Button from "../../shared/Button.astro";
 import "../../../styles/shop/sections/order-confirmation.css";
 import "../../../styles/shop/sections/payment-failure.css";
@@ -9,6 +10,8 @@ type Props = {
   copy: ShopCheckoutFlowCopy;
   checkoutHref: string;
   cartHref: string;
+  locale?: string;
+  order?: CommerceOrder | null;
   editAttributes?: (field: string) => EditAttributes;
 };
 
@@ -16,8 +19,13 @@ const {
   copy,
   checkoutHref,
   cartHref,
+  locale = "en",
+  order,
   editAttributes = () => ({}),
 } = Astro.props as Props;
+const savedTotal = order
+  ? new Intl.NumberFormat(locale, { style: "currency", currency: order.currency, minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(order.totalCents / 100)
+  : "";
 ---
 
 <main class="shop-confirmation shop-payment-failure" data-screen-label="Payment Unsuccessful">
@@ -41,6 +49,7 @@ const {
       <p {...editAttributes("shop_payment_failure_context_description")}>
         {copy.paymentFailureContextDescription}
       </p>
+      {order ? <p data-shop-payment-snapshot><strong>{order.orderNumber}</strong><span>{savedTotal} {order.currency}</span></p> : null}
     </section>
 
     <div class="shop-payment-failure__actions">

@@ -27,6 +27,7 @@ type Props = {
   walletHref: string;
   newChatHref: string;
   locale: string;
+  currency: string;
   chatSessions?: Array<{
     id: string;
     astrologerName: string;
@@ -85,6 +86,7 @@ const {
   walletHref,
   newChatHref,
   locale,
+  currency,
   chatSessions = [],
   walletTransactions = [],
   activeProfileLabel = "",
@@ -143,6 +145,7 @@ const personalizedOpeningMessage = copy.openingMessage.replaceAll(
     data-csrf-token={csrfToken}
     data-wallet-balance-cents={walletBalanceCents}
     data-question-price-cents={questionPriceCents}
+    data-currency={currency}
     aria-label={`${sessionMode} ${sessionActive ? copy.connected : copy.sessionEnded}`}
   >
   <header class="astrologer-live__bar">
@@ -430,7 +433,7 @@ const personalizedOpeningMessage = copy.openingMessage.replaceAll(
     const formatWalletAmount = (cents: number) =>
       new Intl.NumberFormat(document.documentElement.lang || "en", {
         style: "currency",
-        currency: "USD",
+        currency: liveSession.dataset.currency || "USD",
         minimumFractionDigits: 2,
       }).format(Math.max(0, cents) / 100);
 

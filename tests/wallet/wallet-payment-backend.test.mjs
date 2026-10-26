@@ -2,10 +2,12 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
+import { applyPaymentTestSchema } from "../helpers/payment-schema.mjs";
 const read = (path) => readFileSync(new URL(`../../${path}`, import.meta.url), "utf8");
 const createD1 = () => {
   const sqlite = new DatabaseSync(":memory:");
   for (const file of ["0001_base_runtime.sql", "0002_customer_auth.sql", "0109_customer_auth_mutations.sql", "0111_session_payment_entitlements.sql", "0136_wallet_stripe_recharges.sql"]) sqlite.exec(read(`migrations/${file}`));
+  applyPaymentTestSchema(sqlite);
   return { sqlite, prepare(sql) { const statement = sqlite.prepare(sql); let values = []; return { bind(...next) { values = next; return this; }, async first() { return statement.get(...values) ?? null; }, async all() { return { results: statement.all(...values) }; }, async run() { const result = statement.run(...values); return { meta: { changes: Number(result.changes) } }; } }; } };
 };
 const insertAccount = (sqlite) => { const now = new Date().toISOString(); sqlite.prepare(`INSERT INTO ap_customer_accounts (id,email,display_name,password_hash,password_salt,default_language,consent_marketing,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?)`).run("wallet_account","wallet@example.test","Wallet User","hash","salt","English",0,now,now); };
@@ -96,6 +98,11 @@ test("wallet page and APIs keep auth, CSRF, success, cancel, and failure contrac
   assert.match(component, /wallet-hero__actions/);
   assert.match(component, /wallet-summary/);
   assert.match(component, /data-wallet-after-recharge/);
+  assert.match(component, /data-wallet-payment-receipt/);
+  assert.match(component, /paymentState === "pending" \? "pending"/);
+  assert.match(component, /paymentRecharge\.amountCents/);
+  assert.match(component, /paymentRecharge\.creditCents/);
+  assert.doesNotMatch(component, /<script is:inline[\s\S]*querySelector<HTMLElement>/);
   assert.match(component, /import Button from "\.\.\/\.\.\/shared\/Button\.astro"/);
   assert.match(component, /variant="primary"/);
   assert.match(component, /variant="secondary"/);

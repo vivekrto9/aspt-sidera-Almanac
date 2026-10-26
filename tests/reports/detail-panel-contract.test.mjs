@@ -97,7 +97,9 @@ test("each report slug maps prepared commerce data to localized detail copy", as
   assert.match(page, /const chapters = Array\.from\(\{ length: 5 \}/);
   assert.match(page, /glyph=\{report\.glyph\}/);
   assert.match(page, /pagesLabel=\{report\.pages\}/);
-  assert.match(page, /price=\{report\.price\}/);
+  assert.match(page, /price=\{paymentOrder/);
+  assert.match(page, /paymentOrder\.totalCents \/ 100/);
+  assert.match(page, /currency: paymentOrder\.currency/);
   assert.match(page, /coverTone=\{report\.coverTone\}/);
   assert.match(page, /coverSrc=\{report\.imageUrl\}/);
   assert.match(page, /purchaseHref=\{localizePath\("\/account", locale\)\}/);

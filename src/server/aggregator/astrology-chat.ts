@@ -1,5 +1,6 @@
 import { callAstrologyChatProvider } from "./astrology-chat-provider.ts";
 import { getAstrologerBySlug } from "./astrologer-directory.ts";
+import { getWalletCurrency } from "./payment-pricing.ts";
 import { getCustomerUserProfile } from "./customer-profiles.ts";
 import { AP_TABLES as tables } from "./db/tables.ts";
 import { createId, nowIso, safeString, type RuntimeEnv } from "./runtime.ts";
@@ -54,10 +55,10 @@ const validRequestKey = (value: string) =>
 
 const priceCentsFor = (rate: number) => Math.max(0, Math.round(rate * 100));
 
-const formatUsd = (amountCents: number) =>
+const formatAmount = (amountCents: number, currency: string) =>
   new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "USD",
+    currency,
     minimumFractionDigits: 2,
   }).format(amountCents / 100);
 
@@ -201,7 +202,8 @@ export const checkAstrologyChatEligibility = async ({
   accountId: string;
   astrologerSlug: string;
 }) => {
-  const astrologer = await getAstrologerBySlug(env, astrologerSlug);
+  const walletCurrency = await getWalletCurrency(env, accountId);
+  const astrologer = await getAstrologerBySlug(env, astrologerSlug, walletCurrency);
   if (!astrologer || astrologer.availability === "offline") {
     return {
       ok: false as const,
@@ -322,7 +324,7 @@ export const createAstrologyChatSession = async ({
       `INSERT INTO ${tables.chatSessions} (
         id, account_id, profile_id, partner_profile_id, astrologer_slug, provider, session_name,
         status, price_cents, currency, client_request_key, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, 'astrologyapi', ?, 'active', ?, 'USD', ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, 'astrologyapi', ?, 'active', ?, ?, ?, ?, ?)`,
       [
         sessionId,
         accountId,
@@ -331,6 +333,7 @@ export const createAstrologyChatSession = async ({
         eligibility.astrologer.slug,
         `Chat with ${eligibility.astrologer.name}`,
         eligibility.perQuestionCostCents,
+        eligibility.astrologer.currency,
         key || null,
         now,
         now,
@@ -486,9 +489,9 @@ const debitWalletForChat = async ({
     env,
     `UPDATE ${tables.wallets}
      SET balance_cents = balance_cents - ?, updated_at = ?
-     WHERE id = ? AND account_id = ? AND balance_cents >= ?
+     WHERE id = ? AND account_id = ? AND currency = ? AND balance_cents >= ?
      RETURNING balance_cents`,
-    [amountCents, now, walletId, accountId, amountCents],
+    [amountCents, now, walletId, accountId, session.currency, amountCents],
   );
   if (!updated) {
     const current = await getCustomerWalletSummary(env, accountId);
@@ -511,14 +514,15 @@ const debitWalletForChat = async ({
         id, wallet_id, account_id, recharge_id, transaction_type,
         amount_cents, balance_after_cents, currency, description,
         metadata_json, created_at
-      ) VALUES (?, ?, ?, NULL, 'chat_debit', ?, ?, 'USD', ?, ?, ?)`,
+      ) VALUES (?, ?, ?, NULL, 'chat_debit', ?, ?, ?, ?, ?, ?)`,
       [
         transactionId,
         walletId,
         accountId,
         -amountCents,
         balanceAfterCents,
-        `Chat question with ${session.astrologerName} · ${formatUsd(amountCents)}`,
+        session.currency,
+        `Chat question with ${session.astrologerName} · ${formatAmount(amountCents, session.currency)}`,
         JSON.stringify({
           sessionId: session.id,
           astrologerSlug: session.astrologerSlug,

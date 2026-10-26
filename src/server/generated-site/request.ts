@@ -1,4 +1,6 @@
 import { errorResponse } from "./responses.ts";
+import { withPaymentRequest } from "../aggregator/payment-pricing.ts";
+import type { RuntimeEnv } from "../aggregator/runtime.ts";
 
 export type JsonObject = Record<string, unknown>;
 export type D1DatabaseLike = {
@@ -89,9 +91,7 @@ export const requirePost = (request: Request) => {
   return errorResponse("generated-site", "Method not allowed.", 405);
 };
 
-export type GeneratedSiteRuntimeEnv = Record<string, unknown> & {
-  DB?: D1DatabaseLike;
-};
+export type GeneratedSiteRuntimeEnv = RuntimeEnv;
 
 export const getRuntimeEnv = async (
   context: unknown,
@@ -106,7 +106,7 @@ export const getRuntimeEnv = async (
 
   try {
     if (maybeContext.locals?.runtime?.env) {
-      return maybeContext.locals.runtime.env;
+      return withPaymentRequest(maybeContext.locals.runtime.env, (context as { request?: Request }).request);
     }
   } catch {
     // Astro v6 Cloudflare runtime exposes env through cloudflare:workers.
@@ -114,7 +114,7 @@ export const getRuntimeEnv = async (
 
   try {
     const cloudflareWorkers = await import("cloudflare:workers");
-    return cloudflareWorkers.env as GeneratedSiteRuntimeEnv;
+    return withPaymentRequest(cloudflareWorkers.env as GeneratedSiteRuntimeEnv, (context as { request?: Request }).request);
   } catch {
     return {};
   }

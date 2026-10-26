@@ -5,6 +5,7 @@ import test from "node:test";
 import { assertProjectSecretRequirement } from "../scripts/project-secret-requirement-contract.mjs";
 
 const builtInSecretKeys = new Set([
+  "RAZORPAY_KEY_ID",
   "RAZORPAY_KEY_SECRET",
   "RAZORPAY_WEBHOOK_SECRET",
   "STRIPE_SECRET_KEY",

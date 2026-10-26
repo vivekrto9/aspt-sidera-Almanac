@@ -37,6 +37,7 @@ type Props = {
   paymentAttemptId?: string;
   stripeSessionId?: string;
   paymentState?: string;
+  paymentProvider?: string;
   locale?: string;
   runtimeCopy?: {
     profileLabel: string; addProfile: string; preparing: string;
@@ -82,6 +83,7 @@ const {
   paymentAttemptId = "",
   stripeSessionId = "",
   paymentState = "",
+  paymentProvider = "stripe",
   locale = "en",
   runtimeCopy = { profileLabel: "Birth profile", addProfile: "Add a birth profile before purchasing this report.", preparing: "Preparing secure checkout…", createError: "Report order could not be created.", checkoutError: "Secure checkout could not be started.", confirmed: "Payment confirmed. Your report is queued for generation.", confirming: "Confirming your payment…", pending: "Payment confirmation is still pending.", cancelled: "Payment was not completed. No charge was made." },
   purchaseNote,
@@ -111,6 +113,7 @@ const {
   data-payment-order={JSON.stringify(paymentOrder ?? null)}
   data-payment-attempt-id={paymentAttemptId}
   data-stripe-session-id={stripeSessionId}
+  data-payment-provider={paymentProvider}
   data-runtime-copy={JSON.stringify(runtimeCopy)}
 >
   <div class="reports-detail-panel">
@@ -311,7 +314,21 @@ const {
     if (order?.status === "paid") {
       try { sessionStorage.removeItem(`sidera-report-order-${root.dataset.reportSlug || "report"}`); } catch {}
     }
-    if (order?.status !== "pending_payment" || !root.dataset.paymentAttemptId || !root.dataset.stripeSessionId) return;
+    if (order?.status !== "pending_payment" || !root.dataset.paymentAttemptId) return;
+    if (root.dataset.paymentProvider === "razorpay") {
+      void (async () => {
+        const status = root.querySelector<HTMLElement>("[data-report-payment-status]");
+        for (let attempt = 0; attempt < 8; attempt += 1) {
+          const response = await fetch("/api/astropages/generated-site/payments/status", { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json", "x-astropages-customer-csrf": root.dataset.csrfToken || "" }, body: JSON.stringify({ payableType: "commerce_order", payableId: order.id, attemptId: root.dataset.paymentAttemptId }) });
+          const body = await response.json().catch(() => ({}));
+          if (body?.data?.paid) { if (status) status.textContent = copy.confirmed; try { sessionStorage.removeItem(`sidera-report-order-${root.dataset.reportSlug || "report"}`); } catch {} return; }
+          if (status) status.textContent = copy.pending;
+          await new Promise((resolve) => window.setTimeout(resolve, 1000));
+        }
+      })();
+      return;
+    }
+    if (!root.dataset.stripeSessionId) return;
     void fetch("/api/astropages/generated-site/payments/stripe/commerce-confirm", {
       method: "POST",
       credentials: "same-origin",

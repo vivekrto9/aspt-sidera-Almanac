@@ -46,7 +46,7 @@ const firstName = astrologer.name.split(" ")[0];
 const withName = (value: string) => value.replaceAll("{name}", firstName);
 const currency = new Intl.NumberFormat(locale, {
   style: "currency",
-  currency: "USD",
+  currency: astrologer.currency || "USD",
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
